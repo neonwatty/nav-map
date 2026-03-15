@@ -1,0 +1,49 @@
+{
+  "name": "@neonwatty/nav-map",
+  "version": "0.1.0",
+  "description": "Interactive navigation map visualization for Next.js apps and websites",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neonwatty/nav-map",
+    "directory": "packages/core"
+  },
+  "keywords": ["navigation", "sitemap", "react-flow", "next.js", "visualization", "graph"],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/index.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'lint placeholder'"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.6.0",
+    "elkjs": "^0.9.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0"
+  }
+}

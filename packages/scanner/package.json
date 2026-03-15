@@ -1,0 +1,44 @@
+{
+  "name": "@neonwatty/nav-map-scanner",
+  "version": "0.1.0",
+  "description": "CLI scanner for generating nav-map.json from Next.js apps or URLs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neonwatty/nav-map",
+    "directory": "packages/scanner"
+  },
+  "keywords": ["navigation", "scanner", "cli", "next.js", "sitemap", "playwright"],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "nav-map": "./bin/nav-map.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "ts-morph": "^25.0.0",
+    "glob": "^11.0.0",
+    "playwright": "^1.50.0",
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
