@@ -104,6 +104,7 @@ function NavMapInner({
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -116,6 +117,17 @@ function NavMapInner({
   } | null>(null);
 
   const baseEdgesRef = useRef<Edge[]>([]);
+
+  const handleGroupToggle = useCallback((groupId: string, collapsed: boolean) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (collapsed) next.add(groupId);
+      else next.delete(groupId);
+      return next;
+    });
+  }, []);
+  const handleGroupToggleRef = useRef(handleGroupToggle);
+  handleGroupToggleRef.current = handleGroupToggle;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -156,10 +168,17 @@ function NavMapInner({
 
     const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
 
-    computeElkLayout(rfNodes, rfEdges).then(layoutedNodes => {
+    // Inject onToggle into group nodes
+    for (const node of rfNodes) {
+      if (node.type === 'groupNode') {
+        (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+      }
+    }
+
+    computeElkLayout(rfNodes, rfEdges).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
       setNodes(layoutedNodes);
-      setEdges(rfEdges);
-      baseEdgesRef.current = rfEdges;
+      setEdges(layoutedEdges);
+      baseEdgesRef.current = layoutedEdges;
       sharedNavEdgesRef.current = buildSharedNavEdges(graph);
       setLayoutDone(true);
     });
@@ -175,13 +194,13 @@ function NavMapInner({
     }
   }, [showSharedNav, layoutDone, setEdges]);
 
-  // Semantic zoom: swap node types based on zoom level
+  // Semantic zoom: swap node types based on zoom level (skip group nodes)
   const zoomedNodes = useMemo(() => {
     if (showDetail) return nodes;
-    return nodes.map(node => ({
-      ...node,
-      type: 'compactNode',
-    }));
+    return nodes.map(node => {
+      if (node.type === 'groupNode') return node;
+      return { ...node, type: 'compactNode' };
+    });
   }, [nodes, showDetail]);
 
   // Use refs to avoid stale closures in callbacks
@@ -311,8 +330,10 @@ function NavMapInner({
               : baseEdgesRef.current;
             computeElkLayout(nodes, currentEdges, {
               direction: e.shiftKey ? 'RIGHT' : 'DOWN',
-            }).then(layoutedNodes => {
+            }).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
               setNodes(layoutedNodes);
+              setEdges(layoutedEdges);
+              baseEdgesRef.current = layoutedEdges;
               setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50);
             });
           }
@@ -380,17 +401,50 @@ function NavMapInner({
     return () => window.removeEventListener('mousemove', handler);
   }, [hoverPreview]);
 
+  // Filter collapsed group children
+  const visibleNodes = useMemo(() => {
+    if (collapsedGroups.size === 0) return zoomedNodes;
+    return zoomedNodes.filter(node => {
+      if (!node.parentId) return true;
+      const groupId = node.parentId.slice('group-'.length);
+      return !collapsedGroups.has(groupId);
+    });
+  }, [zoomedNodes, collapsedGroups]);
+
+  // Re-route edges targeting collapsed children to the group node
+  const visibleEdges = useMemo(() => {
+    if (collapsedGroups.size === 0) return edges;
+    const collapsedChildIds = new Set(
+      nodes
+        .filter(n => n.parentId && collapsedGroups.has(n.parentId.slice('group-'.length)))
+        .map(n => n.id)
+    );
+    return edges.map(edge => {
+      let { source, target } = edge;
+      const sourceNode = nodes.find(n => n.id === source);
+      const targetNode = nodes.find(n => n.id === target);
+      if (sourceNode?.parentId && collapsedChildIds.has(source)) {
+        source = sourceNode.parentId;
+      }
+      if (targetNode?.parentId && collapsedChildIds.has(target)) {
+        target = targetNode.parentId;
+      }
+      if (source === edge.source && target === edge.target) return edge;
+      return { ...edge, source, target, id: `${edge.id}-rerouted` };
+    });
+  }, [edges, nodes, collapsedGroups]);
+
   // Dimming: when a node is selected, dim unconnected nodes/edges
   const styledNodes = useMemo(() => {
-    if (!ctx.selectedNodeId) return zoomedNodes;
+    if (!ctx.selectedNodeId) return visibleNodes;
 
     const connectedNodeIds = new Set<string>([ctx.selectedNodeId]);
-    for (const edge of edges) {
+    for (const edge of visibleEdges) {
       if (edge.source === ctx.selectedNodeId) connectedNodeIds.add(edge.target);
       if (edge.target === ctx.selectedNodeId) connectedNodeIds.add(edge.source);
     }
 
-    return zoomedNodes.map(node => ({
+    return visibleNodes.map(node => ({
       ...node,
       style: {
         ...node.style,
@@ -398,12 +452,12 @@ function NavMapInner({
         transition: 'opacity 0.2s',
       },
     }));
-  }, [zoomedNodes, edges, ctx.selectedNodeId]);
+  }, [visibleNodes, visibleEdges, ctx.selectedNodeId]);
 
   const styledEdges = useMemo(() => {
-    if (!ctx.selectedNodeId) return edges;
+    if (!ctx.selectedNodeId) return visibleEdges;
 
-    return edges.map(edge => ({
+    return visibleEdges.map(edge => ({
       ...edge,
       style: {
         ...edge.style,
@@ -414,7 +468,7 @@ function NavMapInner({
         transition: 'opacity 0.2s',
       },
     }));
-  }, [edges, ctx.selectedNodeId]);
+  }, [visibleEdges, ctx.selectedNodeId]);
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
