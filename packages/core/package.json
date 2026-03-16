@@ -35,7 +35,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'lint placeholder'"
+    "lint": "eslint src/ --ext .ts,.tsx"
   },
   "peerDependencies": {
     "react": ">=18",

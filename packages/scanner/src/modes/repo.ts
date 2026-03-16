@@ -268,6 +268,8 @@ function detectProjectName(projectDir: string): string {
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
       return pkg.name ?? path.basename(projectDir);
     }
-  } catch {}
+  } catch {
+    // Fall through to basename
+  }
   return path.basename(projectDir);
 }
