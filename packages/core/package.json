@@ -8,7 +8,14 @@
     "url": "https://github.com/neonwatty/nav-map",
     "directory": "packages/core"
   },
-  "keywords": ["navigation", "sitemap", "react-flow", "next.js", "visualization", "graph"],
+  "keywords": [
+    "navigation",
+    "sitemap",
+    "react-flow",
+    "next.js",
+    "visualization",
+    "graph"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -36,9 +43,14 @@
   },
   "dependencies": {
     "@xyflow/react": "^12.6.0",
-    "elkjs": "^0.9.3"
+    "d3-hierarchy": "^3.1.2",
+    "d3-shape": "^3.2.0",
+    "elkjs": "^0.9.3",
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
+    "@types/d3-hierarchy": "^3.1.7",
+    "@types/d3-shape": "^3.1.8",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "react": "^19.0.0",
