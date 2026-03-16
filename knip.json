@@ -9,7 +9,7 @@
     "packages/scanner": {
       "entry": ["src/index.ts", "src/cli.ts", "src/reporter.ts"],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["playwright", "sharp", "ts-morph", "adm-zip"]
+      "ignoreDependencies": ["playwright", "sharp", "ts-morph", "adm-zip", "glob"]
     },
     "packages/demo": {
       "entry": ["app/**/{layout,page}.tsx"],
