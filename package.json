@@ -6,9 +6,12 @@
     "build": "pnpm --filter @neonwatty/nav-map build && pnpm --filter demo build",
     "build:core": "pnpm --filter @neonwatty/nav-map build",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css}\""
   },
   "devDependencies": {
+    "prettier": "^3.8.1",
     "typescript": "^5.7.0"
   },
   "engines": {
