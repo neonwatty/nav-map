@@ -8,7 +8,14 @@
     "url": "https://github.com/neonwatty/nav-map",
     "directory": "packages/scanner"
   },
-  "keywords": ["navigation", "scanner", "cli", "next.js", "sitemap", "playwright"],
+  "keywords": [
+    "navigation",
+    "scanner",
+    "cli",
+    "next.js",
+    "sitemap",
+    "playwright"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,15 +37,17 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "commander": "^13.0.0",
-    "ts-morph": "^25.0.0",
     "glob": "^11.0.0",
     "playwright": "^1.50.0",
-    "sharp": "^0.33.0"
+    "sharp": "^0.33.0",
+    "ts-morph": "^25.0.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "^22.0.0",
     "tsup": "^8.4.0",
-    "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.7.0"
   }
 }

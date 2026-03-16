@@ -1,6 +1,8 @@
 import { Command } from 'commander';
 import { scanRepo } from './modes/repo.js';
 import { crawlUrl } from './modes/crawl.js';
+import { runAuth } from './modes/auth.js';
+import { recordTests } from './modes/record.js';
 import path from 'node:path';
 import fs from 'node:fs';
 
@@ -80,6 +82,55 @@ program
       console.log(`  Groups: ${graph.groups.length}`);
     } catch (err) {
       console.error('Crawl failed:', err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('auth')
+  .description('Log in to a website interactively and save auth state')
+  .argument('<url>', 'URL to open for login')
+  .option('-o, --output <path>', 'Output file for auth state', 'auth.json')
+  .action(async (url: string, opts) => {
+    try {
+      await runAuth({ url, output: opts.output });
+    } catch (err) {
+      console.error('Auth failed:', err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('record')
+  .description('Record navigation from E2E test runs against a live app')
+  .option('--playwright-config <path>', 'Path to Playwright config file', 'playwright.config.ts')
+  .option('--storage-state <path>', 'Path to auth storage state file')
+  .option('--routes <path>', 'Path to routes.json from a prior nav-map scan')
+  .option('--screenshot-dir <dir>', 'Directory for screenshots', 'nav-screenshots')
+  .option('-o, --output <path>', 'Output file path', 'nav-map.json')
+  .option('-n, --name <name>', 'Project name for the graph')
+  .action(async (opts) => {
+    console.log('Recording navigation from E2E tests...\n');
+
+    try {
+      const graph = await recordTests({
+        playwrightConfig: opts.playwrightConfig,
+        storageState: opts.storageState,
+        routesJson: opts.routes,
+        screenshotDir: opts.screenshotDir,
+        output: opts.output,
+        name: opts.name,
+      });
+
+      const outputPath = path.resolve(opts.output);
+      fs.writeFileSync(outputPath, JSON.stringify(graph, null, 2));
+      console.log(`\nWrote ${outputPath}`);
+      console.log(`  Nodes: ${graph.nodes.length}`);
+      console.log(`  Edges: ${graph.edges.length}`);
+      console.log(`  Groups: ${graph.groups.length}`);
+      console.log(`  Flows: ${graph.flows?.length ?? 0}`);
+    } catch (err) {
+      console.error('Record failed:', err);
       process.exit(1);
     }
   });
