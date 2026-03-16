@@ -6,3 +6,16 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Auth state files (contain session cookies/tokens)
+auth.json
+*.auth.json
+.auth/
+
+# Scanner output (regenerated)
+nav-map.json
+nav-screenshots/
+.nav-manifest.json
+
+# Superpowers brainstorm sessions
+.superpowers/
