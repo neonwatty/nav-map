@@ -151,7 +151,10 @@ function NavMapInner({
   const walkthrough = useWalkthrough();
   const { showDetail } = useSemanticZoom();
   const { isNarrow } = useResponsive();
-  const viewport = useStore(s => ({ x: s.transform[0], y: s.transform[1], zoom: s.transform[2] }));
+  const viewportX = useStore(s => s.transform[0]);
+  const viewportY = useStore(s => s.transform[1]);
+  const viewportZoom = useStore(s => s.transform[2]);
+  const viewport = { x: viewportX, y: viewportY, zoom: viewportZoom };
   const { fitView, setCenter } = useReactFlow();
 
   // Load graph from URL if provided
