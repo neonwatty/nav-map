@@ -11,7 +11,7 @@ export interface GroupNodeData {
   [key: string]: unknown;
 }
 
-function GroupNodeComponent({ data }: NodeProps) {
+function GroupNodeComponent({ data, width, height }: NodeProps) {
   const nodeData = data as unknown as GroupNodeData;
   const { isDark, getGroupColors } = useNavMapContext();
   const colors = getGroupColors(nodeData.groupId);
@@ -26,8 +26,8 @@ function GroupNodeComponent({ data }: NodeProps) {
   return (
     <div
       style={{
-        minWidth: isCollapsed ? 160 : 200,
-        minHeight: isCollapsed ? 50 : 100,
+        width: width ?? '100%',
+        height: height ?? '100%',
         borderRadius: 10,
         border: `2px solid ${colors.border}`,
         background: `${colors.bg}88`,

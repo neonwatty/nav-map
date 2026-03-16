@@ -63,9 +63,26 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
           }}
         >
           {nodeData.label}
+          {Boolean(nodeData.metadata?.authRequired) && (
+            <span
+              style={{
+                fontSize: 9,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background: isDark ? '#2a1a18' : '#fef0e0',
+                color: isDark ? '#c87850' : '#a05020',
+              }}
+              title="Authentication required"
+            >
+              &#x1F512;
+            </span>
+          )}
         </div>
         <div
           style={{
