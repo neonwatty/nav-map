@@ -45,9 +45,7 @@ export function HelpOverlay({ isOpen, onClose }: HelpOverlayProps) {
           borderRadius: 12,
           padding: '24px 32px',
           minWidth: 320,
-          boxShadow: isDark
-            ? '0 8px 40px rgba(0,0,0,0.4)'
-            : '0 8px 40px rgba(0,0,0,0.15)',
+          boxShadow: isDark ? '0 8px 40px rgba(0,0,0,0.4)' : '0 8px 40px rgba(0,0,0,0.15)',
         }}
       >
         <h2

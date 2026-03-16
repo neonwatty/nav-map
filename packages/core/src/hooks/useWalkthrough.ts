@@ -29,9 +29,7 @@ export function useWalkthrough(): WalkthroughState {
   const currentNodeId = path[currentIndex] ?? null;
   const canGoBack = currentIndex > 0;
   const canGoForward = mode === 'presentation' && currentIndex < path.length - 1;
-  const stepLabel = path.length > 0
-    ? `${currentIndex + 1} / ${path.length}`
-    : '';
+  const stepLabel = path.length > 0 ? `${currentIndex + 1} / ${path.length}` : '';
 
   const push = useCallback((nodeId: string) => {
     setPath(prev => {
@@ -45,16 +43,19 @@ export function useWalkthrough(): WalkthroughState {
     setViewIndex(prev => prev + 1);
   }, []);
 
-  const goTo = useCallback((index: number) => {
-    setPath(prev => {
-      if (index < 0 || index >= prev.length) return prev;
-      if (mode === 'presentation') {
-        setViewIndex(index);
-        return prev;
-      }
-      return prev.slice(0, index + 1);
-    });
-  }, [mode]);
+  const goTo = useCallback(
+    (index: number) => {
+      setPath(prev => {
+        if (index < 0 || index >= prev.length) return prev;
+        if (mode === 'presentation') {
+          setViewIndex(index);
+          return prev;
+        }
+        return prev.slice(0, index + 1);
+      });
+    },
+    [mode]
+  );
 
   const goBack = useCallback(() => {
     if (mode === 'presentation') {

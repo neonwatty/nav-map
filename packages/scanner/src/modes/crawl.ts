@@ -139,12 +139,14 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
       }
 
       // Discover links (runs in browser context)
-      const links: { href: string; text: string }[] = await page.evaluate(`
+      const links: { href: string; text: string }[] = await page.evaluate(
+        `
         Array.from(document.querySelectorAll('a[href]')).map(a => ({
           href: a.href,
           text: (a.textContent || '').trim(),
         }))
-      ` as unknown as string);
+      ` as unknown as string
+      );
 
       for (const link of links) {
         let linkUrl: URL;

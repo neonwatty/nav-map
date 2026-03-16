@@ -24,9 +24,10 @@ export function AnalyticsOverlay({
 
     const entries = Object.entries(analytics.pageViews);
     const totalViews = entries.reduce((sum, [, count]) => sum + count, 0);
-    const mostViewed = entries.length > 0
-      ? entries.reduce((best, current) => (current[1] > best[1] ? current : best))
-      : null;
+    const mostViewed =
+      entries.length > 0
+        ? entries.reduce((best, current) => (current[1] > best[1] ? current : best))
+        : null;
 
     return { totalViews, mostViewed };
   }, [analytics]);
@@ -55,9 +56,7 @@ export function AnalyticsOverlay({
         display: 'flex',
         alignItems: 'center',
         gap: 16,
-        boxShadow: isDark
-          ? '0 4px 20px rgba(0,0,0,0.5)'
-          : '0 4px 20px rgba(0,0,0,0.1)',
+        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.5)' : '0 4px 20px rgba(0,0,0,0.1)',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         fontSize: 13,
         color: textColor,
@@ -69,7 +68,7 @@ export function AnalyticsOverlay({
         <input
           type="date"
           value={period.start}
-          onChange={(e) => onPeriodChange({ ...period, start: e.target.value })}
+          onChange={e => onPeriodChange({ ...period, start: e.target.value })}
           style={{
             background: inputBg,
             border: `1px solid ${inputBorder}`,
@@ -84,7 +83,7 @@ export function AnalyticsOverlay({
         <input
           type="date"
           value={period.end}
-          onChange={(e) => onPeriodChange({ ...period, end: e.target.value })}
+          onChange={e => onPeriodChange({ ...period, end: e.target.value })}
           style={{
             background: inputBg,
             border: `1px solid ${inputBorder}`,

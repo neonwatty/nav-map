@@ -67,17 +67,9 @@ function buildSharedNavEdges(graph: NavMapGraph): Edge[] {
   if (!graph.sharedNav) return [];
   const existingEdges = new Set(graph.edges.map(e => `${e.source}->${e.target}`));
   const allTargets = [
-    ...new Set([
-      ...graph.sharedNav.navbar.targets,
-      ...graph.sharedNav.footer.targets,
-    ]),
+    ...new Set([...graph.sharedNav.navbar.targets, ...graph.sharedNav.footer.targets]),
   ];
-  const allPages = [
-    ...new Set([
-      ...graph.sharedNav.navbar.pages,
-      ...graph.sharedNav.footer.pages,
-    ]),
-  ];
+  const allPages = [...new Set([...graph.sharedNav.navbar.pages, ...graph.sharedNav.footer.pages])];
 
   const edges: Edge[] = [];
   for (const src of allPages) {
@@ -232,9 +224,9 @@ function NavMapInner({
   // When bundling is turned off, restore original edges
   useEffect(() => {
     if (!layoutDone || useBundledEdges) return;
-    setEdges(showSharedNav
-      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
-      : baseEdgesRef.current);
+    setEdges(
+      showSharedNav ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current] : baseEdgesRef.current
+    );
   }, [useBundledEdges, layoutDone, showSharedNav, setEdges]);
 
   // Re-layout when view mode changes
@@ -302,7 +294,9 @@ function NavMapInner({
           if (!visited.has(neighbor)) {
             visited.add(neighbor);
             queue.push(neighbor);
-            const existingEdge = graph.edges.find(e => e.source === current && e.target === neighbor);
+            const existingEdge = graph.edges.find(
+              e => e.source === current && e.target === neighbor
+            );
             treeEdges.push({
               id: existingEdge?.id ?? `tree-${current}-${neighbor}`,
               source: current,
@@ -370,19 +364,16 @@ function NavMapInner({
   nodesRef.current = nodes;
 
   // Handle node selection (from React Flow click)
-  const onSelectionChange = useCallback(
-    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
-      const selected = selectedNodes[0];
-      if (selected) {
-        ctxRef.current.setSelectedNodeId(selected.id);
-        walkthroughRef.current.push(selected.id);
-        if (viewModeRef.current === 'tree') {
-          setTreeRootId(selected.id);
-        }
+  const onSelectionChange = useCallback(({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+    const selected = selectedNodes[0];
+    if (selected) {
+      ctxRef.current.setSelectedNodeId(selected.id);
+      walkthroughRef.current.push(selected.id);
+      if (viewModeRef.current === 'tree') {
+        setTreeRootId(selected.id);
       }
-    },
-    []
-  );
+    }
+  }, []);
 
   // Navigate to a node programmatically
   const navigateToNode = useCallback(
@@ -406,10 +397,7 @@ function NavMapInner({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Don't handle if typing in an input
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
@@ -537,19 +525,16 @@ function NavMapInner({
   ]);
 
   // Node hover for preview
-  const onNodeMouseEnter = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      const data = node.data as RFNodeData;
-      if (data.screenshot) {
-        setHoverPreview({
-          screenshot: data.screenshot,
-          label: data.label,
-          position: null,
-        });
-      }
-    },
-    []
-  );
+  const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
+    const data = node.data as RFNodeData;
+    if (data.screenshot) {
+      setHoverPreview({
+        screenshot: data.screenshot,
+        label: data.label,
+        position: null,
+      });
+    }
+  }, []);
 
   const onNodeMouseLeave = useCallback(() => {
     setHoverPreview(null);
@@ -673,7 +658,12 @@ function NavMapInner({
     if (focusMode && !ctx.selectedNodeId) {
       return visibleEdges.map(edge => ({
         ...edge,
-        style: { ...edge.style, opacity: 0, pointerEvents: 'none' as const, transition: 'opacity 0.2s' },
+        style: {
+          ...edge.style,
+          opacity: 0,
+          pointerEvents: 'none' as const,
+          transition: 'opacity 0.2s',
+        },
       }));
     }
 
@@ -685,8 +675,10 @@ function NavMapInner({
         ...edge,
         style: {
           ...edge.style,
-          opacity: isConnected ? 1 : (focusMode ? 0 : 0.15),
-          pointerEvents: (isConnected || !focusMode ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+          opacity: isConnected ? 1 : focusMode ? 0 : 0.15,
+          pointerEvents: (isConnected || !focusMode
+            ? 'auto'
+            : 'none') as React.CSSProperties['pointerEvents'],
           transition: 'opacity 0.2s',
         },
       };
@@ -725,19 +717,21 @@ function NavMapInner({
           >
             <ViewModeSelector
               viewMode={viewMode}
-              onViewModeChange={(mode) => {
+              onViewModeChange={mode => {
                 setViewMode(mode);
                 if (mode !== 'flow') setSelectedFlowIndex(null);
                 if (mode !== 'tree') setTreeRootId(null);
               }}
             />
-            {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
-              <FlowSelector
-                flows={graph.flows}
-                selectedIndex={selectedFlowIndex}
-                onSelect={setSelectedFlowIndex}
-              />
-            )}
+            {(viewMode === 'flow' || viewMode === 'map') &&
+              graph?.flows &&
+              graph.flows.length > 0 && (
+                <FlowSelector
+                  flows={graph.flows}
+                  selectedIndex={selectedFlowIndex}
+                  onSelect={setSelectedFlowIndex}
+                />
+              )}
             <button
               onClick={() => fitView({ padding: 0.15, duration: 300 })}
               style={toolbarButtonStyle(ctx.isDark)}
@@ -766,16 +760,21 @@ function NavMapInner({
             >
               {useBundledEdges ? 'Straight Edges' : 'Bundle Edges'}
             </button>
-            {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
-              <button
-                onClick={() => setIsAnimatingFlow(true)}
-                disabled={isAnimatingFlow}
-                style={{ ...toolbarButtonStyle(ctx.isDark, isAnimatingFlow), opacity: isAnimatingFlow ? 0.6 : 1 }}
-                title="Animate the selected flow"
-              >
-                {isAnimatingFlow ? 'Animating...' : 'Animate'}
-              </button>
-            )}
+            {viewMode === 'flow' &&
+              selectedFlowIndex !== null &&
+              graph?.flows?.[selectedFlowIndex] && (
+                <button
+                  onClick={() => setIsAnimatingFlow(true)}
+                  disabled={isAnimatingFlow}
+                  style={{
+                    ...toolbarButtonStyle(ctx.isDark, isAnimatingFlow),
+                    opacity: isAnimatingFlow ? 0.6 : 1,
+                  }}
+                  title="Animate the selected flow"
+                >
+                  {isAnimatingFlow ? 'Animating...' : 'Animate'}
+                </button>
+              )}
             {analyticsAdapter && (
               <button
                 onClick={() => setShowAnalytics(prev => !prev)}
@@ -803,18 +802,64 @@ function NavMapInner({
           </div>
 
           {/* Flow/Tree mode banners */}
-          {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
-            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>
-              Flow: {graph.flows![selectedFlowIndex].name}
-            </div>
-          )}
+          {viewMode === 'flow' &&
+            selectedFlowIndex !== null &&
+            graph?.flows?.[selectedFlowIndex] && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 50,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                  border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                  borderRadius: 8,
+                  padding: '6px 16px',
+                  zIndex: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: ctx.isDark ? '#7aacff' : '#3355aa',
+                }}
+              >
+                Flow: {graph.flows![selectedFlowIndex].name}
+              </div>
+            )}
           {viewMode === 'tree' && !treeRootId && (
-            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, color: ctx.isDark ? '#888' : '#666' }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: 50,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                borderRadius: 8,
+                padding: '6px 16px',
+                zIndex: 20,
+                fontSize: 13,
+                color: ctx.isDark ? '#888' : '#666',
+              }}
+            >
               Click any node to set it as tree root
             </div>
           )}
           {viewMode === 'tree' && treeRootId && (
-            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: 50,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                borderRadius: 8,
+                padding: '6px 16px',
+                zIndex: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                color: ctx.isDark ? '#7aacff' : '#3355aa',
+              }}
+            >
               Tree from: {graph?.nodes.find(n => n.id === treeRootId)?.label ?? treeRootId}
             </div>
           )}
@@ -824,7 +869,7 @@ function NavMapInner({
             <WalkthroughBar
               path={walkthrough.path}
               nodes={graph.nodes}
-              onGoTo={(index) => {
+              onGoTo={index => {
                 walkthrough.goTo(index);
                 const nodeId = walkthrough.path[index];
                 if (nodeId) navigateToNode(nodeId);
@@ -889,21 +934,67 @@ function NavMapInner({
           {graph && <LegendPanel groups={graph.groups} />}
 
           {/* Flow animation overlay */}
-          {isAnimatingFlow && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && layoutDone && (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 25, overflow: 'hidden' }}>
-              <FlowAnimator
-                flowSteps={graph.flows[selectedFlowIndex].steps}
-                nodes={nodes}
-                isAnimating={isAnimatingFlow}
-                onAnimationEnd={() => setIsAnimatingFlow(false)}
-                viewport={viewport}
-              />
-            </div>
-          )}
+          {isAnimatingFlow &&
+            selectedFlowIndex !== null &&
+            graph?.flows?.[selectedFlowIndex] &&
+            layoutDone && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                  zIndex: 25,
+                  overflow: 'hidden',
+                }}
+              >
+                <FlowAnimator
+                  flowSteps={graph.flows[selectedFlowIndex].steps}
+                  nodes={nodes}
+                  isAnimating={isAnimatingFlow}
+                  onAnimationEnd={() => setIsAnimatingFlow(false)}
+                  viewport={viewport}
+                />
+              </div>
+            )}
           {isAnimatingFlow && (
-            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '8px 16px', zIndex: 30, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>Animating flow...</span>
-              <button onClick={() => setIsAnimatingFlow(false)} style={{ background: 'none', border: `1px solid ${ctx.isDark ? '#333' : '#ccc'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: ctx.isDark ? '#888' : '#666', cursor: 'pointer' }}>Stop</button>
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                borderRadius: 8,
+                padding: '8px 16px',
+                zIndex: 30,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span
+                style={{ fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}
+              >
+                Animating flow...
+              </span>
+              <button
+                onClick={() => setIsAnimatingFlow(false)}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${ctx.isDark ? '#333' : '#ccc'}`,
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  color: ctx.isDark ? '#888' : '#666',
+                  cursor: 'pointer',
+                }}
+              >
+                Stop
+              </button>
             </div>
           )}
         </div>
@@ -926,7 +1017,7 @@ function NavMapInner({
             nodes={graph.nodes}
             isOpen={showSearch}
             onClose={() => setShowSearch(false)}
-            onSelect={(nodeId) => {
+            onSelect={nodeId => {
               setShowSearch(false);
               navigateToNode(nodeId);
             }}
@@ -974,19 +1065,14 @@ function NavMapInner({
 
 function toolbarButtonStyle(isDark: boolean, active = false): React.CSSProperties {
   return {
-    background: active
-      ? (isDark ? '#1e2540' : '#e0e8ff')
-      : (isDark ? '#14141e' : '#fff'),
-    border: `1px solid ${active
-      ? (isDark ? '#4466aa' : '#6688cc')
-      : (isDark ? '#2a2a3a' : '#d8dae0')
+    background: active ? (isDark ? '#1e2540' : '#e0e8ff') : isDark ? '#14141e' : '#fff',
+    border: `1px solid ${
+      active ? (isDark ? '#4466aa' : '#6688cc') : isDark ? '#2a2a3a' : '#d8dae0'
     }`,
     borderRadius: 6,
     padding: '5px 12px',
     fontSize: 12,
-    color: active
-      ? (isDark ? '#7aacff' : '#3355aa')
-      : (isDark ? '#888' : '#666'),
+    color: active ? (isDark ? '#7aacff' : '#3355aa') : isDark ? '#888' : '#666',
     cursor: 'pointer',
   };
 }

@@ -38,7 +38,10 @@ export function FlowAnimator({
       let py = node.position.y + h / 2;
       if (node.parentId) {
         const parent = nodes.find(n => n.id === node.parentId);
-        if (parent) { px += parent.position.x; py += parent.position.y; }
+        if (parent) {
+          px += parent.position.x;
+          py += parent.position.y;
+        }
       }
       map.set(node.id, { x: px, y: py });
     }
@@ -58,11 +61,17 @@ export function FlowAnimator({
 
   const animateToNextStep = useCallback(() => {
     const nextIndex = currentStepIndex + 1;
-    if (nextIndex >= flowSteps.length) { onAnimationEnd(); return; }
+    if (nextIndex >= flowSteps.length) {
+      onAnimationEnd();
+      return;
+    }
 
     const fromPos = nodePositions.current.get(flowSteps[currentStepIndex]);
     const toPos = nodePositions.current.get(flowSteps[nextIndex]);
-    if (!fromPos || !toPos) { onAnimationEnd(); return; }
+    if (!fromPos || !toPos) {
+      onAnimationEnd();
+      return;
+    }
 
     setIsPaused(true);
     timeoutRef.current = setTimeout(() => {
@@ -76,8 +85,11 @@ export function FlowAnimator({
           x: fromPos.x + (toPos.x - fromPos.x) * eased,
           y: fromPos.y + (toPos.y - fromPos.y) * eased,
         });
-        if (t < 1) { animFrameRef.current = requestAnimationFrame(animate); }
-        else { setCurrentStepIndex(nextIndex); }
+        if (t < 1) {
+          animFrameRef.current = requestAnimationFrame(animate);
+        } else {
+          setCurrentStepIndex(nextIndex);
+        }
       };
       animFrameRef.current = requestAnimationFrame(animate);
     }, PAUSE_DURATION_MS);
@@ -95,11 +107,51 @@ export function FlowAnimator({
   if (!isAnimating || !dotPosition) return null;
 
   return (
-    <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 25, overflow: 'visible' }}>
-      <g transform={viewport ? `translate(${viewport.x}, ${viewport.y}) scale(${viewport.zoom})` : undefined}>
-        <circle cx={dotPosition.x} cy={dotPosition.y} r={DOT_RADIUS * (isPaused ? PULSE_SCALE : 1)} fill="none" stroke="#3355aa" strokeWidth={2} opacity={isPaused ? 0.5 : 0} style={{ transition: 'r 0.3s ease, opacity 0.3s ease' }} />
-        <circle cx={dotPosition.x} cy={dotPosition.y} r={DOT_RADIUS} fill="#3355aa" stroke="#fff" strokeWidth={2} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-        <text x={dotPosition.x} y={dotPosition.y + 1} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={9} fontWeight={700}>
+    <svg
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 25,
+        overflow: 'visible',
+      }}
+    >
+      <g
+        transform={
+          viewport ? `translate(${viewport.x}, ${viewport.y}) scale(${viewport.zoom})` : undefined
+        }
+      >
+        <circle
+          cx={dotPosition.x}
+          cy={dotPosition.y}
+          r={DOT_RADIUS * (isPaused ? PULSE_SCALE : 1)}
+          fill="none"
+          stroke="#3355aa"
+          strokeWidth={2}
+          opacity={isPaused ? 0.5 : 0}
+          style={{ transition: 'r 0.3s ease, opacity 0.3s ease' }}
+        />
+        <circle
+          cx={dotPosition.x}
+          cy={dotPosition.y}
+          r={DOT_RADIUS}
+          fill="#3355aa"
+          stroke="#fff"
+          strokeWidth={2}
+          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+        />
+        <text
+          x={dotPosition.x}
+          y={dotPosition.y + 1}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#fff"
+          fontSize={9}
+          fontWeight={700}
+        >
           {currentStepIndex + 1}
         </text>
       </g>

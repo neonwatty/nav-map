@@ -1,7 +1,4 @@
-export function parseHtmlLinks(
-  html: string,
-  baseUrl: string,
-): { href: string; text: string }[] {
+export function parseHtmlLinks(html: string, baseUrl: string): { href: string; text: string }[] {
   const results: { href: string; text: string }[] = [];
   const seen = new Set<string>();
 

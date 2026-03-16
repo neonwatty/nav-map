@@ -8,51 +8,292 @@
     "framework": "nextjs-app"
   },
   "nodes": [
-    { "id": "home", "route": "/", "label": "Home", "group": "marketing", "screenshot": "screenshots/home.jpeg" },
-    { "id": "bleep", "route": "/bleep", "label": "Bleep", "group": "product", "screenshot": "screenshots/bleep.jpeg" },
-    { "id": "sampler", "route": "/sampler", "label": "Sampler", "group": "product", "screenshot": "screenshots/sampler.jpeg" },
-    { "id": "studio", "route": "/studio", "label": "Studio", "group": "studio", "screenshot": "screenshots/login.jpeg", "metadata": { "authRequired": true } },
-    { "id": "studio-project", "route": "/studio/[id]", "label": "Project", "group": "studio", "metadata": { "authRequired": true } },
-    { "id": "studio-settings", "route": "/studio/settings", "label": "Settings", "group": "studio", "metadata": { "authRequired": true } },
-    { "id": "blog", "route": "/blog", "label": "Blog", "group": "marketing", "screenshot": "screenshots/blog.jpeg" },
-    { "id": "blog-post", "route": "/blog/[slug]", "label": "Blog Post", "group": "marketing", "screenshot": "screenshots/blog-post.jpeg" },
-    { "id": "premium", "route": "/premium", "label": "Premium", "group": "premium", "screenshot": "screenshots/premium.jpeg" },
-    { "id": "premium-edu", "route": "/premium/educators", "label": "Edu Plans", "group": "premium", "screenshot": "screenshots/premium-edu.jpeg" },
-    { "id": "for-educators", "route": "/for-educators", "label": "Educators", "group": "marketing", "screenshot": "screenshots/for-educators.jpeg" },
-    { "id": "login", "route": "/auth/login", "label": "Login", "group": "auth", "screenshot": "screenshots/login.jpeg" },
-    { "id": "signup", "route": "/auth/signup", "label": "Signup", "group": "auth", "screenshot": "screenshots/signup.jpeg" },
-    { "id": "reset-pw", "route": "/auth/reset-password", "label": "Reset PW", "group": "auth", "screenshot": "screenshots/reset-pw.jpeg" },
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "group": "marketing",
+      "screenshot": "screenshots/home.jpeg"
+    },
+    {
+      "id": "bleep",
+      "route": "/bleep",
+      "label": "Bleep",
+      "group": "product",
+      "screenshot": "screenshots/bleep.jpeg"
+    },
+    {
+      "id": "sampler",
+      "route": "/sampler",
+      "label": "Sampler",
+      "group": "product",
+      "screenshot": "screenshots/sampler.jpeg"
+    },
+    {
+      "id": "studio",
+      "route": "/studio",
+      "label": "Studio",
+      "group": "studio",
+      "screenshot": "screenshots/login.jpeg",
+      "metadata": { "authRequired": true }
+    },
+    {
+      "id": "studio-project",
+      "route": "/studio/[id]",
+      "label": "Project",
+      "group": "studio",
+      "metadata": { "authRequired": true }
+    },
+    {
+      "id": "studio-settings",
+      "route": "/studio/settings",
+      "label": "Settings",
+      "group": "studio",
+      "metadata": { "authRequired": true }
+    },
+    {
+      "id": "blog",
+      "route": "/blog",
+      "label": "Blog",
+      "group": "marketing",
+      "screenshot": "screenshots/blog.jpeg"
+    },
+    {
+      "id": "blog-post",
+      "route": "/blog/[slug]",
+      "label": "Blog Post",
+      "group": "marketing",
+      "screenshot": "screenshots/blog-post.jpeg"
+    },
+    {
+      "id": "premium",
+      "route": "/premium",
+      "label": "Premium",
+      "group": "premium",
+      "screenshot": "screenshots/premium.jpeg"
+    },
+    {
+      "id": "premium-edu",
+      "route": "/premium/educators",
+      "label": "Edu Plans",
+      "group": "premium",
+      "screenshot": "screenshots/premium-edu.jpeg"
+    },
+    {
+      "id": "for-educators",
+      "route": "/for-educators",
+      "label": "Educators",
+      "group": "marketing",
+      "screenshot": "screenshots/for-educators.jpeg"
+    },
+    {
+      "id": "login",
+      "route": "/auth/login",
+      "label": "Login",
+      "group": "auth",
+      "screenshot": "screenshots/login.jpeg"
+    },
+    {
+      "id": "signup",
+      "route": "/auth/signup",
+      "label": "Signup",
+      "group": "auth",
+      "screenshot": "screenshots/signup.jpeg"
+    },
+    {
+      "id": "reset-pw",
+      "route": "/auth/reset-password",
+      "label": "Reset PW",
+      "group": "auth",
+      "screenshot": "screenshots/reset-pw.jpeg"
+    },
     { "id": "update-pw", "route": "/auth/update-password", "label": "Update PW", "group": "auth" },
-    { "id": "waitlist", "route": "/auth/waitlist", "label": "Waitlist", "group": "auth", "screenshot": "screenshots/waitlist.jpeg" },
-    { "id": "terms", "route": "/terms", "label": "Terms", "group": "legal", "screenshot": "screenshots/terms.jpeg" },
-    { "id": "privacy", "route": "/privacy", "label": "Privacy", "group": "legal", "screenshot": "screenshots/privacy.jpeg" },
+    {
+      "id": "waitlist",
+      "route": "/auth/waitlist",
+      "label": "Waitlist",
+      "group": "auth",
+      "screenshot": "screenshots/waitlist.jpeg"
+    },
+    {
+      "id": "terms",
+      "route": "/terms",
+      "label": "Terms",
+      "group": "legal",
+      "screenshot": "screenshots/terms.jpeg"
+    },
+    {
+      "id": "privacy",
+      "route": "/privacy",
+      "label": "Privacy",
+      "group": "legal",
+      "screenshot": "screenshots/privacy.jpeg"
+    },
     { "id": "email-prefs", "route": "/email-preferences", "label": "Email Prefs", "group": "legal" }
   ],
   "edges": [
-    { "id": "e-home-bleep", "source": "home", "target": "bleep", "label": "START BLEEPING", "type": "link" },
-    { "id": "e-home-premium", "source": "home", "target": "premium", "label": "VIEW PREMIUM", "type": "link" },
-    { "id": "e-home-blog", "source": "home", "target": "blog", "label": "GUIDES & TIPS", "type": "link" },
-    { "id": "e-home-educators", "source": "home", "target": "for-educators", "label": "FOR EDUCATORS", "type": "link" },
-    { "id": "e-bleep-studio", "source": "bleep", "target": "studio", "label": "redirect (cloud)", "type": "redirect" },
-    { "id": "e-bleep-premium", "source": "bleep", "target": "premium", "label": "Upgrade to Pro", "type": "link" },
-    { "id": "e-studio-premium", "source": "studio", "target": "premium", "label": "redirect (no access)", "type": "redirect" },
-    { "id": "e-blog-blogpost", "source": "blog", "target": "blog-post", "label": "post cards", "type": "link" },
+    {
+      "id": "e-home-bleep",
+      "source": "home",
+      "target": "bleep",
+      "label": "START BLEEPING",
+      "type": "link"
+    },
+    {
+      "id": "e-home-premium",
+      "source": "home",
+      "target": "premium",
+      "label": "VIEW PREMIUM",
+      "type": "link"
+    },
+    {
+      "id": "e-home-blog",
+      "source": "home",
+      "target": "blog",
+      "label": "GUIDES & TIPS",
+      "type": "link"
+    },
+    {
+      "id": "e-home-educators",
+      "source": "home",
+      "target": "for-educators",
+      "label": "FOR EDUCATORS",
+      "type": "link"
+    },
+    {
+      "id": "e-bleep-studio",
+      "source": "bleep",
+      "target": "studio",
+      "label": "redirect (cloud)",
+      "type": "redirect"
+    },
+    {
+      "id": "e-bleep-premium",
+      "source": "bleep",
+      "target": "premium",
+      "label": "Upgrade to Pro",
+      "type": "link"
+    },
+    {
+      "id": "e-studio-premium",
+      "source": "studio",
+      "target": "premium",
+      "label": "redirect (no access)",
+      "type": "redirect"
+    },
+    {
+      "id": "e-blog-blogpost",
+      "source": "blog",
+      "target": "blog-post",
+      "label": "post cards",
+      "type": "link"
+    },
     { "id": "e-blog-bleep", "source": "blog", "target": "bleep", "label": "CTA", "type": "link" },
-    { "id": "e-blogpost-home", "source": "blog-post", "target": "home", "label": "breadcrumb", "type": "link" },
-    { "id": "e-blogpost-blog", "source": "blog-post", "target": "blog", "label": "Back to Blog", "type": "link" },
-    { "id": "e-premium-home", "source": "premium", "target": "home", "label": "Logo", "type": "link" },
-    { "id": "e-premium-bleep", "source": "premium", "target": "bleep", "label": "TRY FREE", "type": "link" },
-    { "id": "e-premiumedu-premium", "source": "premium-edu", "target": "premium", "label": "See all plans", "type": "link" },
-    { "id": "e-premiumedu-educators", "source": "premium-edu", "target": "for-educators", "label": "Why educators", "type": "link" },
-    { "id": "e-educators-bleep", "source": "for-educators", "target": "bleep", "label": "START FREE", "type": "link" },
-    { "id": "e-educators-premiumedu", "source": "for-educators", "target": "premium-edu", "label": "EDUCATOR PRICING", "type": "link" },
-    { "id": "e-login-studio", "source": "login", "target": "studio", "label": "submit", "type": "redirect" },
-    { "id": "e-signup-studio", "source": "signup", "target": "studio", "label": "submit", "type": "redirect" },
-    { "id": "e-resetpw-updatepw", "source": "reset-pw", "target": "update-pw", "label": "submit", "type": "redirect" },
-    { "id": "e-updatepw-login", "source": "update-pw", "target": "login", "label": "submit", "type": "redirect" },
-    { "id": "e-waitlist-bleep", "source": "waitlist", "target": "bleep", "label": "TRY FREE", "type": "link" },
-    { "id": "e-waitlist-home", "source": "waitlist", "target": "home", "label": "Back home", "type": "link" },
-    { "id": "e-emailprefs-settings", "source": "email-prefs", "target": "studio-settings", "label": "redirect", "type": "redirect" }
+    {
+      "id": "e-blogpost-home",
+      "source": "blog-post",
+      "target": "home",
+      "label": "breadcrumb",
+      "type": "link"
+    },
+    {
+      "id": "e-blogpost-blog",
+      "source": "blog-post",
+      "target": "blog",
+      "label": "Back to Blog",
+      "type": "link"
+    },
+    {
+      "id": "e-premium-home",
+      "source": "premium",
+      "target": "home",
+      "label": "Logo",
+      "type": "link"
+    },
+    {
+      "id": "e-premium-bleep",
+      "source": "premium",
+      "target": "bleep",
+      "label": "TRY FREE",
+      "type": "link"
+    },
+    {
+      "id": "e-premiumedu-premium",
+      "source": "premium-edu",
+      "target": "premium",
+      "label": "See all plans",
+      "type": "link"
+    },
+    {
+      "id": "e-premiumedu-educators",
+      "source": "premium-edu",
+      "target": "for-educators",
+      "label": "Why educators",
+      "type": "link"
+    },
+    {
+      "id": "e-educators-bleep",
+      "source": "for-educators",
+      "target": "bleep",
+      "label": "START FREE",
+      "type": "link"
+    },
+    {
+      "id": "e-educators-premiumedu",
+      "source": "for-educators",
+      "target": "premium-edu",
+      "label": "EDUCATOR PRICING",
+      "type": "link"
+    },
+    {
+      "id": "e-login-studio",
+      "source": "login",
+      "target": "studio",
+      "label": "submit",
+      "type": "redirect"
+    },
+    {
+      "id": "e-signup-studio",
+      "source": "signup",
+      "target": "studio",
+      "label": "submit",
+      "type": "redirect"
+    },
+    {
+      "id": "e-resetpw-updatepw",
+      "source": "reset-pw",
+      "target": "update-pw",
+      "label": "submit",
+      "type": "redirect"
+    },
+    {
+      "id": "e-updatepw-login",
+      "source": "update-pw",
+      "target": "login",
+      "label": "submit",
+      "type": "redirect"
+    },
+    {
+      "id": "e-waitlist-bleep",
+      "source": "waitlist",
+      "target": "bleep",
+      "label": "TRY FREE",
+      "type": "link"
+    },
+    {
+      "id": "e-waitlist-home",
+      "source": "waitlist",
+      "target": "home",
+      "label": "Back home",
+      "type": "link"
+    },
+    {
+      "id": "e-emailprefs-settings",
+      "source": "email-prefs",
+      "target": "studio-settings",
+      "label": "redirect",
+      "type": "redirect"
+    }
   ],
   "groups": [
     { "id": "marketing", "label": "Marketing", "color": "#5b9bf5", "routePrefix": "/" },
@@ -64,12 +305,51 @@
   ],
   "sharedNav": {
     "navbar": {
-      "pages": ["home", "bleep", "sampler", "blog", "blog-post", "for-educators", "login", "signup", "reset-pw", "update-pw", "waitlist", "terms", "privacy", "email-prefs"],
+      "pages": [
+        "home",
+        "bleep",
+        "sampler",
+        "blog",
+        "blog-post",
+        "for-educators",
+        "login",
+        "signup",
+        "reset-pw",
+        "update-pw",
+        "waitlist",
+        "terms",
+        "privacy",
+        "email-prefs"
+      ],
       "targets": ["home", "bleep", "studio", "sampler"]
     },
     "footer": {
-      "pages": ["home", "bleep", "sampler", "blog", "blog-post", "for-educators", "login", "signup", "reset-pw", "update-pw", "waitlist", "terms", "privacy", "email-prefs"],
-      "targets": ["home", "bleep", "blog", "for-educators", "premium", "sampler", "terms", "privacy"]
+      "pages": [
+        "home",
+        "bleep",
+        "sampler",
+        "blog",
+        "blog-post",
+        "for-educators",
+        "login",
+        "signup",
+        "reset-pw",
+        "update-pw",
+        "waitlist",
+        "terms",
+        "privacy",
+        "email-prefs"
+      ],
+      "targets": [
+        "home",
+        "bleep",
+        "blog",
+        "for-educators",
+        "premium",
+        "sampler",
+        "terms",
+        "privacy"
+      ]
     }
   },
   "flows": [

@@ -105,20 +105,23 @@ export async function scanRepo(options: ScanOptions): Promise<NavMapGraph> {
   // Discover routes
   console.log('Discovering routes...');
   const pageFiles = await glob(
-    hasAppDir
-      ? 'app/**/page.{tsx,jsx,ts,js}'
-      : 'pages/**/*.{tsx,jsx,ts,js}',
+    hasAppDir ? 'app/**/page.{tsx,jsx,ts,js}' : 'pages/**/*.{tsx,jsx,ts,js}',
     { cwd: projectDir, ignore: ['**/node_modules/**', '**/_*.{tsx,jsx,ts,js}'] }
   );
 
-  const routeMap = new Map<string, { route: string; filePath: string; id: string; label: string }>();
+  const routeMap = new Map<
+    string,
+    { route: string; filePath: string; id: string; label: string }
+  >();
 
   for (const file of pageFiles) {
     const fullPath = path.join(projectDir, file);
     const scanDir = hasAppDir ? appDir : pagesDir;
     const route = hasAppDir
       ? filePathToRoute(fullPath, scanDir)
-      : filePathToRoute(fullPath, scanDir).replace(/\/index$/, '/').replace(/\/$/, '') || '/';
+      : filePathToRoute(fullPath, scanDir)
+          .replace(/\/index$/, '/')
+          .replace(/\/$/, '') || '/';
 
     const id = routeToId(route);
     const label = routeToLabel(route);
@@ -130,18 +133,16 @@ export async function scanRepo(options: ScanOptions): Promise<NavMapGraph> {
 
   // Parse links from all TSX/JSX files
   console.log('Parsing navigation links...');
-  const allSourceFiles = await glob(
-    hasAppDir
-      ? 'app/**/*.{tsx,jsx}'
-      : 'pages/**/*.{tsx,jsx}',
-    { cwd: projectDir, ignore: ['**/node_modules/**'] }
-  );
+  const allSourceFiles = await glob(hasAppDir ? 'app/**/*.{tsx,jsx}' : 'pages/**/*.{tsx,jsx}', {
+    cwd: projectDir,
+    ignore: ['**/node_modules/**'],
+  });
 
   // Also scan components directory for links
-  const componentFiles = await glob(
-    'components/**/*.{tsx,jsx}',
-    { cwd: projectDir, ignore: ['**/node_modules/**'] }
-  );
+  const componentFiles = await glob('components/**/*.{tsx,jsx}', {
+    cwd: projectDir,
+    ignore: ['**/node_modules/**'],
+  });
   allSourceFiles.push(...componentFiles);
 
   const edges: NavMapGraph['edges'] = [];
@@ -199,9 +200,12 @@ export async function scanRepo(options: ScanOptions): Promise<NavMapGraph> {
 
   // Assign groups to nodes
   const nodes: NavMapGraph['nodes'] = routes.map(r => {
-    const group = groups.find(g =>
-      g.routePrefix && g.routePrefix !== '/' && r.route.startsWith(g.routePrefix)
-    ) ?? groups.find(g => g.id === 'root') ?? groups[0];
+    const group =
+      groups.find(
+        g => g.routePrefix && g.routePrefix !== '/' && r.route.startsWith(g.routePrefix)
+      ) ??
+      groups.find(g => g.id === 'root') ??
+      groups[0];
 
     return {
       id: r.id,
@@ -264,6 +268,8 @@ function detectProjectName(projectDir: string): string {
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
       return pkg.name ?? path.basename(projectDir);
     }
-  } catch {}
+  } catch {
+    // Fall through to basename
+  }
   return path.basename(projectDir);
 }

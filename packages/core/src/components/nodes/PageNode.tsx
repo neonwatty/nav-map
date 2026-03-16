@@ -28,7 +28,26 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
     >
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
       {flowStepNumber != null && (
-        <div style={{ position: 'absolute', top: -10, left: -10, width: 24, height: 24, borderRadius: '50%', background: '#3355aa', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: -10,
+            left: -10,
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            background: '#3355aa',
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 5,
+            border: '2px solid #fff',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          }}
+        >
           {flowStepNumber}
         </div>
       )}

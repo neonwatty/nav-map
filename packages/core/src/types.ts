@@ -42,7 +42,7 @@ export interface NavMapGraph {
     name: string;
     baseUrl?: string;
     generatedAt: string;
-    generatedBy: 'repo-scan' | 'url-crawl' | 'manual';
+    generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record';
     framework?: 'nextjs-app' | 'nextjs-pages' | 'generic';
   };
   nodes: NavMapNode[];

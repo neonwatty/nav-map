@@ -10,7 +10,13 @@ interface ConnectionPanelProps {
   isNarrow?: boolean;
 }
 
-export function ConnectionPanel({ node, edges, nodes, onNavigate, isNarrow = false }: ConnectionPanelProps) {
+export function ConnectionPanel({
+  node,
+  edges,
+  nodes,
+  onNavigate,
+  isNarrow = false,
+}: ConnectionPanelProps) {
   const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
   const colors = getGroupColors(node.group);
 
@@ -28,33 +34,35 @@ export function ConnectionPanel({ node, edges, nodes, onNavigate, isNarrow = fal
     };
   }, [node.id, edges, nodes]);
 
-  const screenshotSrc = node.screenshot
-    ? `${screenshotBasePath}/${node.screenshot}`
-    : undefined;
+  const screenshotSrc = node.screenshot ? `${screenshotBasePath}/${node.screenshot}` : undefined;
 
   return (
     <div
-      style={isNarrow ? {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        maxHeight: '40vh',
-        borderTop: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
-        display: 'flex',
-        flexDirection: 'row',
-        background: isDark ? '#101018' : '#fff',
-        overflow: 'auto',
-        zIndex: 25,
-      } : {
-        width: 340,
-        minWidth: 280,
-        borderLeft: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
-        display: 'flex',
-        flexDirection: 'column',
-        background: isDark ? '#101018' : '#fff',
-        overflow: 'hidden',
-      }}
+      style={
+        isNarrow
+          ? {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxHeight: '40vh',
+              borderTop: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
+              display: 'flex',
+              flexDirection: 'row',
+              background: isDark ? '#101018' : '#fff',
+              overflow: 'auto',
+              zIndex: 25,
+            }
+          : {
+              width: 340,
+              minWidth: 280,
+              borderLeft: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              background: isDark ? '#101018' : '#fff',
+              overflow: 'hidden',
+            }
+      }
     >
       {/* Header */}
       <div
@@ -75,9 +83,7 @@ export function ConnectionPanel({ node, edges, nodes, onNavigate, isNarrow = fal
         >
           Page Details
         </div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: colors.text }}>
-          {node.label}
-        </div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: colors.text }}>{node.label}</div>
         <div
           style={{
             fontSize: 12,
@@ -114,9 +120,7 @@ export function ConnectionPanel({ node, edges, nodes, onNavigate, isNarrow = fal
         ) : (
           <div style={{ textAlign: 'center', color: isDark ? '#333' : '#aaa' }}>
             <div style={{ fontSize: 40, opacity: 0.3 }}>&#x1F512;</div>
-            <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>
-              {node.label}
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>{node.label}</div>
           </div>
         )}
       </div>

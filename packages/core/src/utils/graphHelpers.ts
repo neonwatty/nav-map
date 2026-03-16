@@ -12,10 +12,7 @@ export interface RFNodeData {
   [key: string]: unknown;
 }
 
-export function buildCompoundNodes(
-  nodes: NavMapNode[],
-  groups: NavMapGroup[]
-): Node[] {
+export function buildCompoundNodes(nodes: NavMapNode[], groups: NavMapGroup[]): Node[] {
   const groupIds = new Set(groups.map(g => g.id));
   const groupChildCounts = new Map<string, number>();
 

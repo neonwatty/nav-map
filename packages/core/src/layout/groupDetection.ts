@@ -38,8 +38,8 @@ export function assignGroups(nodes: NavMapNode[], groups: NavMapGroup[]): NavMap
   return nodes.map(node => {
     if (node.group) return node;
 
-    const matchingGroup = groups.find(g =>
-      g.routePrefix && node.route.startsWith(g.routePrefix) && g.routePrefix !== '/'
+    const matchingGroup = groups.find(
+      g => g.routePrefix && node.route.startsWith(g.routePrefix) && g.routePrefix !== '/'
     );
 
     return matchingGroup ? { ...node, group: matchingGroup.id } : node;

@@ -35,7 +35,14 @@ export function WalkthroughBar({ path, nodes, onGoTo, onClear, onPresent }: Walk
         overflow: 'auto',
       }}
     >
-      <span style={{ fontSize: 11, color: isDark ? '#555' : '#999', marginRight: 4, whiteSpace: 'nowrap' }}>
+      <span
+        style={{
+          fontSize: 11,
+          color: isDark ? '#555' : '#999',
+          marginRight: 4,
+          whiteSpace: 'nowrap',
+        }}
+      >
         Walk-through
       </span>
       {path.map((nodeId, i) => {
@@ -50,11 +57,13 @@ export function WalkthroughBar({ path, nodes, onGoTo, onClear, onPresent }: Walk
               onClick={() => onGoTo(i)}
               style={{
                 background: isLast
-                  ? (isDark ? '#1e2540' : '#d8e4f8')
-                  : (isDark ? '#1a1a24' : '#ecedf2'),
-                color: isLast
-                  ? (isDark ? '#7aacff' : '#2563eb')
-                  : (isDark ? '#888' : '#556'),
+                  ? isDark
+                    ? '#1e2540'
+                    : '#d8e4f8'
+                  : isDark
+                    ? '#1a1a24'
+                    : '#ecedf2',
+                color: isLast ? (isDark ? '#7aacff' : '#2563eb') : isDark ? '#888' : '#556',
                 border: 'none',
                 borderRadius: 4,
                 padding: '3px 8px',

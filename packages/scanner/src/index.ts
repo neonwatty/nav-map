@@ -9,3 +9,8 @@ export { captureScreenshots } from './screenshots/capture.js';
 export { optimizeScreenshot } from './screenshots/optimize.js';
 export { writeNavMapJson } from './output/json.js';
 export { validateGraph } from './output/schema.js';
+export { runAuth } from './modes/auth.js';
+export type { AuthOptions } from './modes/auth.js';
+export { recordTests } from './modes/record.js';
+export type { RecordOptions } from './modes/record.js';
+export { normalizeRoute, isLoginPage, loadRoutePatterns } from './modes/dedup.js';

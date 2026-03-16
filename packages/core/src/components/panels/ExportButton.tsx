@@ -33,17 +33,26 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
       const svgNS = 'http://www.w3.org/2000/svg';
       const allNodes = getNodes();
 
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
       for (const node of allNodes) {
         const w = node.measured?.width ?? 180;
         const h = node.measured?.height ?? 140;
-        let nx = node.position.x, ny = node.position.y;
+        let nx = node.position.x,
+          ny = node.position.y;
         if (node.parentId) {
           const parent = allNodes.find(n => n.id === node.parentId);
-          if (parent) { nx += parent.position.x; ny += parent.position.y; }
+          if (parent) {
+            nx += parent.position.x;
+            ny += parent.position.y;
+          }
         }
-        minX = Math.min(minX, nx); minY = Math.min(minY, ny);
-        maxX = Math.max(maxX, nx + w); maxY = Math.max(maxY, ny + h);
+        minX = Math.min(minX, nx);
+        minY = Math.min(minY, ny);
+        maxX = Math.max(maxX, nx + w);
+        maxY = Math.max(maxY, ny + h);
       }
 
       const padding = 40;
@@ -99,7 +108,7 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
         useCORS: true,
       });
 
-      canvas.toBlob((blob) => {
+      canvas.toBlob(blob => {
         if (blob) downloadBlob(blob, `${graphName}.png`);
       }, 'image/png');
     } finally {
@@ -127,9 +136,27 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
         {isExporting ? 'Exporting...' : 'Export'}
       </button>
       {isOpen && (
-        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: isDark ? '#14141e' : '#fff', border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`, borderRadius: 8, padding: 4, zIndex: 30, minWidth: 140, boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.1)' }}>
-          <button onClick={exportSVG} style={dropdownItemStyle(isDark)}>Export as SVG</button>
-          <button onClick={exportPNG} style={dropdownItemStyle(isDark)}>Export as PNG (2x)</button>
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            background: isDark ? '#14141e' : '#fff',
+            border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
+            borderRadius: 8,
+            padding: 4,
+            zIndex: 30,
+            minWidth: 140,
+            boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.1)',
+          }}
+        >
+          <button onClick={exportSVG} style={dropdownItemStyle(isDark)}>
+            Export as SVG
+          </button>
+          <button onClick={exportPNG} style={dropdownItemStyle(isDark)}>
+            Export as PNG (2x)
+          </button>
         </div>
       )}
     </div>
@@ -137,7 +164,18 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
 }
 
 function dropdownItemStyle(isDark: boolean): React.CSSProperties {
-  return { display: 'block', width: '100%', background: 'none', border: 'none', borderRadius: 4, padding: '8px 12px', fontSize: 12, color: isDark ? '#c8c8d0' : '#333', cursor: 'pointer', textAlign: 'left' };
+  return {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    borderRadius: 4,
+    padding: '8px 12px',
+    fontSize: 12,
+    color: isDark ? '#c8c8d0' : '#333',
+    cursor: 'pointer',
+    textAlign: 'left',
+  };
 }
 
 function downloadBlob(blob: Blob, filename: string) {

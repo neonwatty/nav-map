@@ -10,10 +10,11 @@ export function useSearch(nodes: NavMapNode[]) {
     const q = query.toLowerCase().trim();
 
     return nodes
-      .filter(n =>
-        n.label.toLowerCase().includes(q) ||
-        n.route.toLowerCase().includes(q) ||
-        n.group.toLowerCase().includes(q)
+      .filter(
+        n =>
+          n.label.toLowerCase().includes(q) ||
+          n.route.toLowerCase().includes(q) ||
+          n.group.toLowerCase().includes(q)
       )
       .sort((a, b) => {
         // Exact label match first

@@ -79,9 +79,7 @@ export function SearchPanel({ nodes, isOpen, onClose, onSelect, isDark }: Search
           borderRadius: 12,
           maxWidth: 480,
           width: '100%',
-          boxShadow: isDark
-            ? '0 16px 48px rgba(0,0,0,0.6)'
-            : '0 16px 48px rgba(0,0,0,0.15)',
+          boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.6)' : '0 16px 48px rgba(0,0,0,0.15)',
           overflow: 'hidden',
         }}
         onClick={e => e.stopPropagation()}
@@ -119,9 +117,7 @@ export function SearchPanel({ nodes, isOpen, onClose, onSelect, isDark }: Search
                   style={{
                     padding: '10px 16px',
                     cursor: 'pointer',
-                    background: isSelected
-                      ? (isDark ? '#1e1e30' : '#e8ecf8')
-                      : 'transparent',
+                    background: isSelected ? (isDark ? '#1e1e30' : '#e8ecf8') : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',

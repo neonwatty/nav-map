@@ -123,11 +123,7 @@ export function PresentationBar({
             borderTop: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
           }}
         >
-          <button
-            onClick={onBack}
-            disabled={!canGoBack}
-            style={navButtonStyle(isDark, !canGoBack)}
-          >
+          <button onClick={onBack} disabled={!canGoBack} style={navButtonStyle(isDark, !canGoBack)}>
             &#x2190; Prev
           </button>
           <span
@@ -177,9 +173,7 @@ function navButtonStyle(isDark: boolean, disabled: boolean): React.CSSProperties
     padding: '6px 16px',
     fontSize: 13,
     fontWeight: 500,
-    color: disabled
-      ? (isDark ? '#333' : '#ccc')
-      : (isDark ? '#c8c8d0' : '#333'),
+    color: disabled ? (isDark ? '#333' : '#ccc') : isDark ? '#c8c8d0' : '#333',
     cursor: disabled ? 'default' : 'pointer',
     opacity: disabled ? 0.5 : 1,
   };

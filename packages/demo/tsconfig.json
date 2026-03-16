@@ -13,13 +13,6 @@
     "incremental": true,
     "noEmit": true
   },
-  "include": [
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

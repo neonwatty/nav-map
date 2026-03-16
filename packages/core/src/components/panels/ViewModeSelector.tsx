@@ -24,26 +24,21 @@ export function ViewModeSelector({ viewMode, onViewModeChange }: ViewModeSelecto
         overflow: 'hidden',
       }}
     >
-      {modes.map((mode) => {
+      {modes.map(mode => {
         const isActive = viewMode === mode.value;
         return (
           <button
             key={mode.value}
             onClick={() => onViewModeChange(mode.value)}
             style={{
-              background: isActive
-                ? (isDark ? '#1e2540' : '#e0e8ff')
-                : (isDark ? '#14141e' : '#fff'),
+              background: isActive ? (isDark ? '#1e2540' : '#e0e8ff') : isDark ? '#14141e' : '#fff',
               border: 'none',
-              borderRight: mode.value !== 'tree'
-                ? `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`
-                : 'none',
+              borderRight:
+                mode.value !== 'tree' ? `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}` : 'none',
               padding: '5px 12px',
               fontSize: 12,
               fontWeight: isActive ? 600 : 400,
-              color: isActive
-                ? (isDark ? '#7aacff' : '#3355aa')
-                : (isDark ? '#888' : '#666'),
+              color: isActive ? (isDark ? '#7aacff' : '#3355aa') : isDark ? '#888' : '#666',
               cursor: 'pointer',
             }}
           >
