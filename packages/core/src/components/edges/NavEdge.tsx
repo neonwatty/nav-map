@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import {
   BaseEdge,
-  getBezierPath,
+  getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react';
 
@@ -9,45 +9,7 @@ interface NavEdgeData {
   label?: string;
   edgeType?: string;
   alwaysShowLabel?: boolean;
-  points?: { x: number; y: number }[];
   [key: string]: unknown;
-}
-
-function buildOrthogonalPath(
-  points: { x: number; y: number }[],
-  radius = 8
-): string {
-  if (points.length < 2) return '';
-
-  const parts: string[] = [`M ${points[0].x} ${points[0].y}`];
-
-  for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const next = points[i + 1];
-
-    const dx1 = Math.sign(curr.x - prev.x);
-    const dy1 = Math.sign(curr.y - prev.y);
-    const dx2 = Math.sign(next.x - curr.x);
-    const dy2 = Math.sign(next.y - curr.y);
-
-    const seg1 = Math.max(Math.abs(curr.x - prev.x), Math.abs(curr.y - prev.y));
-    const seg2 = Math.max(Math.abs(next.x - curr.x), Math.abs(next.y - curr.y));
-    const r = Math.min(radius, seg1 / 2, seg2 / 2);
-
-    const arcStartX = curr.x - dx1 * r;
-    const arcStartY = curr.y - dy1 * r;
-    parts.push(`L ${arcStartX} ${arcStartY}`);
-
-    const arcEndX = curr.x + dx2 * r;
-    const arcEndY = curr.y + dy2 * r;
-    parts.push(`Q ${curr.x} ${curr.y} ${arcEndX} ${arcEndY}`);
-  }
-
-  const last = points[points.length - 1];
-  parts.push(`L ${last.x} ${last.y}`);
-
-  return parts.join(' ');
 }
 
 function NavEdgeComponent({
@@ -65,23 +27,13 @@ function NavEdgeComponent({
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const edgeData = data as NavEdgeData | undefined;
-  const orthogonalPoints = edgeData?.points;
 
-  // Use orthogonal path if ELK provided bend points, otherwise fallback to bezier
-  let edgePath: string;
-  let labelX: number;
-  let labelY: number;
-
-  if (orthogonalPoints && orthogonalPoints.length >= 2) {
-    edgePath = buildOrthogonalPath(orthogonalPoints);
-    const mid = orthogonalPoints[Math.floor(orthogonalPoints.length / 2)];
-    labelX = mid.x;
-    labelY = mid.y;
-  } else {
-    [edgePath, labelX, labelY] = getBezierPath({
-      sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition,
-    });
-  }
+  // Smooth step path: orthogonal routing with rounded corners
+  // React Flow handles parent-relative coordinate transformation automatically
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
+    sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition,
+    borderRadius: 8,
+  });
 
   const isRedirect = edgeData?.edgeType === 'redirect';
   const isSharedNav = edgeData?.edgeType === 'shared-nav';

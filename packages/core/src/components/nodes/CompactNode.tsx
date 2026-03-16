@@ -30,9 +30,15 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
           fontWeight: 600,
           color: colors.text,
           whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
         }}
       >
         {nodeData.label}
+        {Boolean(nodeData.metadata?.authRequired) && (
+          <span style={{ fontSize: 8 }} title="Auth required">&#x1F512;</span>
+        )}
       </div>
       <div
         style={{

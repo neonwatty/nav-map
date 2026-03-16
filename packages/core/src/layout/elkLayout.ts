@@ -31,7 +31,7 @@ export async function computeElkLayout(
 ): Promise<LayoutResult> {
   const {
     direction = 'DOWN',
-    spacing = 80,
+    spacing = 100,
     nodeSpacing = 50,
   } = options;
 
@@ -75,40 +75,14 @@ export async function computeElkLayout(
       children: groupChildren.get(g.id) ?? [],
     }));
 
-  // Split edges: intra-group edges go inside their group, cross-group at root
-  const nodeToGroup = new Map<string, string>();
-  for (const node of pageNodes) {
-    if (node.parentId) nodeToGroup.set(node.id, node.parentId);
-  }
+  // ALL edges at root level — INCLUDE_CHILDREN handles cross-hierarchy routing
+  const elkEdges: ElkExtendedEdge[] = edges.map(edge => ({
+    id: edge.id,
+    sources: [edge.source],
+    targets: [edge.target],
+  }));
 
-  const rootEdges: ElkExtendedEdge[] = [];
-  const groupEdgesMap = new Map<string, ElkExtendedEdge[]>();
-
-  for (const edge of edges) {
-    const srcGroup = nodeToGroup.get(edge.source);
-    const tgtGroup = nodeToGroup.get(edge.target);
-    const elkEdge: ElkExtendedEdge = {
-      id: edge.id,
-      sources: [edge.source],
-      targets: [edge.target],
-    };
-
-    if (srcGroup && tgtGroup && srcGroup === tgtGroup) {
-      const existing = groupEdgesMap.get(srcGroup) ?? [];
-      existing.push(elkEdge);
-      groupEdgesMap.set(srcGroup, existing);
-    } else {
-      rootEdges.push(elkEdge);
-    }
-  }
-
-  // Attach intra-group edges to their group ELK nodes
-  for (const groupNode of elkGroupNodes) {
-    const ge = groupEdgesMap.get(groupNode.id);
-    if (ge) groupNode.edges = ge;
-  }
-
-  // Run layout
+  // Run layout with INCLUDE_CHILDREN for proper cross-group edge routing
   const graph = await elk.layout({
     id: 'root',
     layoutOptions: {
@@ -116,13 +90,15 @@ export async function computeElkLayout(
       'elk.direction': direction,
       'elk.edgeRouting': 'ORTHOGONAL',
       'elk.spacing.nodeNode': String(nodeSpacing),
-      'elk.spacing.edgeEdge': '20',
+      'elk.spacing.edgeEdge': '15',
+      'elk.spacing.edgeNode': '25',
       'elk.layered.spacing.nodeNodeBetweenLayers': String(spacing),
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     },
     children: [...elkGroupNodes, ...ungroupedNodes],
-    edges: rootEdges,
+    edges: elkEdges,
   });
 
   // Recursively extract positions from ELK output
@@ -143,58 +119,46 @@ export async function computeElkLayout(
   }
 
   // Apply positions to React Flow nodes
+  // Group nodes need explicit width/height for React Flow to size them properly
   const layoutedNodes = nodes.map(node => {
     const pos = positionMap.get(node.id);
     const size = sizeMap.get(node.id);
+    if (node.type === 'groupNode' && size) {
+      return {
+        ...node,
+        position: pos ?? node.position,
+        measured: { width: size.width, height: size.height },
+        style: {
+          ...node.style,
+          width: size.width,
+          height: size.height,
+        },
+      };
+    }
     return {
       ...node,
       position: pos ?? node.position,
-      ...(node.type === 'groupNode' && size
-        ? { style: { ...node.style, width: size.width, height: size.height } }
-        : {}),
     };
   });
 
-  // Extract edge bend points from sections (both root and intra-group)
-  const edgePointsMap = new Map<string, { x: number; y: number }[]>();
-
-  function extractEdgePoints(elkEdges: unknown[]) {
-    for (const elkEdge of elkEdges) {
-      const e = elkEdge as { id: string; sections?: { startPoint?: { x: number; y: number }; endPoint?: { x: number; y: number }; bendPoints?: { x: number; y: number }[] }[] };
-      const points: { x: number; y: number }[] = [];
-      for (const section of e.sections ?? []) {
-        if (section.startPoint) points.push(section.startPoint);
-        for (const bp of section.bendPoints ?? []) {
-          points.push(bp);
-        }
-        if (section.endPoint) points.push(section.endPoint);
-      }
-      if (points.length > 0) {
-        edgePointsMap.set(e.id, points);
-      }
+  // Build map of group positions for coordinate transformation
+  const groupPositions = new Map<string, { x: number; y: number }>();
+  for (const node of layoutedNodes) {
+    if (node.type === 'groupNode') {
+      groupPositions.set(node.id, node.position);
     }
   }
 
-  // Root-level edges
-  extractEdgePoints(graph.edges ?? []);
-  // Intra-group edges
-  for (const child of graph.children ?? []) {
-    if ((child as ElkNode & { edges?: unknown[] }).edges) {
-      extractEdgePoints((child as ElkNode & { edges?: unknown[] }).edges!);
-    }
+  // Build map of node → parent group
+  const nodeParentMap = new Map<string, string>();
+  for (const node of layoutedNodes) {
+    if (node.parentId) nodeParentMap.set(node.id, node.parentId);
   }
 
-  // Attach points to React Flow edges
-  const layoutedEdges = edges.map(edge => {
-    const points = edgePointsMap.get(edge.id);
-    if (points) {
-      return {
-        ...edge,
-        data: { ...edge.data, points },
-      };
-    }
-    return edge;
-  });
+  // Edges: don't attach ELK bend points since they're in root-absolute space
+  // which conflicts with React Flow's parent-relative coordinate system.
+  // Instead, rely on React Flow's smoothstep edge type for routing.
+  const layoutedEdges = edges;
 
   return { nodes: layoutedNodes, edges: layoutedEdges };
 }
