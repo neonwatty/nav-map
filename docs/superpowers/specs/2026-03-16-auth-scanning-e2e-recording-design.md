@@ -42,28 +42,35 @@ npx nav-map record \
 
 **Architecture:** The scanner cannot inject `storageState` into or intercept `page` objects inside Playwright's test runner from the outside — the test runner owns those contexts. Instead, we use a **two-part approach**:
 
-1. **Custom Playwright reporter** — The scanner ships `@neonwatty/nav-map-reporter`, a Playwright reporter that receives test lifecycle events. Tests write navigation data to a shared temp directory via trace files.
+1. **Custom Playwright reporter** — The scanner ships `@neonwatty/nav-map-reporter`, a Playwright reporter that receives test lifecycle events (test started, test finished) and collects trace file paths.
 
 2. **Scanner orchestrates the run** — The scanner:
    - Writes the `storageState` file to disk at a known path
    - Spawns `npx playwright test --config <config> --reporter=@neonwatty/nav-map-reporter` as a child process
-   - The reporter captures: test name, every URL navigated to (from `page.on('framenavigated')` via `use: { trace: 'on' }` config), and takes screenshots at each new page
-   - After tests complete, the scanner reads the reporter's output (a JSONL file of navigation events) and assembles the graph
+   - The Playwright config must have `trace: 'on'` and `screenshot: 'on'` — traces contain the full navigation history (every `framenavigated` event) and screenshots at each step
+   - After all tests complete, the reporter writes a manifest of trace file paths
+   - The scanner parses each trace file to extract: navigation events (URL transitions with timestamps), screenshots (PNG frames captured during navigation), and test metadata
+
+**Trace-based approach:** All data extraction happens *after* each test finishes, by parsing Playwright's trace ZIP files. The reporter does NOT need real-time `page` access — it only needs the trace artifact paths from `testResult.attachments`. This is fully supported by the Playwright reporter API.
 
 **App config requirement:** The user must ensure their Playwright config:
 - References the `storageState` file path (e.g., `use: { storageState: 'auth.json' }`)
-- Has `trace: 'on'` or `trace: 'on-first-retry'` enabled
+- Has `trace: 'on'` enabled (produces trace ZIPs with navigation + screenshots)
+- Has `screenshot: 'on'` enabled (captures page state at each navigation)
 
 The scanner does NOT modify test files. It requires a one-time Playwright config adjustment to reference the auth state and enable tracing.
 
-**Reporter output format** (JSONL, written to `<screenshot-dir>/.nav-events.jsonl`):
-```jsonl
-{"type":"navigate","testName":"studio login","from":"/auth/login","to":"/studio","timestamp":1234567890}
-{"type":"screenshot","route":"/studio","file":"nav-screenshots/studio.webp","timestamp":1234567891}
-{"type":"navigate","testName":"studio login","from":"/studio","to":"/studio/proj_abc","timestamp":1234567892}
+**Reporter output format** (JSON manifest, written to `<screenshot-dir>/.nav-manifest.json`):
+```json
+{
+  "traces": [
+    { "testName": "studio login", "workerId": 0, "tracePath": "test-results/.../trace.zip" },
+    { "testName": "create project", "workerId": 0, "tracePath": "test-results/.../trace.zip" }
+  ]
+}
 ```
 
-After all tests finish, the scanner reads this JSONL, deduplicates, and produces `nav-map.json`.
+After all tests complete, the scanner parses each trace ZIP to extract navigation events and screenshots, deduplicates, and produces `nav-map.json`.
 
 **Parallel test handling:** The reporter attributes each navigation event to its test worker ID. Edges are only recorded within the same worker's sequential navigation — concurrent workers don't produce cross-worker edges. This prevents mixing navigations from independent tests.
 
