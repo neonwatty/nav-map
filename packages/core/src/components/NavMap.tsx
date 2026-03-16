@@ -9,6 +9,7 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useStore,
   type Node,
   type Edge,
   type OnSelectionChangeParams,
@@ -18,6 +19,10 @@ import '@xyflow/react/dist/style.css';
 import type { NavMapGraph, ViewMode } from '../types';
 import { ViewModeSelector } from './panels/ViewModeSelector';
 import { FlowSelector } from './panels/FlowSelector';
+import { BundledEdge } from './edges/BundledEdge';
+import { computeBundledEdges } from '../layout/edgeBundling';
+import { FlowAnimator } from './panels/FlowAnimator';
+import { ExportButton } from './panels/ExportButton';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
@@ -46,6 +51,7 @@ const nodeTypes = {
 
 const edgeTypes = {
   navEdge: NavEdge,
+  bundledEdge: BundledEdge,
 };
 
 export interface NavMapProps {
@@ -107,6 +113,8 @@ function NavMapInner({
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
+  const [useBundledEdges, setUseBundledEdges] = useState(false);
+  const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -143,6 +151,7 @@ function NavMapInner({
   const walkthrough = useWalkthrough();
   const { showDetail } = useSemanticZoom();
   const { isNarrow } = useResponsive();
+  const viewport = useStore(s => ({ x: s.transform[0], y: s.transform[1], zoom: s.transform[2] }));
   const { fitView, setCenter } = useReactFlow();
 
   // Load graph from URL if provided
@@ -201,6 +210,29 @@ function NavMapInner({
       setEdges(baseEdgesRef.current);
     }
   }, [showSharedNav, layoutDone, setEdges]);
+
+  // Compute bundled edges when toggle is enabled
+  useEffect(() => {
+    if (!layoutDone || !useBundledEdges) return;
+    const currentEdges = showSharedNav
+      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
+      : baseEdgesRef.current;
+    const bundledResults = computeBundledEdges(nodes, currentEdges);
+    const bundledPathMap = new Map(bundledResults.map(r => [r.edgeId, r.path]));
+    const bundled = currentEdges.map(edge => {
+      const bp = bundledPathMap.get(edge.id);
+      return bp ? { ...edge, type: 'bundledEdge', data: { ...edge.data, bundledPath: bp } } : edge;
+    });
+    setEdges(bundled);
+  }, [useBundledEdges, layoutDone, nodes, showSharedNav, setEdges]);
+
+  // When bundling is turned off, restore original edges
+  useEffect(() => {
+    if (!layoutDone || useBundledEdges) return;
+    setEdges(showSharedNav
+      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
+      : baseEdgesRef.current);
+  }, [useBundledEdges, layoutDone, showSharedNav, setEdges]);
 
   // Re-layout when view mode changes
   useEffect(() => {
@@ -724,6 +756,23 @@ function NavMapInner({
             >
               {focusMode ? 'Show Edges' : 'Focus Mode'}
             </button>
+            <button
+              onClick={() => setUseBundledEdges(prev => !prev)}
+              style={toolbarButtonStyle(ctx.isDark, useBundledEdges)}
+              title="Toggle Edge Bundling"
+            >
+              {useBundledEdges ? 'Straight Edges' : 'Bundle Edges'}
+            </button>
+            {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
+              <button
+                onClick={() => setIsAnimatingFlow(true)}
+                disabled={isAnimatingFlow}
+                style={{ ...toolbarButtonStyle(ctx.isDark, isAnimatingFlow), opacity: isAnimatingFlow ? 0.6 : 1 }}
+                title="Animate the selected flow"
+              >
+                {isAnimatingFlow ? 'Animating...' : 'Animate'}
+              </button>
+            )}
             {analyticsAdapter && (
               <button
                 onClick={() => setShowAnalytics(prev => !prev)}
@@ -747,6 +796,7 @@ function NavMapInner({
             >
               ?
             </button>
+            <ExportButton graphName={graph?.meta.name} />
           </div>
 
           {/* Flow/Tree mode banners */}
@@ -834,6 +884,25 @@ function NavMapInner({
             </ReactFlow>
           )}
           {graph && <LegendPanel groups={graph.groups} />}
+
+          {/* Flow animation overlay */}
+          {isAnimatingFlow && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && layoutDone && (
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 25, overflow: 'hidden' }}>
+              <FlowAnimator
+                flowSteps={graph.flows[selectedFlowIndex].steps}
+                nodes={nodes}
+                isAnimating={isAnimatingFlow}
+                onAnimationEnd={() => setIsAnimatingFlow(false)}
+                viewport={viewport}
+              />
+            </div>
+          )}
+          {isAnimatingFlow && (
+            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '8px 16px', zIndex: 30, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>Animating flow...</span>
+              <button onClick={() => setIsAnimatingFlow(false)} style={{ background: 'none', border: `1px solid ${ctx.isDark ? '#333' : '#ccc'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: ctx.isDark ? '#888' : '#666', cursor: 'pointer' }}>Stop</button>
+            </div>
+          )}
         </div>
 
         {selectedNode && graph && (
