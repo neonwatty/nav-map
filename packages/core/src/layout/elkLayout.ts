@@ -1,7 +1,4 @@
-import ELK, {
-  type ElkNode,
-  type ElkExtendedEdge,
-} from 'elkjs/lib/elk.bundled.js';
+import ELK, { type ElkNode, type ElkExtendedEdge } from 'elkjs/lib/elk.bundled.js';
 import type { Node, Edge } from '@xyflow/react';
 
 const elk = new ELK();
@@ -29,11 +26,7 @@ export async function computeElkLayout(
   edges: Edge[],
   options: LayoutOptions = {}
 ): Promise<LayoutResult> {
-  const {
-    direction = 'RIGHT',
-    spacing = 100,
-    nodeSpacing = 50,
-  } = options;
+  const { direction = 'RIGHT', spacing = 100, nodeSpacing = 50 } = options;
 
   // Separate group nodes from page nodes
   const groupNodes = nodes.filter(n => n.type === 'groupNode');

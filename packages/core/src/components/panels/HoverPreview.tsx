@@ -34,18 +34,12 @@ export function HoverPreview({ screenshot, label, position }: HoverPreviewProps)
         overflow: 'hidden',
         border: `1px solid ${isDark ? '#2a2a3a' : '#d0d0d8'}`,
         background: isDark ? '#14141e' : '#fff',
-        boxShadow: isDark
-          ? '0 8px 32px rgba(0,0,0,0.5)'
-          : '0 8px 32px rgba(0,0,0,0.15)',
+        boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.15)',
         zIndex: 50,
         pointerEvents: 'none',
       }}
     >
-      <img
-        src={src}
-        alt={label}
-        style={{ width: '100%', display: 'block' }}
-      />
+      <img src={src} alt={label} style={{ width: '100%', display: 'block' }} />
       <div
         style={{
           padding: '6px 12px',

@@ -1,9 +1,5 @@
 import { memo, useState } from 'react';
-import {
-  BaseEdge,
-  getSmoothStepPath,
-  type EdgeProps,
-} from '@xyflow/react';
+import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 
 interface NavEdgeData {
   label?: string;
@@ -31,21 +27,21 @@ function NavEdgeComponent({
   // Smooth step path: orthogonal routing with rounded corners
   // React Flow handles parent-relative coordinate transformation automatically
   const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
     borderRadius: 8,
   });
 
   const isRedirect = edgeData?.edgeType === 'redirect';
   const isSharedNav = edgeData?.edgeType === 'shared-nav';
-  const showLabel = edgeData?.label && (
-    edgeData.alwaysShowLabel || hovered || selected
-  );
+  const showLabel = edgeData?.label && (edgeData.alwaysShowLabel || hovered || selected);
 
   return (
-    <g
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <g onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <BaseEdge
         id={id}
         path={edgePath}

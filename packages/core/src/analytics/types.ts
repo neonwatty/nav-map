@@ -1,6 +1,6 @@
 export interface NavMapAnalytics {
   period: { start: string; end: string };
-  pageViews: Record<string, number>;  // nodeId → count
+  pageViews: Record<string, number>; // nodeId → count
   transitions: Record<string, number>; // edgeId → count
 }
 

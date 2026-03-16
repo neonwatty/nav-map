@@ -61,10 +61,7 @@ export function normalizeRoute(
   return { route, id, label, group };
 }
 
-function matchRoutePattern(
-  pathname: string,
-  patterns: RoutePattern[]
-): RoutePattern | null {
+function matchRoutePattern(pathname: string, patterns: RoutePattern[]): RoutePattern | null {
   const segments = pathname.split('/');
 
   for (const pattern of patterns) {
@@ -76,7 +73,10 @@ function matchRoutePattern(
       const ps = patternSegments[i];
       const us = segments[i];
       if (ps.startsWith('[') && ps.endsWith(']')) continue;
-      if (ps !== us) { matches = false; break; }
+      if (ps !== us) {
+        matches = false;
+        break;
+      }
     }
 
     if (matches) return pattern;
@@ -108,7 +108,9 @@ function routeToLabel(route: string): string {
 export function isLoginPage(url: string): boolean {
   try {
     const pathname = new URL(url).pathname.toLowerCase();
-    return pathname.includes('/auth/') || pathname.includes('/login') || pathname.includes('/signin');
+    return (
+      pathname.includes('/auth/') || pathname.includes('/login') || pathname.includes('/signin')
+    );
   } catch {
     return false;
   }
@@ -116,10 +118,12 @@ export function isLoginPage(url: string): boolean {
 
 export function loadRoutePatterns(routesJsonPath: string): RoutePattern[] {
   const data = JSON.parse(fs.readFileSync(routesJsonPath, 'utf-8'));
-  return (data.nodes ?? []).map((n: { id: string; route: string; group: string; label: string }) => ({
-    id: n.id,
-    route: n.route,
-    group: n.group,
-    label: n.label,
-  }));
+  return (data.nodes ?? []).map(
+    (n: { id: string; route: string; group: string; label: string }) => ({
+      id: n.id,
+      route: n.route,
+      group: n.group,
+      label: n.label,
+    })
+  );
 }

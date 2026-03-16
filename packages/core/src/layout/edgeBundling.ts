@@ -17,9 +17,7 @@ export function computeBundledEdges(
   const { beta = 0.85 } = options;
 
   const pageNodes = nodes.filter(n => n.type !== 'groupNode');
-  const groups = new Set(
-    pageNodes.map(n => (n.data as { group?: string }).group).filter(Boolean)
-  );
+  const groups = new Set(pageNodes.map(n => (n.data as { group?: string }).group).filter(Boolean));
 
   const hierarchyData = {
     id: 'root',

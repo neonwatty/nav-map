@@ -109,7 +109,7 @@ program
   .option('--screenshot-dir <dir>', 'Directory for screenshots', 'nav-screenshots')
   .option('-o, --output <path>', 'Output file path', 'nav-map.json')
   .option('-n, --name <name>', 'Project name for the graph')
-  .action(async (opts) => {
+  .action(async opts => {
     console.log('Recording navigation from E2E tests...\n');
 
     try {

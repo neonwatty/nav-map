@@ -60,12 +60,7 @@ interface NavEvent {
 }
 
 export async function recordTests(options: RecordOptions): Promise<NavMapGraph> {
-  const {
-    playwrightConfig,
-    routesJson,
-    screenshotDir,
-    name,
-  } = options;
+  const { playwrightConfig, routesJson, screenshotDir, name } = options;
 
   const screenshotDirAbs = path.resolve(screenshotDir);
   fs.mkdirSync(screenshotDirAbs, { recursive: true });
@@ -79,18 +74,11 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
   }
 
   // Resolve the reporter path (shipped with this package)
-  const reporterPath = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
-    'reporter.js'
-  );
+  const reporterPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'reporter.js');
 
   // Build playwright args — use execFileSync to avoid shell injection
   const configPath = path.resolve(playwrightConfig);
-  const args = [
-    'playwright', 'test',
-    '--config', configPath,
-    `--reporter=${reporterPath}`,
-  ];
+  const args = ['playwright', 'test', '--config', configPath, `--reporter=${reporterPath}`];
 
   console.log(`Running: npx ${args.join(' ')}`);
   console.log(`Screenshot dir: ${screenshotDirAbs}\n`);
@@ -114,7 +102,9 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
   // Read the manifest
   const manifestPath = path.join(screenshotDirAbs, '.nav-manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    throw new Error(`Reporter manifest not found at ${manifestPath}. Ensure trace: 'on' is set in your Playwright config.`);
+    throw new Error(
+      `Reporter manifest not found at ${manifestPath}. Ensure trace: 'on' is set in your Playwright config.`
+    );
   }
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
@@ -143,7 +133,9 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
       try {
         const u = new URL(events[0].url);
         baseUrl = `${u.protocol}//${u.host}`;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     const flowSteps: string[] = [];
@@ -267,7 +259,9 @@ async function parseTraceNavigation(tracePath: string): Promise<NavEvent[]> {
             const url = event.params?.url;
             if (url) events.push({ url, timestamp: event.startTime ?? Date.now() });
           }
-        } catch { /* skip malformed lines */ }
+        } catch {
+          /* skip malformed lines */
+        }
       }
     }
   } catch (err) {
@@ -301,12 +295,18 @@ async function extractScreenshotsFromTrace(
           try {
             await optimizeScreenshot(rawPath, optimizedPath);
             page.screenshot = path.relative(process.cwd(), optimizedPath);
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
           break;
         }
       }
 
-      try { fs.unlinkSync(rawPath); } catch { /* ignore */ }
+      try {
+        fs.unlinkSync(rawPath);
+      } catch {
+        /* ignore */
+      }
     }
   } catch (err) {
     console.warn(`  Warning: Failed to extract screenshots from ${tracePath}: ${err}`);

@@ -40,7 +40,13 @@ export { detectGroups, assignGroups } from './layout/groupDetection';
 
 // Utilities
 export { getGroupColors, darkGroupColors, lightGroupColors } from './utils/colors';
-export { buildGraphFromJson, buildCompoundNodes, toReactFlowNodes, toReactFlowEdges, getConnectedNodes } from './utils/graphHelpers';
+export {
+  buildGraphFromJson,
+  buildCompoundNodes,
+  toReactFlowNodes,
+  toReactFlowEdges,
+  getConnectedNodes,
+} from './utils/graphHelpers';
 export type { GroupNodeData } from './components/nodes/GroupNode';
 
 // Types

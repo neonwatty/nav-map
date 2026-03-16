@@ -27,7 +27,9 @@ export function parseNextjsLinks(filePath: string, projectDir: string): ParsedLi
     // --- 1. Find all <Link> JSX elements and extract href ---
 
     const jsxOpeningElements = sourceFile.getDescendantsOfKind(SyntaxKind.JsxOpeningElement);
-    const jsxSelfClosingElements = sourceFile.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement);
+    const jsxSelfClosingElements = sourceFile.getDescendantsOfKind(
+      SyntaxKind.JsxSelfClosingElement
+    );
 
     for (const element of [...jsxOpeningElements, ...jsxSelfClosingElements]) {
       const tagName = element.getTagNameNode().getText();
@@ -98,10 +100,7 @@ export function parseNextjsLinks(filePath: string, projectDir: string): ParsedLi
         const methodName = expr.getName();
         const objectText = expr.getExpression().getText();
 
-        if (
-          (methodName === 'push' || methodName === 'replace') &&
-          objectText === 'router'
-        ) {
+        if ((methodName === 'push' || methodName === 'replace') && objectText === 'router') {
           const args = call.getArguments();
           if (args.length === 0) continue;
 
@@ -163,7 +162,7 @@ export function parseNextjsLinks(filePath: string, projectDir: string): ParsedLi
  */
 function resolveIdentifier(
   sourceFile: ReturnType<Project['addSourceFileAtPath']>,
-  name: string,
+  name: string
 ): string | undefined {
   const variableDeclarations = sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration);
   for (const decl of variableDeclarations) {

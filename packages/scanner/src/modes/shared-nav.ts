@@ -8,8 +8,16 @@ interface RouteInfo {
 }
 
 const GROUP_COLORS = [
-  '#5b9bf5', '#4eca6a', '#b07ce8', '#f0a050', '#6e8ca8',
-  '#556878', '#e06070', '#50c8c8', '#c8a050', '#70a0e0',
+  '#5b9bf5',
+  '#4eca6a',
+  '#b07ce8',
+  '#f0a050',
+  '#6e8ca8',
+  '#556878',
+  '#e06070',
+  '#50c8c8',
+  '#c8a050',
+  '#70a0e0',
 ];
 
 export function detectGroupsFromRoutes(
@@ -43,9 +51,11 @@ export function detectGroupsFromRoutes(
   }
 
   // Ungrouped routes get a "marketing" or "root" group
-  const grouped = new Set(groups.flatMap(g =>
-    routes.filter(r => g.routePrefix && r.route.startsWith(g.routePrefix)).map(r => r.id)
-  ));
+  const grouped = new Set(
+    groups.flatMap(g =>
+      routes.filter(r => g.routePrefix && r.route.startsWith(g.routePrefix)).map(r => r.id)
+    )
+  );
 
   const ungrouped = routes.filter(r => !grouped.has(r.id));
   if (ungrouped.length > 0) {
@@ -63,10 +73,13 @@ export function detectGroupsFromRoutes(
 export async function detectSharedNav(
   projectDir: string,
   routeLookup: Map<string, string>
-): Promise<{
-  navbar: { pages: string[]; targets: string[] };
-  footer: { pages: string[]; targets: string[] };
-} | undefined> {
+): Promise<
+  | {
+      navbar: { pages: string[]; targets: string[] };
+      footer: { pages: string[]; targets: string[] };
+    }
+  | undefined
+> {
   // Find layout files — these apply shared nav to all their children
   const layoutFiles = await glob('app/**/layout.{tsx,jsx}', {
     cwd: projectDir,

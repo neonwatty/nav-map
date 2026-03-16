@@ -20,7 +20,17 @@ export default function HomePage() {
 
   if (!graph) {
     return (
-      <main style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0f', color: '#888' }}>
+      <main
+        style={{
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#0a0a0f',
+          color: '#888',
+        }}
+      >
         Loading graph data...
       </main>
     );

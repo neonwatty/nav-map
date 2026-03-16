@@ -15,7 +15,7 @@ export function FlowSelector({ flows, selectedIndex, onSelect }: FlowSelectorPro
   return (
     <select
       value={selectedIndex ?? ''}
-      onChange={(e) => {
+      onChange={e => {
         const val = e.target.value;
         onSelect(val === '' ? null : Number(val));
       }}

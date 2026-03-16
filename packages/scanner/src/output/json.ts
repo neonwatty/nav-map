@@ -11,10 +11,7 @@ interface NavMapGraph {
   [key: string]: unknown;
 }
 
-export function writeNavMapJson(
-  graph: NavMapGraph,
-  outputPath: string
-): void {
+export function writeNavMapJson(graph: NavMapGraph, outputPath: string): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const errors = validateGraph(graph as any);
   if (errors.length > 0) {

@@ -21,7 +21,7 @@ export class PostHogAnalytics implements AnalyticsAdapter {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        Authorization: `Bearer ${this.config.apiKey}`,
       },
       body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
     });

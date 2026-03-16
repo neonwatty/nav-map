@@ -52,7 +52,9 @@ class NavMapReporter {
     const manifestPath = path.join(this.outputDir, '.nav-manifest.json');
     const manifest: NavManifest = { traces: this.traces };
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-    console.log(`\nNav-map reporter: wrote manifest with ${this.traces.length} traces to ${manifestPath}`);
+    console.log(
+      `\nNav-map reporter: wrote manifest with ${this.traces.length} traces to ${manifestPath}`
+    );
   }
 }
 
