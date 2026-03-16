@@ -71,5 +71,23 @@
       "pages": ["home", "bleep", "sampler", "blog", "blog-post", "for-educators", "login", "signup", "reset-pw", "update-pw", "waitlist", "terms", "privacy", "email-prefs"],
       "targets": ["home", "bleep", "blog", "for-educators", "premium", "sampler", "terms", "privacy"]
     }
-  }
+  },
+  "flows": [
+    {
+      "name": "New User Signup",
+      "steps": ["home", "bleep", "signup", "studio"]
+    },
+    {
+      "name": "Blog to Conversion",
+      "steps": ["blog", "blog-post", "home", "bleep", "premium"]
+    },
+    {
+      "name": "Educator Onboarding",
+      "steps": ["for-educators", "premium-edu", "signup", "studio"]
+    },
+    {
+      "name": "Password Reset",
+      "steps": ["login", "reset-pw", "update-pw", "login", "studio"]
+    }
+  ]
 }

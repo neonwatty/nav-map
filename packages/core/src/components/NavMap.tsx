@@ -15,7 +15,9 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph } from '../types';
+import type { NavMapGraph, ViewMode } from '../types';
+import { ViewModeSelector } from './panels/ViewModeSelector';
+import { FlowSelector } from './panels/FlowSelector';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
@@ -102,6 +104,9 @@ function NavMapInner({
   const [layoutDone, setLayoutDone] = useState(false);
   const [showSharedNav, setShowSharedNav] = useState(false);
   const [focusMode, setFocusMode] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
+  const [treeRootId, setTreeRootId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -118,6 +123,8 @@ function NavMapInner({
   } | null>(null);
 
   const baseEdgesRef = useRef<Edge[]>([]);
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
 
   const handleGroupToggle = useCallback((groupId: string, collapsed: boolean) => {
     setCollapsedGroups(prev => {
@@ -195,6 +202,121 @@ function NavMapInner({
     }
   }, [showSharedNav, layoutDone, setEdges]);
 
+  // Re-layout when view mode changes
+  useEffect(() => {
+    if (!graph || !layoutDone) return;
+
+    if (viewMode === 'flow' && selectedFlowIndex !== null) {
+      const flow = graph.flows?.[selectedFlowIndex];
+      if (!flow) return;
+
+      const flowEdges: Edge[] = [];
+      for (let i = 0; i < flow.steps.length - 1; i++) {
+        const src = flow.steps[i];
+        const tgt = flow.steps[i + 1];
+        const existingEdge = graph.edges.find(e => e.source === src && e.target === tgt);
+        flowEdges.push({
+          id: existingEdge?.id ?? `flow-${src}-${tgt}`,
+          source: src,
+          target: tgt,
+          type: 'navEdge',
+          data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
+        });
+      }
+
+      const flowNodes: Node[] = flow.steps.map((stepId, index) => {
+        const graphNode = graph.nodes.find(n => n.id === stepId);
+        return {
+          id: stepId,
+          type: graphNode?.screenshot ? 'pageNode' : 'compactNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: graphNode?.label ?? stepId,
+            route: graphNode?.route ?? '',
+            group: graphNode?.group ?? '',
+            screenshot: graphNode?.screenshot,
+            flowStepNumber: index + 1,
+          },
+        };
+      });
+
+      computeElkLayout(flowNodes, flowEdges, { direction: 'RIGHT', spacing: 120 }).then(
+        ({ nodes: ln, edges: le }) => {
+          setNodes(ln);
+          setEdges(le);
+          baseEdgesRef.current = le;
+          setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
+        }
+      );
+    } else if (viewMode === 'tree' && treeRootId) {
+      const adjacency = new Map<string, string[]>();
+      for (const edge of graph.edges) {
+        const existing = adjacency.get(edge.source) ?? [];
+        existing.push(edge.target);
+        adjacency.set(edge.source, existing);
+      }
+
+      const visited = new Set<string>();
+      const queue = [treeRootId];
+      visited.add(treeRootId);
+      const treeEdges: Edge[] = [];
+
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        for (const neighbor of adjacency.get(current) ?? []) {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+            const existingEdge = graph.edges.find(e => e.source === current && e.target === neighbor);
+            treeEdges.push({
+              id: existingEdge?.id ?? `tree-${current}-${neighbor}`,
+              source: current,
+              target: neighbor,
+              type: 'navEdge',
+              data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
+            });
+          }
+        }
+      }
+
+      const treeNodes: Node[] = graph.nodes.map(n => ({
+        id: n.id,
+        type: n.screenshot ? 'pageNode' : 'compactNode',
+        position: { x: 0, y: 0 },
+        data: { label: n.label, route: n.route, group: n.group, screenshot: n.screenshot },
+        style: { opacity: visited.has(n.id) ? 1 : 0.1, transition: 'opacity 0.3s' },
+      }));
+
+      computeElkLayout(
+        treeNodes.filter(n => visited.has(n.id)),
+        treeEdges,
+        { direction: 'RIGHT', spacing: 100 }
+      ).then(({ nodes: ln, edges: le }) => {
+        const nonReachable = treeNodes
+          .filter(n => !visited.has(n.id))
+          .map((n, i) => ({ ...n, position: { x: -300, y: i * 60 } }));
+        setNodes([...ln, ...nonReachable]);
+        setEdges(le);
+        baseEdgesRef.current = le;
+        setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
+      });
+    } else if (viewMode === 'map') {
+      const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
+      for (const node of rfNodes) {
+        if (node.type === 'groupNode') {
+          (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+        }
+      }
+      computeElkLayout(rfNodes, rfEdges).then(({ nodes: ln, edges: le }) => {
+        setNodes(ln);
+        setEdges(le);
+        baseEdgesRef.current = le;
+        sharedNavEdgesRef.current = buildSharedNavEdges(graph);
+        setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50);
+      });
+    }
+  }, [viewMode, selectedFlowIndex, treeRootId]);
+
   // Semantic zoom: swap node types based on zoom level (skip group nodes)
   const zoomedNodes = useMemo(() => {
     if (showDetail) return nodes;
@@ -219,6 +341,9 @@ function NavMapInner({
       if (selected) {
         ctxRef.current.setSelectedNodeId(selected.id);
         walkthroughRef.current.push(selected.id);
+        if (viewModeRef.current === 'tree') {
+          setTreeRootId(selected.id);
+        }
       }
     },
     []
@@ -440,8 +565,35 @@ function NavMapInner({
     });
   }, [edges, nodes, collapsedGroups]);
 
-  // Dimming: when a node is selected, dim unconnected nodes/edges
+  // Active flow for highlighting
+  const activeFlow = useMemo(() => {
+    if (selectedFlowIndex === null || !graph?.flows) return null;
+    return graph.flows[selectedFlowIndex] ?? null;
+  }, [selectedFlowIndex, graph]);
+
+  // Dimming: selection, flow highlighting, or default
   const styledNodes = useMemo(() => {
+    // Flow highlighting in map mode
+    if (viewMode === 'map' && activeFlow) {
+      const flowStepSet = new Set(activeFlow.steps);
+      const flowStepMap = new Map(activeFlow.steps.map((id, i) => [id, i + 1]));
+      return visibleNodes.map(node => {
+        const isFlowNode = flowStepSet.has(node.id);
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}),
+          },
+          style: {
+            ...node.style,
+            opacity: isFlowNode ? 1 : 0.2,
+            transition: 'opacity 0.2s',
+          },
+        };
+      });
+    }
+
     if (!ctx.selectedNodeId) return visibleNodes;
 
     const connectedNodeIds = new Set<string>([ctx.selectedNodeId]);
@@ -458,9 +610,30 @@ function NavMapInner({
         transition: 'opacity 0.2s',
       },
     }));
-  }, [visibleNodes, visibleEdges, ctx.selectedNodeId]);
+  }, [visibleNodes, visibleEdges, ctx.selectedNodeId, viewMode, activeFlow]);
 
   const styledEdges = useMemo(() => {
+    // Flow highlighting in map mode
+    if (viewMode === 'map' && activeFlow) {
+      const flowEdgePairs = new Set<string>();
+      for (let i = 0; i < activeFlow.steps.length - 1; i++) {
+        flowEdgePairs.add(`${activeFlow.steps[i]}->${activeFlow.steps[i + 1]}`);
+      }
+      return visibleEdges.map(edge => {
+        const isFlowEdge = flowEdgePairs.has(`${edge.source}->${edge.target}`);
+        return {
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity: isFlowEdge ? 1 : 0.08,
+            stroke: isFlowEdge ? '#3355aa' : undefined,
+            strokeWidth: isFlowEdge ? 2.5 : undefined,
+            transition: 'opacity 0.2s',
+          },
+        };
+      });
+    }
+
     // Focus mode: hide all edges when nothing is selected
     if (focusMode && !ctx.selectedNodeId) {
       return visibleEdges.map(edge => ({
@@ -483,7 +656,7 @@ function NavMapInner({
         },
       };
     });
-  }, [visibleEdges, ctx.selectedNodeId, focusMode]);
+  }, [visibleEdges, ctx.selectedNodeId, focusMode, viewMode, activeFlow]);
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
@@ -515,6 +688,21 @@ function NavMapInner({
               zIndex: 15,
             }}
           >
+            <ViewModeSelector
+              viewMode={viewMode}
+              onViewModeChange={(mode) => {
+                setViewMode(mode);
+                if (mode !== 'flow') setSelectedFlowIndex(null);
+                if (mode !== 'tree') setTreeRootId(null);
+              }}
+            />
+            {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
+              <FlowSelector
+                flows={graph.flows}
+                selectedIndex={selectedFlowIndex}
+                onSelect={setSelectedFlowIndex}
+              />
+            )}
             <button
               onClick={() => fitView({ padding: 0.15, duration: 300 })}
               style={toolbarButtonStyle(ctx.isDark)}
@@ -560,6 +748,23 @@ function NavMapInner({
               ?
             </button>
           </div>
+
+          {/* Flow/Tree mode banners */}
+          {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
+            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>
+              Flow: {graph.flows![selectedFlowIndex].name}
+            </div>
+          )}
+          {viewMode === 'tree' && !treeRootId && (
+            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, color: ctx.isDark ? '#888' : '#666' }}>
+              Click any node to set it as tree root
+            </div>
+          )}
+          {viewMode === 'tree' && treeRootId && (
+            <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)', border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`, borderRadius: 8, padding: '6px 16px', zIndex: 20, fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}>
+              Tree from: {graph?.nodes.find(n => n.id === treeRootId)?.label ?? treeRootId}
+            </div>
+          )}
 
           {/* Walkthrough breadcrumb */}
           {graph && (

@@ -10,6 +10,8 @@ export { WalkthroughBar } from './components/panels/WalkthroughBar';
 export { HelpOverlay } from './components/panels/HelpOverlay';
 export { HoverPreview } from './components/panels/HoverPreview';
 export { SearchPanel } from './components/panels/SearchPanel';
+export { ViewModeSelector } from './components/panels/ViewModeSelector';
+export { FlowSelector } from './components/panels/FlowSelector';
 export { GroupNode } from './components/nodes/GroupNode';
 export { PresentationBar } from './components/panels/PresentationBar';
 export { AnalyticsOverlay } from './components/panels/AnalyticsOverlay';
@@ -47,4 +49,6 @@ export type {
   NavMapAnalytics,
   GroupColors,
   GroupColorMap,
+  NavMapFlow,
+  ViewMode,
 } from './types';
