@@ -101,6 +101,7 @@ function NavMapInner({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
   const [showSharedNav, setShowSharedNav] = useState(false);
+  const [focusMode, setFocusMode] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -342,6 +343,10 @@ function NavMapInner({
         case 'N':
           setShowSharedNav(prev => !prev);
           break;
+        case 'f':
+        case 'F':
+          setFocusMode(prev => !prev);
+          break;
         case 'o':
         case 'O': {
           if (!selectedId || !graph) return;
@@ -364,6 +369,7 @@ function NavMapInner({
     showSearch,
     showHelp,
     showSharedNav,
+    focusMode,
     fitView,
     setCenter,
     setNodes,
@@ -455,20 +461,29 @@ function NavMapInner({
   }, [visibleNodes, visibleEdges, ctx.selectedNodeId]);
 
   const styledEdges = useMemo(() => {
+    // Focus mode: hide all edges when nothing is selected
+    if (focusMode && !ctx.selectedNodeId) {
+      return visibleEdges.map(edge => ({
+        ...edge,
+        style: { ...edge.style, opacity: 0, pointerEvents: 'none' as const, transition: 'opacity 0.2s' },
+      }));
+    }
+
     if (!ctx.selectedNodeId) return visibleEdges;
 
-    return visibleEdges.map(edge => ({
-      ...edge,
-      style: {
-        ...edge.style,
-        opacity:
-          edge.source === ctx.selectedNodeId || edge.target === ctx.selectedNodeId
-            ? 1
-            : 0.15,
-        transition: 'opacity 0.2s',
-      },
-    }));
-  }, [visibleEdges, ctx.selectedNodeId]);
+    return visibleEdges.map(edge => {
+      const isConnected = edge.source === ctx.selectedNodeId || edge.target === ctx.selectedNodeId;
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: isConnected ? 1 : (focusMode ? 0 : 0.15),
+          pointerEvents: (isConnected || !focusMode ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+          transition: 'opacity 0.2s',
+        },
+      };
+    });
+  }, [visibleEdges, ctx.selectedNodeId, focusMode]);
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
@@ -513,6 +528,13 @@ function NavMapInner({
               title="Toggle Shared Nav (N)"
             >
               {showSharedNav ? 'Hide' : 'Show'} Shared Nav
+            </button>
+            <button
+              onClick={() => setFocusMode(prev => !prev)}
+              style={toolbarButtonStyle(ctx.isDark, focusMode)}
+              title="Focus Mode: edges visible on selection only (F)"
+            >
+              {focusMode ? 'Show Edges' : 'Focus Mode'}
             </button>
             {analyticsAdapter && (
               <button

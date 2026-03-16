@@ -13,6 +13,7 @@ const shortcuts = [
   { key: '/ or ⌘K', label: 'Search pages' },
   { key: '0', label: 'Reset view' },
   { key: 'L', label: 'Toggle layout' },
+  { key: 'F', label: 'Toggle focus mode' },
   { key: 'N', label: 'Toggle shared nav' },
   { key: 'O', label: 'Open page in browser' },
   { key: '?', label: 'This help' },
