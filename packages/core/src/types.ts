@@ -29,6 +29,13 @@ export interface NavMapSharedNav {
   footer: { pages: string[]; targets: string[] };
 }
 
+export interface NavMapFlow {
+  name: string;
+  steps: string[];
+}
+
+export type ViewMode = 'map' | 'flow' | 'tree';
+
 export interface NavMapGraph {
   version: '1.0';
   meta: {
@@ -42,6 +49,7 @@ export interface NavMapGraph {
   edges: NavMapEdge[];
   groups: NavMapGroup[];
   sharedNav?: NavMapSharedNav;
+  flows?: NavMapFlow[];
 }
 
 export interface NavMapAnalytics {

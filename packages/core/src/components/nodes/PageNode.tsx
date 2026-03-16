@@ -5,6 +5,7 @@ import { useNavMapContext } from '../../hooks/useNavMap';
 
 function PageNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
+  const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
@@ -16,15 +17,21 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
       style={{
         width: 180,
         borderRadius: 8,
+        position: 'relative' as const,
         border: `2px solid ${selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8'}`,
         background: isDark ? '#14141e' : '#fff',
-        overflow: 'hidden',
+        overflow: 'visible',
         cursor: 'pointer',
         transition: 'border-color 0.15s, box-shadow 0.15s',
         boxShadow: selected ? `0 0 12px ${colors.border}44` : 'none',
       }}
     >
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      {flowStepNumber != null && (
+        <div style={{ position: 'absolute', top: -10, left: -10, width: 24, height: 24, borderRadius: '50%', background: '#3355aa', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>
+          {flowStepNumber}
+        </div>
+      )}
 
       <div
         style={{
