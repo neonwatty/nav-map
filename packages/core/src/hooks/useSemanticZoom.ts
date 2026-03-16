@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useOnViewportChange, type Viewport } from '@xyflow/react';
 
-const ZOOM_THRESHOLD = 0.5;
+const ZOOM_THRESHOLD = 0.15;
 
 export function useSemanticZoom() {
   const [showDetail, setShowDetail] = useState(true);
