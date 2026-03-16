@@ -30,7 +30,7 @@ export async function computeElkLayout(
   options: LayoutOptions = {}
 ): Promise<LayoutResult> {
   const {
-    direction = 'DOWN',
+    direction = 'RIGHT',
     spacing = 100,
     nodeSpacing = 50,
   } = options;
