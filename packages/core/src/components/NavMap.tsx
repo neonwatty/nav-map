@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -17,13 +18,13 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
-import { ViewModeSelector } from './panels/ViewModeSelector';
-import { FlowSelector } from './panels/FlowSelector';
 import { BundledEdge } from './edges/BundledEdge';
 import { computeBundledEdges } from '../layout/edgeBundling';
 import { FlowAnimator } from './panels/FlowAnimator';
-import { ExportButton } from './panels/ExportButton';
+import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
+import { useKeyboardNav } from '../hooks/useKeyboardNav';
+import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
 import { computeElkLayout } from '../layout/elkLayout';
@@ -393,123 +394,8 @@ function NavMapInner({
     [setCenter]
   );
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Don't handle if typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      const selectedId = ctx.selectedNodeId;
-
-      switch (e.key) {
-        case 'ArrowDown':
-        case 'ArrowRight': {
-          if (!selectedId || !graph) return;
-          e.preventDefault();
-          const outgoing = graph.edges.filter(edge => edge.source === selectedId);
-          if (outgoing.length > 0) {
-            const next = outgoing[0];
-            navigateToNode(next.target);
-          }
-          break;
-        }
-        case 'ArrowUp':
-        case 'ArrowLeft': {
-          if (!selectedId || !graph) return;
-          e.preventDefault();
-          const incoming = graph.edges.filter(edge => edge.target === selectedId);
-          if (incoming.length > 0) {
-            const prev = incoming[0];
-            navigateToNode(prev.source);
-          }
-          break;
-        }
-        case 'Backspace': {
-          e.preventDefault();
-          walkthrough.goBack();
-          const prevNode = walkthrough.path[walkthrough.path.length - 2];
-          if (prevNode) {
-            ctx.setSelectedNodeId(prevNode);
-            const node = nodes.find(n => n.id === prevNode);
-            if (node) {
-              setCenter(node.position.x + 90, node.position.y + 70, {
-                zoom: 0.8,
-                duration: 300,
-              });
-            }
-          } else {
-            ctx.setSelectedNodeId(null);
-          }
-          break;
-        }
-        case 'Escape':
-          if (showSearch) {
-            setShowSearch(false);
-          } else if (showHelp) {
-            setShowHelp(false);
-          } else {
-            ctx.setSelectedNodeId(null);
-            walkthrough.clear();
-          }
-          break;
-        case '/':
-          e.preventDefault();
-          setShowSearch(true);
-          break;
-        case 'k':
-          if (e.metaKey || e.ctrlKey) {
-            e.preventDefault();
-            setShowSearch(true);
-          }
-          break;
-        case '?':
-          setShowHelp(prev => !prev);
-          break;
-        case '0':
-          fitView({ padding: 0.15, duration: 300 });
-          break;
-        case 'l':
-        case 'L':
-          // Re-compute layout
-          if (graph) {
-            const currentEdges = showSharedNav
-              ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
-              : baseEdgesRef.current;
-            computeElkLayout(nodes, currentEdges, {
-              direction: e.shiftKey ? 'RIGHT' : 'DOWN',
-            }).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-              setNodes(layoutedNodes);
-              setEdges(layoutedEdges);
-              baseEdgesRef.current = layoutedEdges;
-              setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50);
-            });
-          }
-          break;
-        case 'n':
-        case 'N':
-          setShowSharedNav(prev => !prev);
-          break;
-        case 'f':
-        case 'F':
-          setFocusMode(prev => !prev);
-          break;
-        case 'o':
-        case 'O': {
-          if (!selectedId || !graph) return;
-          const nodeInfo = graph.nodes.find(n => n.id === selectedId);
-          if (nodeInfo && graph.meta.baseUrl) {
-            window.open(`${graph.meta.baseUrl}${nodeInfo.route}`, '_blank');
-          }
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [
+  // Keyboard navigation (extracted to hook)
+  useKeyboardNav({
     ctx,
     graph,
     walkthrough,
@@ -518,11 +404,18 @@ function NavMapInner({
     showHelp,
     showSharedNav,
     focusMode,
+    setShowSearch,
+    setShowHelp,
+    setShowSharedNav,
+    setFocusMode,
+    setNodes,
+    setEdges,
     fitView,
     setCenter,
-    setNodes,
     navigateToNode,
-  ]);
+    baseEdgesRef,
+    sharedNavEdgesRef,
+  });
 
   // Node hover for preview
   const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
@@ -552,138 +445,22 @@ function NavMapInner({
     return () => window.removeEventListener('mousemove', handler);
   }, [hoverPreview]);
 
-  // Filter collapsed group children
-  const visibleNodes = useMemo(() => {
-    if (collapsedGroups.size === 0) return zoomedNodes;
-    return zoomedNodes.filter(node => {
-      if (!node.parentId) return true;
-      const groupId = node.parentId.slice('group-'.length);
-      return !collapsedGroups.has(groupId);
-    });
-  }, [zoomedNodes, collapsedGroups]);
-
-  // Re-route edges targeting collapsed children to the group node
-  const visibleEdges = useMemo(() => {
-    if (collapsedGroups.size === 0) return edges;
-    const collapsedChildIds = new Set(
-      nodes
-        .filter(n => n.parentId && collapsedGroups.has(n.parentId.slice('group-'.length)))
-        .map(n => n.id)
-    );
-    return edges.map(edge => {
-      let { source, target } = edge;
-      const sourceNode = nodes.find(n => n.id === source);
-      const targetNode = nodes.find(n => n.id === target);
-      if (sourceNode?.parentId && collapsedChildIds.has(source)) {
-        source = sourceNode.parentId;
-      }
-      if (targetNode?.parentId && collapsedChildIds.has(target)) {
-        target = targetNode.parentId;
-      }
-      if (source === edge.source && target === edge.target) return edge;
-      return { ...edge, source, target, id: `${edge.id}-rerouted` };
-    });
-  }, [edges, nodes, collapsedGroups]);
-
-  // Active flow for highlighting
+  // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
     if (selectedFlowIndex === null || !graph?.flows) return null;
     return graph.flows[selectedFlowIndex] ?? null;
   }, [selectedFlowIndex, graph]);
 
-  // Dimming: selection, flow highlighting, or default
-  const styledNodes = useMemo(() => {
-    // Flow highlighting in map mode
-    if (viewMode === 'map' && activeFlow) {
-      const flowStepSet = new Set(activeFlow.steps);
-      const flowStepMap = new Map(activeFlow.steps.map((id, i) => [id, i + 1]));
-      return visibleNodes.map(node => {
-        const isFlowNode = flowStepSet.has(node.id);
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}),
-          },
-          style: {
-            ...node.style,
-            opacity: isFlowNode ? 1 : 0.2,
-            transition: 'opacity 0.2s',
-          },
-        };
-      });
-    }
-
-    if (!ctx.selectedNodeId) return visibleNodes;
-
-    const connectedNodeIds = new Set<string>([ctx.selectedNodeId]);
-    for (const edge of visibleEdges) {
-      if (edge.source === ctx.selectedNodeId) connectedNodeIds.add(edge.target);
-      if (edge.target === ctx.selectedNodeId) connectedNodeIds.add(edge.source);
-    }
-
-    return visibleNodes.map(node => ({
-      ...node,
-      style: {
-        ...node.style,
-        opacity: connectedNodeIds.has(node.id) ? 1 : 0.25,
-        transition: 'opacity 0.2s',
-      },
-    }));
-  }, [visibleNodes, visibleEdges, ctx.selectedNodeId, viewMode, activeFlow]);
-
-  const styledEdges = useMemo(() => {
-    // Flow highlighting in map mode
-    if (viewMode === 'map' && activeFlow) {
-      const flowEdgePairs = new Set<string>();
-      for (let i = 0; i < activeFlow.steps.length - 1; i++) {
-        flowEdgePairs.add(`${activeFlow.steps[i]}->${activeFlow.steps[i + 1]}`);
-      }
-      return visibleEdges.map(edge => {
-        const isFlowEdge = flowEdgePairs.has(`${edge.source}->${edge.target}`);
-        return {
-          ...edge,
-          style: {
-            ...edge.style,
-            opacity: isFlowEdge ? 1 : 0.08,
-            stroke: isFlowEdge ? '#3355aa' : undefined,
-            strokeWidth: isFlowEdge ? 2.5 : undefined,
-            transition: 'opacity 0.2s',
-          },
-        };
-      });
-    }
-
-    // Focus mode: hide all edges when nothing is selected
-    if (focusMode && !ctx.selectedNodeId) {
-      return visibleEdges.map(edge => ({
-        ...edge,
-        style: {
-          ...edge.style,
-          opacity: 0,
-          pointerEvents: 'none' as const,
-          transition: 'opacity 0.2s',
-        },
-      }));
-    }
-
-    if (!ctx.selectedNodeId) return visibleEdges;
-
-    return visibleEdges.map(edge => {
-      const isConnected = edge.source === ctx.selectedNodeId || edge.target === ctx.selectedNodeId;
-      return {
-        ...edge,
-        style: {
-          ...edge.style,
-          opacity: isConnected ? 1 : focusMode ? 0 : 0.15,
-          pointerEvents: (isConnected || !focusMode
-            ? 'auto'
-            : 'none') as React.CSSProperties['pointerEvents'],
-          transition: 'opacity 0.2s',
-        },
-      };
-    });
-  }, [visibleEdges, ctx.selectedNodeId, focusMode, viewMode, activeFlow]);
+  const { styledNodes, styledEdges } = useGraphStyling({
+    nodes,
+    edges,
+    zoomedNodes,
+    collapsedGroups,
+    selectedNodeId: ctx.selectedNodeId,
+    focusMode,
+    viewMode,
+    activeFlow,
+  });
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
@@ -705,101 +482,31 @@ function NavMapInner({
       >
         <div style={{ flex: 1, position: 'relative' }}>
           {/* Toolbar */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              display: 'flex',
-              gap: 6,
-              zIndex: 15,
+          <NavMapToolbar
+            graph={graph}
+            viewMode={viewMode}
+            selectedFlowIndex={selectedFlowIndex}
+            showSharedNav={showSharedNav}
+            focusMode={focusMode}
+            useBundledEdges={useBundledEdges}
+            isAnimatingFlow={isAnimatingFlow}
+            showAnalytics={showAnalytics}
+            analyticsAdapter={analyticsAdapter}
+            onViewModeChange={mode => {
+              setViewMode(mode);
+              if (mode !== 'flow') setSelectedFlowIndex(null);
+              if (mode !== 'tree') setTreeRootId(null);
             }}
-          >
-            <ViewModeSelector
-              viewMode={viewMode}
-              onViewModeChange={mode => {
-                setViewMode(mode);
-                if (mode !== 'flow') setSelectedFlowIndex(null);
-                if (mode !== 'tree') setTreeRootId(null);
-              }}
-            />
-            {(viewMode === 'flow' || viewMode === 'map') &&
-              graph?.flows &&
-              graph.flows.length > 0 && (
-                <FlowSelector
-                  flows={graph.flows}
-                  selectedIndex={selectedFlowIndex}
-                  onSelect={setSelectedFlowIndex}
-                />
-              )}
-            <button
-              onClick={() => fitView({ padding: 0.15, duration: 300 })}
-              style={toolbarButtonStyle(ctx.isDark)}
-              title="Reset View (0)"
-            >
-              Reset View
-            </button>
-            <button
-              onClick={() => setShowSharedNav(prev => !prev)}
-              style={toolbarButtonStyle(ctx.isDark, showSharedNav)}
-              title="Toggle Shared Nav (N)"
-            >
-              {showSharedNav ? 'Hide' : 'Show'} Shared Nav
-            </button>
-            <button
-              onClick={() => setFocusMode(prev => !prev)}
-              style={toolbarButtonStyle(ctx.isDark, focusMode)}
-              title="Focus Mode: edges visible on selection only (F)"
-            >
-              {focusMode ? 'Show Edges' : 'Focus Mode'}
-            </button>
-            <button
-              onClick={() => setUseBundledEdges(prev => !prev)}
-              style={toolbarButtonStyle(ctx.isDark, useBundledEdges)}
-              title="Toggle Edge Bundling"
-            >
-              {useBundledEdges ? 'Straight Edges' : 'Bundle Edges'}
-            </button>
-            {viewMode === 'flow' &&
-              selectedFlowIndex !== null &&
-              graph?.flows?.[selectedFlowIndex] && (
-                <button
-                  onClick={() => setIsAnimatingFlow(true)}
-                  disabled={isAnimatingFlow}
-                  style={{
-                    ...toolbarButtonStyle(ctx.isDark, isAnimatingFlow),
-                    opacity: isAnimatingFlow ? 0.6 : 1,
-                  }}
-                  title="Animate the selected flow"
-                >
-                  {isAnimatingFlow ? 'Animating...' : 'Animate'}
-                </button>
-              )}
-            {analyticsAdapter && (
-              <button
-                onClick={() => setShowAnalytics(prev => !prev)}
-                style={toolbarButtonStyle(ctx.isDark, showAnalytics)}
-                title="Toggle Analytics"
-              >
-                Analytics
-              </button>
-            )}
-            <button
-              onClick={() => setShowSearch(true)}
-              style={toolbarButtonStyle(ctx.isDark)}
-              title="Search (/ or ⌘K)"
-            >
-              Search
-            </button>
-            <button
-              onClick={() => setShowHelp(true)}
-              style={toolbarButtonStyle(ctx.isDark)}
-              title="Help (?)"
-            >
-              ?
-            </button>
-            <ExportButton graphName={graph?.meta.name} />
-          </div>
+            onFlowSelect={setSelectedFlowIndex}
+            onResetView={() => fitView({ padding: 0.15, duration: 300 })}
+            onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+            onToggleFocusMode={() => setFocusMode(prev => !prev)}
+            onToggleBundledEdges={() => setUseBundledEdges(prev => !prev)}
+            onAnimate={() => setIsAnimatingFlow(true)}
+            onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+            onSearch={() => setShowSearch(true)}
+            onHelp={() => setShowHelp(true)}
+          />
 
           {/* Flow/Tree mode banners */}
           {viewMode === 'flow' &&
@@ -1061,20 +768,6 @@ function NavMapInner({
       </div>
     </NavMapContext.Provider>
   );
-}
-
-function toolbarButtonStyle(isDark: boolean, active = false): React.CSSProperties {
-  return {
-    background: active ? (isDark ? '#1e2540' : '#e0e8ff') : isDark ? '#14141e' : '#fff',
-    border: `1px solid ${
-      active ? (isDark ? '#4466aa' : '#6688cc') : isDark ? '#2a2a3a' : '#d8dae0'
-    }`,
-    borderRadius: 6,
-    padding: '5px 12px',
-    fontSize: 12,
-    color: active ? (isDark ? '#7aacff' : '#3355aa') : isDark ? '#888' : '#666',
-    cursor: 'pointer',
-  };
 }
 
 export function NavMap(props: NavMapProps) {
