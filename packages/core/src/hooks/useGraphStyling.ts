@@ -13,7 +13,10 @@ interface GraphStylingDeps {
   activeFlow: NavMapFlow | null;
 }
 
-export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; styledEdges: Edge[] } {
+export function useGraphStyling(deps: GraphStylingDeps): {
+  styledNodes: Node[];
+  styledEdges: Edge[];
+} {
   const {
     nodes,
     edges,
@@ -72,7 +75,12 @@ export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; 
         merged.push({
           ...bucket[0],
           id: `merged-${key}`,
-          data: { ...bucket[0].data, label: `${bucket.length} connections`, edgeCount: bucket.length, edgeType: 'link' },
+          data: {
+            ...bucket[0].data,
+            label: `${bucket.length} connections`,
+            edgeCount: bucket.length,
+            edgeType: 'link',
+          },
         });
       }
     }
@@ -89,7 +97,10 @@ export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; 
         const isFlowNode = flowStepSet.has(node.id);
         return {
           ...node,
-          data: { ...node.data, ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}) },
+          data: {
+            ...node.data,
+            ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}),
+          },
           style: { ...node.style, opacity: isFlowNode ? 1 : 0.2, transition: 'opacity 0.2s' },
         };
       });
@@ -105,7 +116,11 @@ export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; 
 
     return visibleNodes.map(node => ({
       ...node,
-      style: { ...node.style, opacity: connectedNodeIds.has(node.id) ? 1 : 0.25, transition: 'opacity 0.2s' },
+      style: {
+        ...node.style,
+        opacity: connectedNodeIds.has(node.id) ? 1 : 0.25,
+        transition: 'opacity 0.2s',
+      },
     }));
   }, [visibleNodes, visibleEdges, selectedNodeId, viewMode, activeFlow]);
 
@@ -133,7 +148,12 @@ export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; 
     if (focusMode && !selectedNodeId) {
       return visibleEdges.map(edge => ({
         ...edge,
-        style: { ...edge.style, opacity: 0, pointerEvents: 'none' as const, transition: 'opacity 0.2s' },
+        style: {
+          ...edge.style,
+          opacity: 0,
+          pointerEvents: 'none' as const,
+          transition: 'opacity 0.2s',
+        },
       }));
     }
 
@@ -146,7 +166,9 @@ export function useGraphStyling(deps: GraphStylingDeps): { styledNodes: Node[]; 
         style: {
           ...edge.style,
           opacity: isConnected ? 1 : focusMode ? 0 : 0.15,
-          pointerEvents: (isConnected || !focusMode ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+          pointerEvents: (isConnected || !focusMode
+            ? 'auto'
+            : 'none') as React.CSSProperties['pointerEvents'],
           transition: 'opacity 0.2s',
         },
       };

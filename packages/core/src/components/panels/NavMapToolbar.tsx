@@ -62,15 +62,13 @@ export function NavMapToolbar({
       }}
     >
       <ViewModeSelector viewMode={viewMode} onViewModeChange={onViewModeChange} />
-      {(viewMode === 'flow' || viewMode === 'map') &&
-        graph?.flows &&
-        graph.flows.length > 0 && (
-          <FlowSelector
-            flows={graph.flows}
-            selectedIndex={selectedFlowIndex}
-            onSelect={onFlowSelect}
-          />
-        )}
+      {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
+        <FlowSelector
+          flows={graph.flows}
+          selectedIndex={selectedFlowIndex}
+          onSelect={onFlowSelect}
+        />
+      )}
       <button onClick={onResetView} style={btnStyle(isDark)} title="Reset View (0)">
         Reset View
       </button>

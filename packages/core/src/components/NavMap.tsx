@@ -396,10 +396,25 @@ function NavMapInner({
 
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
-    ctx, graph, walkthrough, nodes, showSearch, showHelp, showSharedNav, focusMode,
-    setShowSearch, setShowHelp, setShowSharedNav, setFocusMode,
-    setNodes, setEdges, fitView, setCenter, navigateToNode,
-    baseEdgesRef, sharedNavEdgesRef,
+    ctx,
+    graph,
+    walkthrough,
+    nodes,
+    showSearch,
+    showHelp,
+    showSharedNav,
+    focusMode,
+    setShowSearch,
+    setShowHelp,
+    setShowSharedNav,
+    setFocusMode,
+    setNodes,
+    setEdges,
+    fitView,
+    setCenter,
+    navigateToNode,
+    baseEdgesRef,
+    sharedNavEdgesRef,
   });
 
   // Node hover for preview
@@ -437,9 +452,14 @@ function NavMapInner({
   }, [selectedFlowIndex, graph]);
 
   const { styledNodes, styledEdges } = useGraphStyling({
-    nodes, edges, zoomedNodes, collapsedGroups,
+    nodes,
+    edges,
+    zoomedNodes,
+    collapsedGroups,
     selectedNodeId: ctx.selectedNodeId,
-    focusMode, viewMode, activeFlow,
+    focusMode,
+    viewMode,
+    activeFlow,
   });
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
