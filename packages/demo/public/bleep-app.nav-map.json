@@ -34,7 +34,7 @@
       "route": "/studio",
       "label": "Studio",
       "group": "studio",
-      "screenshot": "screenshots/login.jpeg",
+      "screenshot": "screenshots/studio.jpeg",
       "metadata": { "authRequired": true }
     },
     {
@@ -49,6 +49,7 @@
       "route": "/studio/settings",
       "label": "Settings",
       "group": "studio",
+      "screenshot": "screenshots/studio-settings.jpeg",
       "metadata": { "authRequired": true }
     },
     {
