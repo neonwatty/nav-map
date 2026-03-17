@@ -31,11 +31,13 @@ export function useNavMapState(
   screenshotBasePath: string
 ): NavMapContextValue {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
