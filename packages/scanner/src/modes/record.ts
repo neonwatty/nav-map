@@ -144,7 +144,12 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
     for (const event of events) {
       let pathname: string;
       try {
-        pathname = new URL(event.url).pathname;
+        // Handle both absolute and relative URLs
+        if (event.url.startsWith('/')) {
+          pathname = event.url.split('?')[0].split('#')[0];
+        } else {
+          pathname = new URL(event.url).pathname;
+        }
       } catch {
         continue;
       }
@@ -251,13 +256,18 @@ async function parseTraceNavigation(tracePath: string): Promise<NavEvent[]> {
       for (const line of content.split('\n').filter(Boolean)) {
         try {
           const event = JSON.parse(line);
-          if (event.type === 'navigation' || event.method === 'navigated') {
+          // Playwright trace format: Frame.goto in 0-trace.trace
+          if (event.class === 'Frame' && event.method === 'goto' && event.params?.url) {
+            events.push({ url: event.params.url, timestamp: event.startTime ?? Date.now() });
+          }
+          // Also catch Navigate actions in test.trace
+          if (event.title && /^Navigate to /.test(event.title) && event.params?.url) {
+            events.push({ url: event.params.url, timestamp: event.startTime ?? Date.now() });
+          }
+          // Fallback: any event with a navigation-like URL param
+          if (event.method === 'navigated' || event.type === 'navigation') {
             const url = event.params?.url ?? event.url;
             if (url) events.push({ url, timestamp: event.timestamp ?? Date.now() });
-          }
-          if (event.type === 'action' && event.method === 'goto') {
-            const url = event.params?.url;
-            if (url) events.push({ url, timestamp: event.startTime ?? Date.now() });
           }
         } catch {
           /* skip malformed lines */
