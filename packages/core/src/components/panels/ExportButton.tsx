@@ -8,7 +8,7 @@ interface ExportButtonProps {
 
 export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
   const { isDark } = useNavMapContext();
-  const { getNodes, getViewport } = useReactFlow();
+  const { getNodes } = useReactFlow();
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

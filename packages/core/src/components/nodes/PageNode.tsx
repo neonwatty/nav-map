@@ -3,7 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
 
-function PageNodeComponent({ id, data, selected }: NodeProps) {
+function PageNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();

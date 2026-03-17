@@ -16,7 +16,7 @@ export async function optimizeScreenshot(
       })
       .webp({ quality: 80 })
       .toFile(outputPath);
-  } catch (err) {
+  } catch {
     // If sharp isn't available, just copy the file
     const fs = await import('node:fs');
     fs.copyFileSync(inputPath, outputPath.replace('.webp', '.png'));

@@ -345,6 +345,7 @@ function NavMapInner({
         setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, selectedFlowIndex, treeRootId]);
 
   // Semantic zoom: swap node types based on zoom level (skip group nodes)
