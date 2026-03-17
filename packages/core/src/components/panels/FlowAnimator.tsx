@@ -102,6 +102,7 @@ export function FlowAnimator({
       cancelAnimationFrame(animFrameRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex, isAnimating]);
 
   if (!isAnimating || !dotPosition) return null;

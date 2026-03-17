@@ -38,7 +38,7 @@ export class PostHogAnalytics implements AnalyticsAdapter {
     return result;
   }
 
-  async fetchTransitions(period: { start: string; end: string }): Promise<Record<string, number>> {
+  async fetchTransitions(_period: { start: string; end: string }): Promise<Record<string, number>> {
     // PostHog doesn't have a direct transitions API; we use session recordings
     // For now, return empty - could be enhanced with funnel queries
     return {};
