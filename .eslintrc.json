@@ -18,7 +18,19 @@
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
     ],
     "no-console": "warn",
-    "prettier/prettier": "error"
+    "prettier/prettier": "error",
+    "max-lines": ["warn", { "max": 400, "skipBlankLines": true, "skipComments": true }],
+    "max-len": [
+      "warn",
+      {
+        "code": 100,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true,
+        "ignoreComments": false
+      }
+    ]
   },
   "ignorePatterns": [
     "node_modules/",
