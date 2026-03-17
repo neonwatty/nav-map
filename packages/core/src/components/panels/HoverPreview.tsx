@@ -9,15 +9,18 @@ interface HoverPreviewProps {
 
 export function HoverPreview({ screenshot, label, position }: HoverPreviewProps) {
   const { isDark, screenshotBasePath } = useNavMapContext();
-  const [visible, setVisible] = useState(false);
+  const [delayedShow, setDelayedShow] = useState(false);
 
   useEffect(() => {
-    if (position && screenshot) {
-      const timer = setTimeout(() => setVisible(true), 300);
-      return () => clearTimeout(timer);
-    }
-    setVisible(false);
+    if (!(position && screenshot)) return;
+    const timer = setTimeout(() => setDelayedShow(true), 300);
+    return () => {
+      clearTimeout(timer);
+      setDelayedShow(false);
+    };
   }, [position, screenshot]);
+
+  const visible = delayedShow && !!(position && screenshot);
 
   if (!visible || !position || !screenshot) return null;
 
