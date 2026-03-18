@@ -109,7 +109,8 @@ export async function recordFlows(options: RecordFlowsOptions): Promise<NavMapGr
     'reporter.js'
   );
 
-  const tempConfig = path.join(screenshotDirAbs, '_temp-playwright.config.ts');
+  // Config must be inside the project cwd so @playwright/test resolves
+  const tempConfig = path.join(cwd, '_temp-navmap-playwright.config.ts');
   const storageLine = storageState
     ? `storageState: '${path.resolve(storageState).replace(/\\/g, '/')}',`
     : '';
