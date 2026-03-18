@@ -14,3 +14,6 @@ export type { AuthOptions } from './modes/auth.js';
 export { recordTests } from './modes/record.js';
 export type { RecordOptions } from './modes/record.js';
 export { normalizeRoute, isLoginPage, loadRoutePatterns } from './modes/dedup.js';
+export { recordFlows } from './modes/record-flows.js';
+export type { RecordFlowsOptions } from './modes/record-flows.js';
+export { parseTrace, correlateScreenshots, extractScreenshotBySha1 } from './modes/trace-parser.js';

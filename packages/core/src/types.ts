@@ -29,9 +29,22 @@ export interface NavMapSharedNav {
   footer: { pages: string[]; targets: string[] };
 }
 
+export interface NavMapFlowStep {
+  action: 'goto' | 'waitFor' | 'click' | 'fill' | 'end';
+  title: string;
+  screenshot?: string;
+  timestamp?: number;
+}
+
+export interface NavMapFlowGallery {
+  [nodeId: string]: NavMapFlowStep[];
+}
+
 export interface NavMapFlow {
   name: string;
   steps: string[];
+  gallery?: NavMapFlowGallery;
+  partial?: boolean;
 }
 
 export type ViewMode = 'map' | 'flow' | 'tree';
