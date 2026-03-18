@@ -54,7 +54,6 @@ interface TraceEntry {
   status: string;
 }
 
-
 export async function recordTests(options: RecordOptions): Promise<NavMapGraph> {
   const { playwrightConfig, routesJson, screenshotDir, name } = options;
 

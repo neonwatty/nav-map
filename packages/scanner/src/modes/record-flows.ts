@@ -104,10 +104,7 @@ export async function recordFlows(options: RecordFlowsOptions): Promise<NavMapGr
   console.log(`Working directory: ${cwd}`);
 
   // Generate temp Playwright config
-  const reporterPath = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
-    'reporter.js'
-  );
+  const reporterPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'reporter.js');
 
   // Config must be inside the project cwd so @playwright/test resolves
   const tempConfig = path.join(cwd, '_temp-navmap-playwright.config.ts');
@@ -292,7 +289,9 @@ export default defineConfig({
     }
   }
 
-  console.log(`\nDiscovered ${pages.size} page(s), ${edgeSet.size} edge(s), ${flows.length} flow(s)`);
+  console.log(
+    `\nDiscovered ${pages.size} page(s), ${edgeSet.size} edge(s), ${flows.length} flow(s)`
+  );
 
   // Build groups
   const groupMap = new Map<string, Set<string>>();

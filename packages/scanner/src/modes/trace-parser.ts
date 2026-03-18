@@ -75,10 +75,7 @@ export async function parseTrace(tracePath: string): Promise<TraceParseResult> {
           }
 
           // Expect/assertion waits (toBeVisible, toHaveURL, etc.)
-          if (
-            event.method === 'expect' ||
-            (event.title && event.title.startsWith('expect.'))
-          ) {
+          if (event.method === 'expect' || (event.title && event.title.startsWith('expect.'))) {
             actions.push({
               action: 'waitFor',
               title: event.title ?? `expect ${event.method}`,
