@@ -8,7 +8,7 @@ import {
   type RoutePattern,
   type PageRecord,
 } from './dedup.js';
-import { optimizeScreenshot } from '../screenshots/optimize.js';
+import { parseTrace, extractScreenshotBySha1 } from './trace-parser.js';
 
 interface NavMapGraph {
   version: '1.0';
@@ -54,10 +54,6 @@ interface TraceEntry {
   status: string;
 }
 
-interface NavEvent {
-  url: string;
-  timestamp: number;
-}
 
 export async function recordTests(options: RecordOptions): Promise<NavMapGraph> {
   const { playwrightConfig, routesJson, screenshotDir, name } = options;
@@ -125,7 +121,8 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
 
     console.log(`  Parsing: ${trace.testName} (${trace.tracePath})`);
 
-    const events = await parseTraceNavigation(trace.tracePath);
+    const { navigations } = await parseTrace(trace.tracePath);
+    const events = navigations.map(n => ({ url: n.url, timestamp: n.timestamp }));
     if (events.length === 0) continue;
 
     // Detect base URL from first event
@@ -189,7 +186,7 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
       prevNodeId = normalized.id;
     }
 
-    if (flowSteps.length >= 2) {
+    if (flowSteps.length >= 1) {
       flows.push({ name: trace.testName, steps: flowSteps });
     }
   }
@@ -200,7 +197,24 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
   console.log('Extracting screenshots from traces...');
   for (const trace of traces) {
     if (!fs.existsSync(trace.tracePath)) continue;
-    await extractScreenshotsFromTrace(trace.tracePath, screenshotDirAbs, pages, routePatterns);
+    const { screenshots: traceScreenshots } = await parseTrace(trace.tracePath);
+    if (traceScreenshots.length > 0) {
+      const lastSs = traceScreenshots[traceScreenshots.length - 1];
+      for (const page of pages.values()) {
+        if (!page.screenshot) {
+          const extracted = await extractScreenshotBySha1(
+            trace.tracePath,
+            lastSs.sha1,
+            screenshotDirAbs,
+            page.id
+          );
+          if (extracted) {
+            page.screenshot = path.relative(process.cwd(), extracted);
+          }
+          break;
+        }
+      }
+    }
   }
 
   // Build groups
@@ -242,83 +256,5 @@ export async function recordTests(options: RecordOptions): Promise<NavMapGraph> 
   };
 }
 
-async function parseTraceNavigation(tracePath: string): Promise<NavEvent[]> {
-  const events: NavEvent[] = [];
-
-  try {
-    const AdmZip = (await import('adm-zip')).default;
-    const zip = new AdmZip(tracePath);
-
-    for (const entry of zip.getEntries()) {
-      if (!entry.entryName.endsWith('.trace') && !entry.entryName.endsWith('.jsonl')) continue;
-
-      const content = entry.getData().toString('utf-8');
-      for (const line of content.split('\n').filter(Boolean)) {
-        try {
-          const event = JSON.parse(line);
-          // Playwright trace format: Frame.goto in 0-trace.trace
-          if (event.class === 'Frame' && event.method === 'goto' && event.params?.url) {
-            events.push({ url: event.params.url, timestamp: event.startTime ?? Date.now() });
-          }
-          // Also catch Navigate actions in test.trace
-          if (event.title && /^Navigate to /.test(event.title) && event.params?.url) {
-            events.push({ url: event.params.url, timestamp: event.startTime ?? Date.now() });
-          }
-          // Fallback: any event with a navigation-like URL param
-          if (event.method === 'navigated' || event.type === 'navigation') {
-            const url = event.params?.url ?? event.url;
-            if (url) events.push({ url, timestamp: event.timestamp ?? Date.now() });
-          }
-        } catch {
-          /* skip malformed lines */
-        }
-      }
-    }
-  } catch (err) {
-    console.warn(`  Warning: Failed to parse trace ${tracePath}: ${err}`);
-  }
-
-  return events;
-}
-
-async function extractScreenshotsFromTrace(
-  tracePath: string,
-  outputDir: string,
-  pages: Map<string, PageRecord>,
-  _routePatterns?: RoutePattern[]
-): Promise<void> {
-  try {
-    const AdmZip = (await import('adm-zip')).default;
-    const zip = new AdmZip(tracePath);
-
-    for (const entry of zip.getEntries()) {
-      if (!entry.entryName.endsWith('.png') && !entry.entryName.endsWith('.jpeg')) continue;
-
-      const imageData = entry.getData();
-      const rawPath = path.join(outputDir, `_tmp_${entry.entryName.replace(/\//g, '_')}`);
-      fs.writeFileSync(rawPath, imageData);
-
-      // Assign to first page without a screenshot
-      for (const page of pages.values()) {
-        if (!page.screenshot) {
-          const optimizedPath = path.join(outputDir, `${page.id}.webp`);
-          try {
-            await optimizeScreenshot(rawPath, optimizedPath);
-            page.screenshot = path.relative(process.cwd(), optimizedPath);
-          } catch {
-            /* skip */
-          }
-          break;
-        }
-      }
-
-      try {
-        fs.unlinkSync(rawPath);
-      } catch {
-        /* ignore */
-      }
-    }
-  } catch (err) {
-    console.warn(`  Warning: Failed to extract screenshots from ${tracePath}: ${err}`);
-  }
-}
+// Inline parseTraceNavigation and extractScreenshotsFromTrace removed —
+// now using shared trace-parser.ts module
