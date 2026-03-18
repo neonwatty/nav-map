@@ -60,5 +60,7 @@ export type {
   GroupColors,
   GroupColorMap,
   NavMapFlow,
+  NavMapFlowStep,
+  NavMapFlowGallery,
   ViewMode,
 } from './types';
