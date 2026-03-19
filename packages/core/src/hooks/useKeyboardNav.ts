@@ -27,6 +27,8 @@ interface KeyboardNavDeps {
   navigateToNode: (nodeId: string) => void;
   baseEdgesRef: React.MutableRefObject<Edge[]>;
   sharedNavEdgesRef: React.MutableRefObject<Edge[]>;
+  focusedGroupId: string | null;
+  setFocusedGroupId: (id: string | null) => void;
 }
 
 export function useKeyboardNav(deps: KeyboardNavDeps) {
@@ -50,6 +52,8 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     navigateToNode,
     baseEdgesRef,
     sharedNavEdgesRef,
+    focusedGroupId,
+    setFocusedGroupId,
   } = deps;
 
   useEffect(() => {
@@ -93,6 +97,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
         case 'Escape':
           if (showSearch) setShowSearch(false);
           else if (showHelp) setShowHelp(false);
+          else if (focusedGroupId) setFocusedGroupId(null);
           else {
             ctx.setSelectedNodeId(null);
             walkthrough.clear();
@@ -172,5 +177,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     setFocusMode,
     baseEdgesRef,
     sharedNavEdgesRef,
+    focusedGroupId,
+    setFocusedGroupId,
   ]);
 }

@@ -9,6 +9,7 @@ export interface NavMapContextValue {
   isDark: boolean;
   screenshotBasePath: string;
   getGroupColors: (groupId: string) => GroupColors;
+  focusedGroupId: string | null;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -18,6 +19,7 @@ const defaultContext: NavMapContextValue = {
   isDark: true,
   screenshotBasePath: '',
   getGroupColors: () => ({ bg: '#1e1e2a', border: '#888', text: '#aaa' }),
+  focusedGroupId: null,
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -29,7 +31,7 @@ export function useNavMapContext(): NavMapContextValue {
 export function useNavMapState(
   graph: NavMapGraph | null,
   screenshotBasePath: string
-): NavMapContextValue {
+): Omit<NavMapContextValue, 'focusedGroupId'> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;

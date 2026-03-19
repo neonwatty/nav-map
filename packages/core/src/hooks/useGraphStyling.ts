@@ -11,6 +11,8 @@ interface GraphStylingDeps {
   focusMode: boolean;
   viewMode: ViewMode;
   activeFlow: NavMapFlow | null;
+  focusedGroupId: string | null;
+  nodeGroupMap: Map<string, string>;
 }
 
 export function useGraphStyling(deps: GraphStylingDeps): {
@@ -26,6 +28,8 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     focusMode,
     viewMode,
     activeFlow,
+    focusedGroupId,
+    nodeGroupMap,
   } = deps;
 
   // Filter collapsed group children
@@ -88,7 +92,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     return merged.filter(e => e.source !== e.target);
   }, [edges, nodes, collapsedGroups]);
 
-  // Dimming: selection, flow highlighting, or default
+  // Dimming: flow highlighting > group focus > selection > default
   const styledNodes = useMemo(() => {
     if (viewMode === 'map' && activeFlow) {
       const flowStepSet = new Set(activeFlow.steps);
@@ -102,6 +106,34 @@ export function useGraphStyling(deps: GraphStylingDeps): {
             ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}),
           },
           style: { ...node.style, opacity: isFlowNode ? 1 : 0.2, transition: 'opacity 0.2s' },
+        };
+      });
+    }
+
+    if (focusedGroupId) {
+      return visibleNodes.map(node => {
+        if (node.type === 'groupNode') {
+          const groupId = (node.data as Record<string, unknown>).groupId as string;
+          const isFocused = groupId === focusedGroupId;
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              opacity: isFocused ? 1 : 0.15,
+              transition: 'opacity 300ms ease',
+            },
+          };
+        }
+        const nodeGroup = (node.data as Record<string, unknown>).group as string | undefined;
+        const isFocused = nodeGroup === focusedGroupId;
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            opacity: isFocused ? 1 : 0.15,
+            pointerEvents: (isFocused ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+            transition: 'opacity 300ms ease',
+          },
         };
       });
     }
@@ -122,7 +154,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
         transition: 'opacity 0.2s',
       },
     }));
-  }, [visibleNodes, visibleEdges, selectedNodeId, viewMode, activeFlow]);
+  }, [visibleNodes, visibleEdges, selectedNodeId, viewMode, activeFlow, focusedGroupId]);
 
   const styledEdges = useMemo(() => {
     if (viewMode === 'map' && activeFlow) {
@@ -140,6 +172,27 @@ export function useGraphStyling(deps: GraphStylingDeps): {
             stroke: isFlowEdge ? '#3355aa' : undefined,
             strokeWidth: isFlowEdge ? 2.5 : undefined,
             transition: 'opacity 0.2s',
+          },
+        };
+      });
+    }
+
+    if (focusedGroupId) {
+      return visibleEdges.map(edge => {
+        const sourceGroup = nodeGroupMap.get(edge.source);
+        const targetGroup = nodeGroupMap.get(edge.target);
+        const sourceIn = sourceGroup === focusedGroupId;
+        const targetIn = targetGroup === focusedGroupId;
+        let opacity = 0;
+        if (sourceIn && targetIn) opacity = 1;
+        else if (sourceIn || targetIn) opacity = 0.15;
+        return {
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity,
+            pointerEvents: (opacity > 0 ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+            transition: 'opacity 300ms ease',
           },
         };
       });
@@ -173,7 +226,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
         },
       };
     });
-  }, [visibleEdges, selectedNodeId, focusMode, viewMode, activeFlow]);
+  }, [visibleEdges, selectedNodeId, focusMode, viewMode, activeFlow, focusedGroupId, nodeGroupMap]);
 
   return { styledNodes, styledEdges };
 }

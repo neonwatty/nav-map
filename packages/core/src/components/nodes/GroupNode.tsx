@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useRef, useCallback, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { useNavMapContext } from '../../hooks/useNavMap';
 
@@ -8,6 +8,7 @@ export interface GroupNodeData {
   childCount: number;
   collapsed: boolean;
   onToggle?: (groupId: string, collapsed: boolean) => void;
+  onDoubleClick?: (groupId: string) => void;
   [key: string]: unknown;
 }
 
@@ -16,12 +17,36 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
   const { isDark, getGroupColors } = useNavMapContext();
   const colors = getGroupColors(nodeData.groupId);
   const [isCollapsed, setIsCollapsed] = useState(nodeData.collapsed ?? false);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleToggle = () => {
-    const next = !isCollapsed;
-    setIsCollapsed(next);
-    nodeData.onToggle?.(nodeData.groupId, next);
-  };
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    };
+  }, []);
+
+  const handleClick = useCallback(() => {
+    // Delay toggle to distinguish from double-click
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      const next = !isCollapsed;
+      setIsCollapsed(next);
+      nodeData.onToggle?.(nodeData.groupId, next);
+    }, 250);
+  }, [isCollapsed, nodeData]);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      nodeData.onDoubleClick?.(nodeData.groupId);
+    },
+    [nodeData]
+  );
 
   return (
     <div
@@ -36,7 +61,8 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
     >
       {/* Header bar */}
       <div
-        onClick={handleToggle}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         style={{
           display: 'flex',
           alignItems: 'center',

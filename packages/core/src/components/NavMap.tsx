@@ -110,6 +110,7 @@ function NavMapInner({
   const [useBundledEdges, setUseBundledEdges] = useState(false);
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
+  const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -136,9 +137,17 @@ function NavMapInner({
       else next.delete(groupId);
       return next;
     });
+    if (collapsed) {
+      setFocusedGroupId(prev => (prev === groupId ? null : prev));
+    }
   }, []);
   const handleGroupToggleRef = useRef(handleGroupToggle);
   handleGroupToggleRef.current = handleGroupToggle;
+  const handleGroupDoubleClick = useCallback((groupId: string) => {
+    setFocusedGroupId(prev => (prev === groupId ? null : groupId));
+  }, []);
+  const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
+  handleGroupDoubleClickRef.current = handleGroupDoubleClick;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -151,6 +160,25 @@ function NavMapInner({
   const viewportZoom = useStore(s => s.transform[2]);
   const viewport = { x: viewportX, y: viewportY, zoom: viewportZoom };
   const { fitView, setCenter } = useReactFlow();
+
+  // Zoom to focused group when entering group focus mode
+  const prevFocusedGroupRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusedGroupId === prevFocusedGroupRef.current) return;
+    prevFocusedGroupRef.current = focusedGroupId;
+    if (!focusedGroupId) return;
+    const focusedNodes = nodes
+      .filter(n => {
+        if (n.type === 'groupNode') {
+          return (n.data as Record<string, unknown>).groupId === focusedGroupId;
+        }
+        return (n.data as Record<string, unknown>).group === focusedGroupId;
+      })
+      .map(n => ({ id: n.id }));
+    if (focusedNodes.length > 0) {
+      fitView({ nodes: focusedNodes, padding: 0.3, duration: 300 });
+    }
+  }, [focusedGroupId, nodes, fitView]);
 
   // Load graph from URL if provided
   useEffect(() => {
@@ -183,10 +211,11 @@ function NavMapInner({
 
     const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
 
-    // Inject onToggle into group nodes
+    // Inject onToggle and onDoubleClick into group nodes
     for (const node of rfNodes) {
       if (node.type === 'groupNode') {
         (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+        (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
       }
     }
 
@@ -337,6 +366,7 @@ function NavMapInner({
       for (const node of rfNodes) {
         if (node.type === 'groupNode') {
           (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+          (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
         }
       }
       computeElkLayout(rfNodes, rfEdges).then(({ nodes: ln, edges: le }) => {
@@ -359,6 +389,15 @@ function NavMapInner({
       }
     }
     return ids;
+  }, [graph]);
+
+  // Map node IDs to their group for edge dimming in group focus mode
+  const nodeGroupMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const node of graph?.nodes ?? []) {
+      map.set(node.id, node.group);
+    }
+    return map;
   }, [graph]);
 
   // Semantic zoom: swap node types based on zoom level (skip group nodes)
@@ -438,6 +477,8 @@ function NavMapInner({
     navigateToNode,
     baseEdgesRef,
     sharedNavEdgesRef,
+    focusedGroupId,
+    setFocusedGroupId,
   });
 
   // Node hover for preview
@@ -483,6 +524,8 @@ function NavMapInner({
     focusMode,
     viewMode,
     activeFlow,
+    focusedGroupId,
+    nodeGroupMap,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -499,7 +542,7 @@ function NavMapInner({
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
   return (
-    <NavMapContext.Provider value={ctx}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId }}>
       <div
         ref={containerRef}
         className={className}
@@ -531,8 +574,14 @@ function NavMapInner({
               if (mode !== 'flow') setSelectedFlowIndex(null);
               if (mode !== 'tree') setTreeRootId(null);
             }}
-            onFlowSelect={setSelectedFlowIndex}
-            onResetView={() => fitView({ padding: 0.15, duration: 300 })}
+            onFlowSelect={idx => {
+              setSelectedFlowIndex(idx);
+              setFocusedGroupId(null);
+            }}
+            onResetView={() => {
+              setFocusedGroupId(null);
+              fitView({ padding: 0.15, duration: 300 });
+            }}
             onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
             onToggleFocusMode={() => setFocusMode(prev => !prev)}
             onToggleBundledEdges={() => setUseBundledEdges(prev => !prev)}
@@ -602,6 +651,45 @@ function NavMapInner({
               }}
             >
               Tree from: {graph?.nodes.find(n => n.id === treeRootId)?.label ?? treeRootId}
+            </div>
+          )}
+
+          {/* Group focus indicator */}
+          {focusedGroupId && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 50,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                borderRadius: 8,
+                padding: '6px 16px',
+                zIndex: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                color: ctx.isDark ? '#7aacff' : '#3355aa',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              Focused: {graph?.groups?.find(g => g.id === focusedGroupId)?.label ?? focusedGroupId}
+              <button
+                onClick={() => setFocusedGroupId(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: ctx.isDark ? '#555' : '#aaa',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+              >
+                &#x2715;
+              </button>
             </div>
           )}
 
