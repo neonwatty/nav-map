@@ -12,7 +12,7 @@ interface NavMapToolbarProps {
   showSharedNav: boolean;
   showRedirects: boolean;
   focusMode: boolean;
-  useBundledEdges: boolean;
+  useRoutedEdges: boolean;
   isAnimatingFlow: boolean;
   showAnalytics: boolean;
   analyticsAdapter?: AnalyticsAdapter;
@@ -22,7 +22,7 @@ interface NavMapToolbarProps {
   onToggleSharedNav: () => void;
   onToggleRedirects: () => void;
   onToggleFocusMode: () => void;
-  onToggleBundledEdges: () => void;
+  onToggleRoutedEdges: () => void;
   onAnimate: () => void;
   onToggleAnalytics: () => void;
   onSearch: () => void;
@@ -36,7 +36,7 @@ export function NavMapToolbar({
   showSharedNav,
   showRedirects,
   focusMode,
-  useBundledEdges,
+  useRoutedEdges,
   isAnimatingFlow,
   showAnalytics,
   analyticsAdapter,
@@ -46,7 +46,7 @@ export function NavMapToolbar({
   onToggleSharedNav,
   onToggleRedirects,
   onToggleFocusMode,
-  onToggleBundledEdges,
+  onToggleRoutedEdges,
   onAnimate,
   onToggleAnalytics,
   onSearch,
@@ -98,11 +98,11 @@ export function NavMapToolbar({
         {focusMode ? 'Show Edges' : 'Focus Mode'}
       </button>
       <button
-        onClick={onToggleBundledEdges}
-        style={btnStyle(isDark, useBundledEdges)}
-        title="Toggle Edge Bundling"
+        onClick={onToggleRoutedEdges}
+        style={btnStyle(isDark, useRoutedEdges)}
+        title="Toggle Routed Edges (E)"
       >
-        {useBundledEdges ? 'Straight Edges' : 'Bundle Edges'}
+        {useRoutedEdges ? 'Smooth Edges' : 'Route Edges'}
       </button>
       {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
         <button

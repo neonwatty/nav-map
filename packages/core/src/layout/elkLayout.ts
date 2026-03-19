@@ -84,10 +84,12 @@ export async function computeElkLayout(
       'elk.edgeRouting': 'ORTHOGONAL',
       'elk.spacing.nodeNode': String(nodeSpacing),
       'elk.spacing.edgeEdge': '15',
-      'elk.spacing.edgeNode': '25',
+      'elk.spacing.edgeNode': '30',
       'elk.layered.spacing.nodeNodeBetweenLayers': String(spacing),
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '40',
+      'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.crossingMinimization.greedySwitchType': 'TWO_SIDED',
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     },
     children: [...elkGroupNodes, ...ungroupedNodes],
@@ -148,10 +150,28 @@ export async function computeElkLayout(
     if (node.parentId) nodeParentMap.set(node.id, node.parentId);
   }
 
-  // Edges: don't attach ELK bend points since they're in root-absolute space
-  // which conflicts with React Flow's parent-relative coordinate system.
-  // Instead, rely on React Flow's smoothstep edge type for routing.
-  const layoutedEdges = edges;
+  // Extract ELK's obstacle-aware edge routing (bend points)
+  const elkEdgePathMap = new Map<string, string>();
+  for (const elkEdge of graph.edges ?? []) {
+    const sections = (elkEdge as ElkExtendedEdge & { sections?: ElkSection[] }).sections;
+    const section = sections?.[0];
+    if (!section) continue;
+    const pts = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
+    const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    elkEdgePathMap.set(elkEdge.id, d);
+  }
+
+  const layoutedEdges = edges.map(edge => {
+    const elkPath = elkEdgePathMap.get(edge.id);
+    if (!elkPath) return edge;
+    return { ...edge, data: { ...edge.data, elkPath } };
+  });
 
   return { nodes: layoutedNodes, edges: layoutedEdges };
+}
+
+interface ElkSection {
+  startPoint: { x: number; y: number };
+  endPoint: { x: number; y: number };
+  bendPoints?: { x: number; y: number }[];
 }

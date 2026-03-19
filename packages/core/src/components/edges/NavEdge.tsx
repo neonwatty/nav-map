@@ -1,9 +1,11 @@
 import { memo, useState } from 'react';
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
+import { useNavMapContext } from '../../hooks/useNavMap';
 
 interface NavEdgeData {
   label?: string;
   edgeType?: string;
+  elkPath?: string;
   alwaysShowLabel?: boolean;
   [key: string]: unknown;
 }
@@ -23,10 +25,10 @@ function NavEdgeComponent({
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const edgeData = data as NavEdgeData | undefined;
+  const { useRoutedEdges } = useNavMapContext();
 
   // Smooth step path: orthogonal routing with rounded corners
-  // React Flow handles parent-relative coordinate transformation automatically
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [smoothPath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     targetX,
@@ -35,6 +37,9 @@ function NavEdgeComponent({
     targetPosition,
     borderRadius: 8,
   });
+
+  // Use ELK's obstacle-aware path when routed edges are enabled
+  const edgePath = useRoutedEdges && edgeData?.elkPath ? edgeData.elkPath : smoothPath;
 
   const isRedirect = edgeData?.edgeType === 'redirect';
   const isSharedNav = edgeData?.edgeType === 'shared-nav';

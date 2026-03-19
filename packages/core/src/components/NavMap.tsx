@@ -19,7 +19,8 @@ import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
 import { BundledEdge } from './edges/BundledEdge';
-import { computeBundledEdges } from '../layout/edgeBundling';
+// Edge bundling (legacy, disabled — replaced by routed edges)
+// import { computeBundledEdges } from '../layout/edgeBundling';
 import { FlowAnimator } from './panels/FlowAnimator';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
@@ -108,7 +109,7 @@ function NavMapInner({
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [useBundledEdges, setUseBundledEdges] = useState(false);
+  const [useRoutedEdges, setUseRoutedEdges] = useState(false);
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
@@ -242,28 +243,8 @@ function NavMapInner({
     }
   }, [showSharedNav, layoutDone, setEdges]);
 
-  // Compute bundled edges when toggle is enabled
-  useEffect(() => {
-    if (!layoutDone || !useBundledEdges) return;
-    const currentEdges = showSharedNav
-      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
-      : baseEdgesRef.current;
-    const bundledResults = computeBundledEdges(nodes, currentEdges);
-    const bundledPathMap = new Map(bundledResults.map(r => [r.edgeId, r.path]));
-    const bundled = currentEdges.map(edge => {
-      const bp = bundledPathMap.get(edge.id);
-      return bp ? { ...edge, type: 'bundledEdge', data: { ...edge.data, bundledPath: bp } } : edge;
-    });
-    setEdges(bundled);
-  }, [useBundledEdges, layoutDone, nodes, showSharedNav, setEdges]);
-
-  // When bundling is turned off, restore original edges
-  useEffect(() => {
-    if (!layoutDone || useBundledEdges) return;
-    setEdges(
-      showSharedNav ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current] : baseEdgesRef.current
-    );
-  }, [useBundledEdges, layoutDone, showSharedNav, setEdges]);
+  // Routed edges toggle is handled via context — NavEdge reads useRoutedEdges
+  // and switches between getSmoothStepPath and the ELK-computed elkPath.
 
   // Re-layout when view mode changes
   useEffect(() => {
@@ -548,7 +529,7 @@ function NavMapInner({
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, useRoutedEdges }}>
       <div
         ref={containerRef}
         className={className}
@@ -572,7 +553,7 @@ function NavMapInner({
             showSharedNav={showSharedNav}
             showRedirects={showRedirects}
             focusMode={focusMode}
-            useBundledEdges={useBundledEdges}
+            useRoutedEdges={useRoutedEdges}
             isAnimatingFlow={isAnimatingFlow}
             showAnalytics={showAnalytics}
             analyticsAdapter={analyticsAdapter}
@@ -592,7 +573,7 @@ function NavMapInner({
             onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
             onToggleRedirects={() => setShowRedirects(prev => !prev)}
             onToggleFocusMode={() => setFocusMode(prev => !prev)}
-            onToggleBundledEdges={() => setUseBundledEdges(prev => !prev)}
+            onToggleRoutedEdges={() => setUseRoutedEdges(prev => !prev)}
             onAnimate={() => setIsAnimatingFlow(true)}
             onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
             onSearch={() => setShowSearch(true)}
