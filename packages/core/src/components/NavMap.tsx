@@ -166,7 +166,10 @@ function NavMapInner({
   useEffect(() => {
     if (focusedGroupId === prevFocusedGroupRef.current) return;
     prevFocusedGroupRef.current = focusedGroupId;
-    if (!focusedGroupId) return;
+    if (!focusedGroupId) {
+      fitView({ padding: 0.15, duration: 300 });
+      return;
+    }
     const focusedNodes = nodes
       .filter(n => {
         if (n.type === 'groupNode') {
