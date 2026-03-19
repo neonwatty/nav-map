@@ -27,6 +27,8 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
   }, []);
 
   const handleClick = useCallback(() => {
+    // Clear any pending timer from a previous click (e.g., first click of a double-click)
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
     // Delay toggle to distinguish from double-click
     clickTimerRef.current = setTimeout(() => {
       clickTimerRef.current = null;
