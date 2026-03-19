@@ -29,6 +29,7 @@ interface KeyboardNavDeps {
   sharedNavEdgesRef: React.MutableRefObject<Edge[]>;
   focusedGroupId: string | null;
   setFocusedGroupId: (id: string | null) => void;
+  setShowRedirects: (v: boolean | ((p: boolean) => boolean)) => void;
 }
 
 export function useKeyboardNav(deps: KeyboardNavDeps) {
@@ -54,6 +55,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    setShowRedirects,
   } = deps;
 
   useEffect(() => {
@@ -139,6 +141,10 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
         case 'N':
           setShowSharedNav((prev: boolean) => !prev);
           break;
+        case 'r':
+        case 'R':
+          setShowRedirects((prev: boolean) => !prev);
+          break;
         case 'f':
         case 'F':
           setFocusMode((prev: boolean) => !prev);
@@ -179,5 +185,6 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    setShowRedirects,
   ]);
 }

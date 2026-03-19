@@ -104,6 +104,7 @@ function NavMapInner({
   const [layoutDone, setLayoutDone] = useState(false);
   const [showSharedNav, setShowSharedNav] = useState(false);
   const [focusMode, setFocusMode] = useState(true);
+  const [showRedirects, setShowRedirects] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
@@ -482,6 +483,7 @@ function NavMapInner({
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    setShowRedirects,
   });
 
   // Node hover for preview
@@ -529,6 +531,7 @@ function NavMapInner({
     activeFlow,
     focusedGroupId,
     nodeGroupMap,
+    showRedirects,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -567,6 +570,7 @@ function NavMapInner({
             viewMode={viewMode}
             selectedFlowIndex={selectedFlowIndex}
             showSharedNav={showSharedNav}
+            showRedirects={showRedirects}
             focusMode={focusMode}
             useBundledEdges={useBundledEdges}
             isAnimatingFlow={isAnimatingFlow}
@@ -586,6 +590,7 @@ function NavMapInner({
               fitView({ padding: 0.15, duration: 300 });
             }}
             onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+            onToggleRedirects={() => setShowRedirects(prev => !prev)}
             onToggleFocusMode={() => setFocusMode(prev => !prev)}
             onToggleBundledEdges={() => setUseBundledEdges(prev => !prev)}
             onAnimate={() => setIsAnimatingFlow(true)}

@@ -10,6 +10,7 @@ interface NavMapToolbarProps {
   viewMode: ViewMode;
   selectedFlowIndex: number | null;
   showSharedNav: boolean;
+  showRedirects: boolean;
   focusMode: boolean;
   useBundledEdges: boolean;
   isAnimatingFlow: boolean;
@@ -19,6 +20,7 @@ interface NavMapToolbarProps {
   onFlowSelect: (index: number | null) => void;
   onResetView: () => void;
   onToggleSharedNav: () => void;
+  onToggleRedirects: () => void;
   onToggleFocusMode: () => void;
   onToggleBundledEdges: () => void;
   onAnimate: () => void;
@@ -32,6 +34,7 @@ export function NavMapToolbar({
   viewMode,
   selectedFlowIndex,
   showSharedNav,
+  showRedirects,
   focusMode,
   useBundledEdges,
   isAnimatingFlow,
@@ -41,6 +44,7 @@ export function NavMapToolbar({
   onFlowSelect,
   onResetView,
   onToggleSharedNav,
+  onToggleRedirects,
   onToggleFocusMode,
   onToggleBundledEdges,
   onAnimate,
@@ -78,6 +82,13 @@ export function NavMapToolbar({
         title="Toggle Shared Nav (N)"
       >
         {showSharedNav ? 'Hide' : 'Show'} Shared Nav
+      </button>
+      <button
+        onClick={onToggleRedirects}
+        style={btnStyle(isDark, showRedirects)}
+        title="Toggle Redirect Edges (R)"
+      >
+        {showRedirects ? 'Hide' : 'Show'} Redirects
       </button>
       <button
         onClick={onToggleFocusMode}

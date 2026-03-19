@@ -13,6 +13,7 @@ interface GraphStylingDeps {
   activeFlow: NavMapFlow | null;
   focusedGroupId: string | null;
   nodeGroupMap: Map<string, string>;
+  showRedirects: boolean;
 }
 
 export function useGraphStyling(deps: GraphStylingDeps): {
@@ -30,6 +31,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     activeFlow,
     focusedGroupId,
     nodeGroupMap,
+    showRedirects,
   } = deps;
 
   // Filter collapsed group children
@@ -92,6 +94,15 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     return merged.filter(e => e.source !== e.target);
   }, [edges, nodes, collapsedGroups]);
 
+  // Filter out redirect edges when toggle is off
+  const filteredEdges = useMemo(() => {
+    if (showRedirects) return visibleEdges;
+    return visibleEdges.filter(e => {
+      const edgeType = (e.data as Record<string, unknown>)?.edgeType ?? e.type;
+      return edgeType !== 'redirect';
+    });
+  }, [visibleEdges, showRedirects]);
+
   // Dimming: flow highlighting > group focus > selection > default
   const styledNodes = useMemo(() => {
     if (viewMode === 'map' && activeFlow) {
@@ -141,7 +152,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     if (!selectedNodeId) return visibleNodes;
 
     const connectedNodeIds = new Set<string>([selectedNodeId]);
-    for (const edge of visibleEdges) {
+    for (const edge of filteredEdges) {
       if (edge.source === selectedNodeId) connectedNodeIds.add(edge.target);
       if (edge.target === selectedNodeId) connectedNodeIds.add(edge.source);
     }
@@ -154,7 +165,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
         transition: 'opacity 0.2s',
       },
     }));
-  }, [visibleNodes, visibleEdges, selectedNodeId, viewMode, activeFlow, focusedGroupId]);
+  }, [visibleNodes, filteredEdges, selectedNodeId, viewMode, activeFlow, focusedGroupId]);
 
   const styledEdges = useMemo(() => {
     if (viewMode === 'map' && activeFlow) {
@@ -162,7 +173,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
       for (let i = 0; i < activeFlow.steps.length - 1; i++) {
         flowEdgePairs.add(`${activeFlow.steps[i]}->${activeFlow.steps[i + 1]}`);
       }
-      return visibleEdges.map(edge => {
+      return filteredEdges.map(edge => {
         const isFlowEdge = flowEdgePairs.has(`${edge.source}->${edge.target}`);
         return {
           ...edge,
@@ -178,7 +189,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     }
 
     if (focusedGroupId) {
-      return visibleEdges.map(edge => {
+      return filteredEdges.map(edge => {
         const sourceGroup = nodeGroupMap.get(edge.source);
         const targetGroup = nodeGroupMap.get(edge.target);
         const sourceIn = sourceGroup === focusedGroupId;
@@ -199,7 +210,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     }
 
     if (focusMode && !selectedNodeId) {
-      return visibleEdges.map(edge => ({
+      return filteredEdges.map(edge => ({
         ...edge,
         style: {
           ...edge.style,
@@ -210,9 +221,9 @@ export function useGraphStyling(deps: GraphStylingDeps): {
       }));
     }
 
-    if (!selectedNodeId) return visibleEdges;
+    if (!selectedNodeId) return filteredEdges;
 
-    return visibleEdges.map(edge => {
+    return filteredEdges.map(edge => {
       const isConnected = edge.source === selectedNodeId || edge.target === selectedNodeId;
       return {
         ...edge,
@@ -226,7 +237,15 @@ export function useGraphStyling(deps: GraphStylingDeps): {
         },
       };
     });
-  }, [visibleEdges, selectedNodeId, focusMode, viewMode, activeFlow, focusedGroupId, nodeGroupMap]);
+  }, [
+    filteredEdges,
+    selectedNodeId,
+    focusMode,
+    viewMode,
+    activeFlow,
+    focusedGroupId,
+    nodeGroupMap,
+  ]);
 
   return { styledNodes, styledEdges };
 }
