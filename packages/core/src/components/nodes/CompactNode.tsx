@@ -6,6 +6,7 @@ import { useNavMapContext } from '../../hooks/useNavMap';
 function CompactNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
+  const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
   const { isDark, getGroupColors } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
 
@@ -81,6 +82,21 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
         {nodeData.route}
       </div>
 
+      {hasGallery && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 2,
+            right: 4,
+            fontSize: 10,
+            color: isDark ? '#5b9bf5' : '#3355aa',
+            opacity: 0.7,
+          }}
+          title="Double-click to view gallery"
+        >
+          &#x2922;
+        </div>
+      )}
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );

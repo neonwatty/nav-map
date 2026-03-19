@@ -6,6 +6,7 @@ import { useNavMapContext } from '../../hooks/useNavMap';
 function PageNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
+  const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
   const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
@@ -125,6 +126,28 @@ function PageNodeComponent({ data, selected }: NodeProps) {
         </div>
       </div>
 
+      {hasGallery && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            right: 4,
+            width: 20,
+            height: 20,
+            borderRadius: 4,
+            background: isDark ? 'rgba(91,155,245,0.2)' : 'rgba(51,85,170,0.1)',
+            color: isDark ? '#5b9bf5' : '#3355aa',
+            fontSize: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+          title="Double-click to view gallery"
+        >
+          &#x2922;
+        </div>
+      )}
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );

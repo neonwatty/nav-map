@@ -43,6 +43,7 @@ import { HoverPreview } from './panels/HoverPreview';
 import { SearchPanel } from './panels/SearchPanel';
 import { PresentationBar } from './panels/PresentationBar';
 import { AnalyticsOverlay } from './panels/AnalyticsOverlay';
+import { GalleryViewer } from './panels/GalleryViewer';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -108,6 +109,7 @@ function NavMapInner({
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
   const [useBundledEdges, setUseBundledEdges] = useState(false);
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
+  const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -348,14 +350,34 @@ function NavMapInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, selectedFlowIndex, treeRootId]);
 
+  // Identify nodes that have gallery data from any flow
+  const galleryNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const flow of graph?.flows ?? []) {
+      for (const nodeId of Object.keys(flow.gallery ?? {})) {
+        if ((flow.gallery?.[nodeId]?.length ?? 0) > 0) ids.add(nodeId);
+      }
+    }
+    return ids;
+  }, [graph]);
+
   // Semantic zoom: swap node types based on zoom level (skip group nodes)
+  // Also inject hasGallery flag into node data
   const zoomedNodes = useMemo(() => {
-    if (showDetail) return nodes;
+    const addGalleryFlag = (node: Node) => {
+      if (node.type === 'groupNode') return node;
+      const hasGallery = galleryNodeIds.has(node.id);
+      if (!hasGallery) return node;
+      return { ...node, data: { ...node.data, hasGallery: true } };
+    };
+
+    if (showDetail) return nodes.map(addGalleryFlag);
     return nodes.map(node => {
       if (node.type === 'groupNode') return node;
-      return { ...node, type: 'compactNode' };
+      const withGallery = addGalleryFlag(node);
+      return { ...withGallery, type: 'compactNode' };
     });
-  }, [nodes, showDetail]);
+  }, [nodes, showDetail, galleryNodeIds]);
 
   // Use refs to avoid stale closures in callbacks
   const ctxRef = useRef(ctx);
@@ -462,6 +484,17 @@ function NavMapInner({
     viewMode,
     activeFlow,
   });
+
+  // Double-click opens gallery if ANY flow has gallery data for this node
+  const onNodeDoubleClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
+      if (hasGallery) {
+        setGalleryNodeId(node.id);
+      }
+    },
+    [graph]
+  );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
@@ -599,6 +632,7 @@ function NavMapInner({
               onSelectionChange={onSelectionChange}
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
+              onNodeDoubleClick={onNodeDoubleClick}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               fitView
@@ -766,6 +800,21 @@ function NavMapInner({
             screenshotBasePath={screenshotBasePath}
           />
         )}
+
+        {/* Gallery Viewer */}
+        {galleryNodeId &&
+          (() => {
+            const flow = graph?.flows?.find(f => f.gallery?.[galleryNodeId]?.length);
+            if (!flow?.gallery?.[galleryNodeId]) return null;
+            return (
+              <GalleryViewer
+                nodeLabel={graph?.nodes.find(n => n.id === galleryNodeId)?.label ?? galleryNodeId}
+                steps={flow.gallery[galleryNodeId]}
+                flowName={flow.name}
+                onClose={() => setGalleryNodeId(null)}
+              />
+            );
+          })()}
       </div>
     </NavMapContext.Provider>
   );
