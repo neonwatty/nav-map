@@ -42,7 +42,9 @@ function NavEdgeComponent({
   // Select edge path based on mode, with fallback to smooth
   const edgePath = (() => {
     if (edgeMode === 'routed' && edgeData?.elkPath) {
-      // Fall back to smooth if nodes have been dragged from layout positions
+      // ELK section endpoints are at node borders; React Flow handles are at
+      // node centers. Only fall back if nodes have been significantly dragged
+      // (>200px displacement indicates manual repositioning, not coordinate offset).
       const elkPath = edgeData.elkPath;
       const firstM = elkPath.match(/^M\s+([\d.-]+)\s+([\d.-]+)/);
       const lastL = elkPath.match(/[ML]\s+([\d.-]+)\s+([\d.-]+)\s*$/);
@@ -51,7 +53,7 @@ function NavEdgeComponent({
         const dy1 = Math.abs(sourceY - parseFloat(firstM[2]));
         const dx2 = Math.abs(targetX - parseFloat(lastL[1]));
         const dy2 = Math.abs(targetY - parseFloat(lastL[2]));
-        if (dx1 > 5 || dy1 > 5 || dx2 > 5 || dy2 > 5) return smoothPath;
+        if (dx1 > 200 || dy1 > 200 || dx2 > 200 || dy2 > 200) return smoothPath;
       }
       return elkPath;
     }
