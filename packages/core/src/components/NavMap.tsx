@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* eslint-disable max-lines, react-hooks/refs */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -18,9 +18,6 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
-import { BundledEdge } from './edges/BundledEdge';
-// Edge bundling (legacy, disabled — replaced by routed edges)
-// import { computeBundledEdges } from '../layout/edgeBundling';
 import { FlowAnimator } from './panels/FlowAnimator';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
@@ -28,8 +25,10 @@ import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
+import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
@@ -56,7 +55,6 @@ const nodeTypes = {
 
 const edgeTypes = {
   navEdge: NavEdge,
-  bundledEdge: BundledEdge,
 };
 
 export interface NavMapProps {
@@ -66,31 +64,6 @@ export interface NavMapProps {
   analytics?: AnalyticsAdapter;
   className?: string;
   style?: React.CSSProperties;
-}
-
-function buildSharedNavEdges(graph: NavMapGraph): Edge[] {
-  if (!graph.sharedNav) return [];
-  const existingEdges = new Set(graph.edges.map(e => `${e.source}->${e.target}`));
-  const allTargets = [
-    ...new Set([...graph.sharedNav.navbar.targets, ...graph.sharedNav.footer.targets]),
-  ];
-  const allPages = [...new Set([...graph.sharedNav.navbar.pages, ...graph.sharedNav.footer.pages])];
-
-  const edges: Edge[] = [];
-  for (const src of allPages) {
-    for (const tgt of allTargets) {
-      if (src === tgt) continue;
-      if (existingEdges.has(`${src}->${tgt}`)) continue;
-      edges.push({
-        id: `shared-${src}-${tgt}`,
-        source: src,
-        target: tgt,
-        type: 'navEdge',
-        data: { label: 'shared nav', edgeType: 'shared-nav' },
-      });
-    }
-  }
-  return edges;
 }
 
 function NavMapInner({
@@ -120,10 +93,10 @@ function NavMapInner({
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
-  const [analyticsPeriod, setAnalyticsPeriod] = useState({
+  const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     end: new Date().toISOString().slice(0, 10),
-  });
+  }));
   const [hoverPreview, setHoverPreview] = useState<{
     screenshot?: string;
     label: string;
@@ -257,124 +230,21 @@ function NavMapInner({
   // Routed edges toggle is handled via context — NavEdge reads useRoutedEdges
   // and switches between getSmoothStepPath and the ELK-computed elkPath.
 
-  // Re-layout when view mode changes
-  useEffect(() => {
-    if (!graph || !layoutDone) return;
-
-    if (viewMode === 'flow' && selectedFlowIndex !== null) {
-      const flow = graph.flows?.[selectedFlowIndex];
-      if (!flow) return;
-
-      const flowEdges: Edge[] = [];
-      for (let i = 0; i < flow.steps.length - 1; i++) {
-        const src = flow.steps[i];
-        const tgt = flow.steps[i + 1];
-        const existingEdge = graph.edges.find(e => e.source === src && e.target === tgt);
-        flowEdges.push({
-          id: existingEdge?.id ?? `flow-${src}-${tgt}`,
-          source: src,
-          target: tgt,
-          type: 'navEdge',
-          data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
-        });
-      }
-
-      const flowNodes: Node[] = flow.steps.map((stepId, index) => {
-        const graphNode = graph.nodes.find(n => n.id === stepId);
-        return {
-          id: stepId,
-          type: graphNode?.screenshot ? 'pageNode' : 'compactNode',
-          position: { x: 0, y: 0 },
-          data: {
-            label: graphNode?.label ?? stepId,
-            route: graphNode?.route ?? '',
-            group: graphNode?.group ?? '',
-            screenshot: graphNode?.screenshot,
-            flowStepNumber: index + 1,
-          },
-        };
-      });
-
-      computeElkLayout(flowNodes, flowEdges, { direction: 'RIGHT', spacing: 120 }).then(
-        ({ nodes: ln, edges: le }) => {
-          setNodes(ln);
-          setEdges(le);
-          baseEdgesRef.current = le;
-          setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
-        }
-      );
-    } else if (viewMode === 'tree' && treeRootId) {
-      const adjacency = new Map<string, string[]>();
-      for (const edge of graph.edges) {
-        const existing = adjacency.get(edge.source) ?? [];
-        existing.push(edge.target);
-        adjacency.set(edge.source, existing);
-      }
-
-      const visited = new Set<string>();
-      const queue = [treeRootId];
-      visited.add(treeRootId);
-      const treeEdges: Edge[] = [];
-
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        for (const neighbor of adjacency.get(current) ?? []) {
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor);
-            queue.push(neighbor);
-            const existingEdge = graph.edges.find(
-              e => e.source === current && e.target === neighbor
-            );
-            treeEdges.push({
-              id: existingEdge?.id ?? `tree-${current}-${neighbor}`,
-              source: current,
-              target: neighbor,
-              type: 'navEdge',
-              data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
-            });
-          }
-        }
-      }
-
-      const treeNodes: Node[] = graph.nodes.map(n => ({
-        id: n.id,
-        type: n.screenshot ? 'pageNode' : 'compactNode',
-        position: { x: 0, y: 0 },
-        data: { label: n.label, route: n.route, group: n.group, screenshot: n.screenshot },
-        style: { opacity: visited.has(n.id) ? 1 : 0.1, transition: 'opacity 0.3s' },
-      }));
-
-      computeElkLayout(
-        treeNodes.filter(n => visited.has(n.id)),
-        treeEdges,
-        { direction: 'RIGHT', spacing: 100 }
-      ).then(({ nodes: ln, edges: le }) => {
-        const nonReachable = treeNodes
-          .filter(n => !visited.has(n.id))
-          .map((n, i) => ({ ...n, position: { x: -300, y: i * 60 } }));
-        setNodes([...ln, ...nonReachable]);
-        setEdges(le);
-        baseEdgesRef.current = le;
-        setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
-      });
-    } else if (viewMode === 'map') {
-      const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
-      for (const node of rfNodes) {
-        if (node.type === 'groupNode') {
-          (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
-          (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
-        }
-      }
-      computeElkLayout(rfNodes, rfEdges).then(({ nodes: ln, edges: le }) => {
-        setNodes(ln);
-        setEdges(le);
-        baseEdgesRef.current = le;
-        sharedNavEdgesRef.current = buildSharedNavEdges(graph);
-        setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, selectedFlowIndex, treeRootId]);
+  // Re-layout when view mode changes (extracted to hook)
+  useViewModeLayout({
+    graph,
+    layoutDone,
+    viewMode,
+    selectedFlowIndex,
+    treeRootId,
+    setNodes,
+    setEdges,
+    fitView,
+    baseEdgesRef,
+    sharedNavEdgesRef,
+    handleGroupToggleRef,
+    handleGroupDoubleClickRef,
+  });
 
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
