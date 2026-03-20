@@ -18,7 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
-import { FlowAnimator } from './panels/FlowAnimator';
+import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
@@ -561,70 +561,17 @@ function NavMapInner({
           )}
           {graph && <LegendPanel groups={graph.groups} />}
 
-          {/* Flow animation overlay */}
-          {isAnimatingFlow &&
-            selectedFlowIndex !== null &&
-            graph?.flows?.[selectedFlowIndex] &&
-            layoutDone && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none',
-                  zIndex: 25,
-                  overflow: 'hidden',
-                }}
-              >
-                <FlowAnimator
-                  flowSteps={graph.flows[selectedFlowIndex].steps}
-                  nodes={nodes}
-                  isAnimating={isAnimatingFlow}
-                  onAnimationEnd={() => setIsAnimatingFlow(false)}
-                  viewport={viewport}
-                />
-              </div>
-            )}
-          {isAnimatingFlow && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 20,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
-                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
-                borderRadius: 8,
-                padding: '8px 16px',
-                zIndex: 30,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-              }}
-            >
-              <span
-                style={{ fontSize: 13, fontWeight: 600, color: ctx.isDark ? '#7aacff' : '#3355aa' }}
-              >
-                Animating flow...
-              </span>
-              <button
-                onClick={() => setIsAnimatingFlow(false)}
-                style={{
-                  background: 'none',
-                  border: `1px solid ${ctx.isDark ? '#333' : '#ccc'}`,
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  color: ctx.isDark ? '#888' : '#666',
-                  cursor: 'pointer',
-                }}
-              >
-                Stop
-              </button>
-            </div>
-          )}
+          <FlowAnimationOverlay
+            isDark={ctx.isDark}
+            isAnimatingFlow={isAnimatingFlow}
+            selectedFlowIndex={selectedFlowIndex}
+            graph={graph}
+            layoutDone={layoutDone}
+            nodes={nodes}
+            viewport={viewport}
+            onAnimationEnd={() => setIsAnimatingFlow(false)}
+            onStop={() => setIsAnimatingFlow(false)}
+          />
         </div>
 
         {selectedNode && graph && (
