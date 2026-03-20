@@ -22,7 +22,7 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       'no-console': 'warn',
-      'max-lines': ['warn', { max: 400, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['warn', { max: 300, skipBlankLines: true, skipComments: true }],
       'max-len': [
         'warn',
         {
