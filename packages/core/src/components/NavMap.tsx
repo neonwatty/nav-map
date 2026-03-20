@@ -18,9 +18,6 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
-import { BundledEdge } from './edges/BundledEdge';
-// Edge bundling (legacy, disabled — replaced by routed edges)
-// import { computeBundledEdges } from '../layout/edgeBundling';
 import { FlowAnimator } from './panels/FlowAnimator';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
@@ -56,7 +53,6 @@ const nodeTypes = {
 
 const edgeTypes = {
   navEdge: NavEdge,
-  bundledEdge: BundledEdge,
 };
 
 export interface NavMapProps {

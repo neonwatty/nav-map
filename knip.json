@@ -4,7 +4,7 @@
     "packages/core": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["@xyflow/react", "elkjs", "d3-hierarchy", "d3-shape", "html2canvas"]
+      "ignoreDependencies": ["@xyflow/react", "elkjs", "html2canvas"]
     },
     "packages/scanner": {
       "entry": ["src/index.ts", "src/cli.ts", "src/reporter.ts"],
