@@ -6,6 +6,7 @@ interface NavEdgeData {
   label?: string;
   edgeType?: string;
   elkPath?: string;
+  bundledPath?: string;
   alwaysShowLabel?: boolean;
   [key: string]: unknown;
 }
@@ -25,7 +26,7 @@ function NavEdgeComponent({
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const edgeData = data as NavEdgeData | undefined;
-  const { useRoutedEdges } = useNavMapContext();
+  const { edgeMode } = useNavMapContext();
 
   // Smooth step path: orthogonal routing with rounded corners
   const [smoothPath, labelX, labelY] = getSmoothStepPath({
@@ -38,22 +39,26 @@ function NavEdgeComponent({
     borderRadius: 8,
   });
 
-  // Use ELK's obstacle-aware path when routed edges are enabled,
-  // but fall back to smooth path if nodes have been dragged from layout positions
+  // Select edge path based on mode, with fallback to smooth
   const edgePath = (() => {
-    if (!useRoutedEdges || !edgeData?.elkPath) return smoothPath;
-    // Check if current handle positions still match the ELK path endpoints
-    const elkPath = edgeData.elkPath;
-    const firstM = elkPath.match(/^M\s+([\d.-]+)\s+([\d.-]+)/);
-    const lastL = elkPath.match(/[ML]\s+([\d.-]+)\s+([\d.-]+)\s*$/);
-    if (firstM && lastL) {
-      const dx1 = Math.abs(sourceX - parseFloat(firstM[1]));
-      const dy1 = Math.abs(sourceY - parseFloat(firstM[2]));
-      const dx2 = Math.abs(targetX - parseFloat(lastL[1]));
-      const dy2 = Math.abs(targetY - parseFloat(lastL[2]));
-      if (dx1 > 5 || dy1 > 5 || dx2 > 5 || dy2 > 5) return smoothPath;
+    if (edgeMode === 'routed' && edgeData?.elkPath) {
+      // Fall back to smooth if nodes have been dragged from layout positions
+      const elkPath = edgeData.elkPath;
+      const firstM = elkPath.match(/^M\s+([\d.-]+)\s+([\d.-]+)/);
+      const lastL = elkPath.match(/[ML]\s+([\d.-]+)\s+([\d.-]+)\s*$/);
+      if (firstM && lastL) {
+        const dx1 = Math.abs(sourceX - parseFloat(firstM[1]));
+        const dy1 = Math.abs(sourceY - parseFloat(firstM[2]));
+        const dx2 = Math.abs(targetX - parseFloat(lastL[1]));
+        const dy2 = Math.abs(targetY - parseFloat(lastL[2]));
+        if (dx1 > 5 || dy1 > 5 || dx2 > 5 || dy2 > 5) return smoothPath;
+      }
+      return elkPath;
     }
-    return elkPath;
+    if (edgeMode === 'bundled' && edgeData?.bundledPath) {
+      return edgeData.bundledPath;
+    }
+    return smoothPath;
   })();
 
   const isRedirect = edgeData?.edgeType === 'redirect';

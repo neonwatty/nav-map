@@ -49,6 +49,8 @@ export interface NavMapFlow {
 
 export type ViewMode = 'map' | 'flow' | 'tree';
 
+export type EdgeMode = 'smooth' | 'routed' | 'bundled';
+
 export interface NavMapGraph {
   version: '1.0';
   meta: {

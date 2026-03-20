@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph, ViewMode } from '../types';
+import type { NavMapGraph, ViewMode, EdgeMode } from '../types';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
@@ -30,6 +30,7 @@ import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
+import { computeBundledEdges } from '../layout/edgeBundling';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
@@ -80,7 +81,7 @@ function NavMapInner({
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [useRoutedEdges, setUseRoutedEdges] = useState(false);
+  const [edgeMode, setEdgeMode] = useState<EdgeMode>('smooth');
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
@@ -223,8 +224,30 @@ function NavMapInner({
     }
   }, [showSharedNav, layoutDone, setEdges]);
 
-  // Routed edges toggle is handled via context — NavEdge reads useRoutedEdges
-  // and switches between getSmoothStepPath and the ELK-computed elkPath.
+  // Compute bundled edge paths when edge mode is 'bundled'
+  useEffect(() => {
+    if (!layoutDone || edgeMode !== 'bundled') return;
+    const currentEdges = showSharedNav
+      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
+      : baseEdgesRef.current;
+    const results = computeBundledEdges(nodes, currentEdges);
+    const pathMap = new Map(results.map(r => [r.edgeId, r.path]));
+    setEdges(
+      currentEdges.map(edge => {
+        const bundledPath = pathMap.get(edge.id);
+        if (!bundledPath) return edge;
+        return { ...edge, data: { ...edge.data, bundledPath } };
+      })
+    );
+  }, [edgeMode, layoutDone, nodes, showSharedNav, setEdges]);
+
+  // Restore original edges when leaving bundled mode
+  useEffect(() => {
+    if (!layoutDone || edgeMode === 'bundled') return;
+    setEdges(
+      showSharedNav ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current] : baseEdgesRef.current
+    );
+  }, [edgeMode, layoutDone, showSharedNav, setEdges]);
 
   // Re-layout when view mode changes (extracted to hook)
   useViewModeLayout({
@@ -428,7 +451,7 @@ function NavMapInner({
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, useRoutedEdges }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode }}>
       <div
         ref={containerRef}
         className={className}
@@ -452,7 +475,7 @@ function NavMapInner({
             showSharedNav={showSharedNav}
             showRedirects={showRedirects}
             focusMode={focusMode}
-            useRoutedEdges={useRoutedEdges}
+            edgeMode={edgeMode}
             isAnimatingFlow={isAnimatingFlow}
             showAnalytics={showAnalytics}
             analyticsAdapter={analyticsAdapter}
@@ -472,7 +495,7 @@ function NavMapInner({
             onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
             onToggleRedirects={() => setShowRedirects(prev => !prev)}
             onToggleFocusMode={() => setFocusMode(prev => !prev)}
-            onToggleRoutedEdges={() => setUseRoutedEdges(prev => !prev)}
+            onEdgeModeChange={setEdgeMode}
             onAnimate={() => setIsAnimatingFlow(true)}
             onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
             onSearch={() => setShowSearch(true)}
