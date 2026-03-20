@@ -61,4 +61,5 @@ export type {
   NavMapFlowStep,
   NavMapFlowGallery,
   ViewMode,
+  EdgeMode,
 } from './types';

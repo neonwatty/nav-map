@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { NavMapGraph, GroupColors } from '../types';
+import type { NavMapGraph, GroupColors, EdgeMode } from '../types';
 import { getGroupColors as getColors } from '../utils/colors';
 
 export interface NavMapContextValue {
@@ -10,7 +10,7 @@ export interface NavMapContextValue {
   screenshotBasePath: string;
   getGroupColors: (groupId: string) => GroupColors;
   focusedGroupId: string | null;
-  useRoutedEdges: boolean;
+  edgeMode: EdgeMode;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -21,7 +21,7 @@ const defaultContext: NavMapContextValue = {
   screenshotBasePath: '',
   getGroupColors: () => ({ bg: '#1e1e2a', border: '#888', text: '#aaa' }),
   focusedGroupId: null,
-  useRoutedEdges: false,
+  edgeMode: 'smooth',
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -33,7 +33,7 @@ export function useNavMapContext(): NavMapContextValue {
 export function useNavMapState(
   graph: NavMapGraph | null,
   screenshotBasePath: string
-): Omit<NavMapContextValue, 'focusedGroupId' | 'useRoutedEdges'> {
+): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode'> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;

@@ -1,4 +1,4 @@
-import type { NavMapGraph, ViewMode } from '../../types';
+import type { NavMapGraph, ViewMode, EdgeMode } from '../../types';
 import type { AnalyticsAdapter } from '../../analytics/types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { ViewModeSelector } from './ViewModeSelector';
@@ -12,7 +12,7 @@ interface NavMapToolbarProps {
   showSharedNav: boolean;
   showRedirects: boolean;
   focusMode: boolean;
-  useRoutedEdges: boolean;
+  edgeMode: EdgeMode;
   isAnimatingFlow: boolean;
   showAnalytics: boolean;
   analyticsAdapter?: AnalyticsAdapter;
@@ -22,7 +22,7 @@ interface NavMapToolbarProps {
   onToggleSharedNav: () => void;
   onToggleRedirects: () => void;
   onToggleFocusMode: () => void;
-  onToggleRoutedEdges: () => void;
+  onEdgeModeChange: (mode: EdgeMode) => void;
   onAnimate: () => void;
   onToggleAnalytics: () => void;
   onSearch: () => void;
@@ -36,7 +36,7 @@ export function NavMapToolbar({
   showSharedNav,
   showRedirects,
   focusMode,
-  useRoutedEdges,
+  edgeMode,
   isAnimatingFlow,
   showAnalytics,
   analyticsAdapter,
@@ -46,7 +46,7 @@ export function NavMapToolbar({
   onToggleSharedNav,
   onToggleRedirects,
   onToggleFocusMode,
-  onToggleRoutedEdges,
+  onEdgeModeChange,
   onAnimate,
   onToggleAnalytics,
   onSearch,
@@ -97,13 +97,24 @@ export function NavMapToolbar({
       >
         {focusMode ? 'Show Edges' : 'Focus Mode'}
       </button>
-      <button
-        onClick={onToggleRoutedEdges}
-        style={btnStyle(isDark, useRoutedEdges)}
-        title="Toggle Routed Edges (E)"
+      <select
+        value={edgeMode}
+        onChange={e => onEdgeModeChange(e.target.value as EdgeMode)}
+        title="Edge rendering mode"
+        style={{
+          background: isDark ? '#14141e' : '#fff',
+          border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
+          borderRadius: 6,
+          padding: '5px 8px',
+          fontSize: 12,
+          color: isDark ? '#888' : '#666',
+          cursor: 'pointer',
+        }}
       >
-        {useRoutedEdges ? 'Smooth Edges' : 'Route Edges'}
-      </button>
+        <option value="smooth">Smooth</option>
+        <option value="routed">Routed</option>
+        <option value="bundled">Bundled</option>
+      </select>
       {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
         <button
           onClick={onAnimate}
