@@ -19,3 +19,7 @@ nav-screenshots/
 
 # Superpowers brainstorm sessions
 .superpowers/
+
+# Test artifacts
+.playwright-mcp/
+*.png
