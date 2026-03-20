@@ -25,6 +25,8 @@ jobs:
         run: pnpm typecheck
       - name: Knip
         run: pnpm knip:production
+      - name: Test
+        run: pnpm test
 
   build:
     runs-on: ubuntu-latest
