@@ -40,12 +40,8 @@ import { NavEdge } from './edges/NavEdge';
 import { ConnectionPanel } from './panels/ConnectionPanel';
 import { LegendPanel } from './panels/LegendPanel';
 import { WalkthroughBar } from './panels/WalkthroughBar';
-import { HelpOverlay } from './panels/HelpOverlay';
-import { HoverPreview } from './panels/HoverPreview';
-import { SearchPanel } from './panels/SearchPanel';
-import { PresentationBar } from './panels/PresentationBar';
-import { AnalyticsOverlay } from './panels/AnalyticsOverlay';
-import { GalleryViewer } from './panels/GalleryViewer';
+import { StatusBanners } from './panels/StatusBanners';
+import { NavMapOverlays } from './panels/NavMapOverlays';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -483,107 +479,15 @@ function NavMapInner({
             onHelp={() => setShowHelp(true)}
           />
 
-          {/* Flow/Tree mode banners */}
-          {viewMode === 'flow' &&
-            selectedFlowIndex !== null &&
-            graph?.flows?.[selectedFlowIndex] && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 50,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
-                  border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
-                  borderRadius: 8,
-                  padding: '6px 16px',
-                  zIndex: 20,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: ctx.isDark ? '#7aacff' : '#3355aa',
-                }}
-              >
-                Flow: {graph.flows![selectedFlowIndex].name}
-              </div>
-            )}
-          {viewMode === 'tree' && !treeRootId && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 50,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
-                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
-                borderRadius: 8,
-                padding: '6px 16px',
-                zIndex: 20,
-                fontSize: 13,
-                color: ctx.isDark ? '#888' : '#666',
-              }}
-            >
-              Click any node to set it as tree root
-            </div>
-          )}
-          {viewMode === 'tree' && treeRootId && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 50,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
-                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
-                borderRadius: 8,
-                padding: '6px 16px',
-                zIndex: 20,
-                fontSize: 13,
-                fontWeight: 600,
-                color: ctx.isDark ? '#7aacff' : '#3355aa',
-              }}
-            >
-              Tree from: {graph?.nodes.find(n => n.id === treeRootId)?.label ?? treeRootId}
-            </div>
-          )}
-
-          {/* Group focus indicator */}
-          {focusedGroupId && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 50,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
-                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
-                borderRadius: 8,
-                padding: '6px 16px',
-                zIndex: 20,
-                fontSize: 13,
-                fontWeight: 600,
-                color: ctx.isDark ? '#7aacff' : '#3355aa',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              Focused: {graph?.groups?.find(g => g.id === focusedGroupId)?.label ?? focusedGroupId}
-              <button
-                onClick={() => setFocusedGroupId(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: ctx.isDark ? '#555' : '#aaa',
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  padding: 0,
-                  lineHeight: 1,
-                }}
-              >
-                &#x2715;
-              </button>
-            </div>
-          )}
+          <StatusBanners
+            isDark={ctx.isDark}
+            viewMode={viewMode}
+            selectedFlowIndex={selectedFlowIndex}
+            treeRootId={treeRootId}
+            focusedGroupId={focusedGroupId}
+            graph={graph}
+            onClearFocus={() => setFocusedGroupId(null)}
+          />
 
           {/* Walkthrough breadcrumb */}
           {graph && (
@@ -733,70 +637,28 @@ function NavMapInner({
           />
         )}
 
-        {/* Overlays */}
-        <HelpOverlay isOpen={showHelp} onClose={() => setShowHelp(false)} />
-
-        {graph && (
-          <SearchPanel
-            nodes={graph.nodes}
-            isOpen={showSearch}
-            onClose={() => setShowSearch(false)}
-            onSelect={nodeId => {
-              setShowSearch(false);
-              navigateToNode(nodeId);
-            }}
-            isDark={ctx.isDark}
-          />
-        )}
-
-        {hoverPreview && (
-          <HoverPreview
-            screenshot={hoverPreview.screenshot}
-            label={hoverPreview.label}
-            position={hoverPreview.position}
-          />
-        )}
-
-        {/* Analytics Overlay */}
-        {showAnalytics && (
-          <AnalyticsOverlay
-            analytics={analyticsData}
-            isVisible={showAnalytics}
-            onClose={() => setShowAnalytics(false)}
-            period={analyticsPeriod}
-            onPeriodChange={setAnalyticsPeriod}
-          />
-        )}
-
-        {/* Presentation Mode */}
-        {walkthrough.mode === 'presentation' && graph && (
-          <PresentationBar
-            currentNodeId={walkthrough.currentNodeId}
-            nodes={graph.nodes}
-            stepLabel={walkthrough.stepLabel}
-            canGoBack={walkthrough.canGoBack}
-            canGoForward={walkthrough.canGoForward}
-            onBack={walkthrough.goBack}
-            onForward={walkthrough.goForward}
-            onExit={() => walkthrough.setMode('explore')}
-            screenshotBasePath={screenshotBasePath}
-          />
-        )}
-
-        {/* Gallery Viewer */}
-        {galleryNodeId &&
-          (() => {
-            const flow = graph?.flows?.find(f => f.gallery?.[galleryNodeId]?.length);
-            if (!flow?.gallery?.[galleryNodeId]) return null;
-            return (
-              <GalleryViewer
-                nodeLabel={graph?.nodes.find(n => n.id === galleryNodeId)?.label ?? galleryNodeId}
-                steps={flow.gallery[galleryNodeId]}
-                flowName={flow.name}
-                onClose={() => setGalleryNodeId(null)}
-              />
-            );
-          })()}
+        <NavMapOverlays
+          graph={graph}
+          isDark={ctx.isDark}
+          showHelp={showHelp}
+          showSearch={showSearch}
+          showAnalytics={showAnalytics}
+          hoverPreview={hoverPreview}
+          analyticsData={analyticsData}
+          analyticsPeriod={analyticsPeriod}
+          walkthrough={walkthrough}
+          galleryNodeId={galleryNodeId}
+          screenshotBasePath={screenshotBasePath}
+          onCloseHelp={() => setShowHelp(false)}
+          onCloseSearch={() => setShowSearch(false)}
+          onCloseAnalytics={() => setShowAnalytics(false)}
+          onSearchSelect={nodeId => {
+            setShowSearch(false);
+            navigateToNode(nodeId);
+          }}
+          onPeriodChange={setAnalyticsPeriod}
+          onCloseGallery={() => setGalleryNodeId(null)}
+        />
       </div>
     </NavMapContext.Provider>
   );
