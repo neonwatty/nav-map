@@ -1,9 +1,11 @@
 import { memo, useState } from 'react';
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
+import { useNavMapContext } from '../../hooks/useNavMap';
 
 interface NavEdgeData {
   label?: string;
   edgeType?: string;
+  elkPath?: string;
   alwaysShowLabel?: boolean;
   [key: string]: unknown;
 }
@@ -23,10 +25,10 @@ function NavEdgeComponent({
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const edgeData = data as NavEdgeData | undefined;
+  const { useRoutedEdges } = useNavMapContext();
 
   // Smooth step path: orthogonal routing with rounded corners
-  // React Flow handles parent-relative coordinate transformation automatically
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [smoothPath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     targetX,
@@ -35,6 +37,24 @@ function NavEdgeComponent({
     targetPosition,
     borderRadius: 8,
   });
+
+  // Use ELK's obstacle-aware path when routed edges are enabled,
+  // but fall back to smooth path if nodes have been dragged from layout positions
+  const edgePath = (() => {
+    if (!useRoutedEdges || !edgeData?.elkPath) return smoothPath;
+    // Check if current handle positions still match the ELK path endpoints
+    const elkPath = edgeData.elkPath;
+    const firstM = elkPath.match(/^M\s+([\d.-]+)\s+([\d.-]+)/);
+    const lastL = elkPath.match(/[ML]\s+([\d.-]+)\s+([\d.-]+)\s*$/);
+    if (firstM && lastL) {
+      const dx1 = Math.abs(sourceX - parseFloat(firstM[1]));
+      const dy1 = Math.abs(sourceY - parseFloat(firstM[2]));
+      const dx2 = Math.abs(targetX - parseFloat(lastL[1]));
+      const dy2 = Math.abs(targetY - parseFloat(lastL[2]));
+      if (dx1 > 5 || dy1 > 5 || dx2 > 5 || dy2 > 5) return smoothPath;
+    }
+    return elkPath;
+  })();
 
   const isRedirect = edgeData?.edgeType === 'redirect';
   const isSharedNav = edgeData?.edgeType === 'shared-nav';

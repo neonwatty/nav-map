@@ -19,13 +19,16 @@ import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode } from '../types';
 import { BundledEdge } from './edges/BundledEdge';
-import { computeBundledEdges } from '../layout/edgeBundling';
+// Edge bundling (legacy, disabled — replaced by routed edges)
+// import { computeBundledEdges } from '../layout/edgeBundling';
 import { FlowAnimator } from './panels/FlowAnimator';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
+import { useUndoHistory } from '../hooks/useUndoHistory';
+import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
 import { computeElkLayout } from '../layout/elkLayout';
 import { useWalkthrough } from '../hooks/useWalkthrough';
@@ -43,6 +46,7 @@ import { HoverPreview } from './panels/HoverPreview';
 import { SearchPanel } from './panels/SearchPanel';
 import { PresentationBar } from './panels/PresentationBar';
 import { AnalyticsOverlay } from './panels/AnalyticsOverlay';
+import { GalleryViewer } from './panels/GalleryViewer';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -103,11 +107,14 @@ function NavMapInner({
   const [layoutDone, setLayoutDone] = useState(false);
   const [showSharedNav, setShowSharedNav] = useState(false);
   const [focusMode, setFocusMode] = useState(true);
+  const [showRedirects, setShowRedirects] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [useBundledEdges, setUseBundledEdges] = useState(false);
+  const [useRoutedEdges, setUseRoutedEdges] = useState(false);
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
+  const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
+  const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -127,16 +134,33 @@ function NavMapInner({
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
 
-  const handleGroupToggle = useCallback((groupId: string, collapsed: boolean) => {
-    setCollapsedGroups(prev => {
-      const next = new Set(prev);
-      if (collapsed) next.add(groupId);
-      else next.delete(groupId);
-      return next;
-    });
-  }, []);
+  // Undo history for node drags and group collapse
+  const { pushSnapshot, undo, canUndo } = useUndoHistory();
+  const beforeDragRef = useRef<HistoryEntry | null>(null);
+
+  const handleGroupToggle = useCallback(
+    (groupId: string, collapsed: boolean) => {
+      // Capture before-state for undo
+      setCollapsedGroups(prev => {
+        pushSnapshot({ type: 'collapse', collapsedGroups: new Set(prev) });
+        const next = new Set(prev);
+        if (collapsed) next.add(groupId);
+        else next.delete(groupId);
+        return next;
+      });
+      if (collapsed) {
+        setFocusedGroupId(prev => (prev === groupId ? null : prev));
+      }
+    },
+    [pushSnapshot]
+  );
   const handleGroupToggleRef = useRef(handleGroupToggle);
   handleGroupToggleRef.current = handleGroupToggle;
+  const handleGroupDoubleClick = useCallback((groupId: string) => {
+    setFocusedGroupId(prev => (prev === groupId ? null : groupId));
+  }, []);
+  const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
+  handleGroupDoubleClickRef.current = handleGroupDoubleClick;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -149,6 +173,28 @@ function NavMapInner({
   const viewportZoom = useStore(s => s.transform[2]);
   const viewport = { x: viewportX, y: viewportY, zoom: viewportZoom };
   const { fitView, setCenter } = useReactFlow();
+
+  // Zoom to focused group when entering group focus mode
+  const prevFocusedGroupRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusedGroupId === prevFocusedGroupRef.current) return;
+    prevFocusedGroupRef.current = focusedGroupId;
+    if (!focusedGroupId) {
+      fitView({ padding: 0.15, duration: 300 });
+      return;
+    }
+    const focusedNodes = nodes
+      .filter(n => {
+        if (n.type === 'groupNode') {
+          return (n.data as Record<string, unknown>).groupId === focusedGroupId;
+        }
+        return (n.data as Record<string, unknown>).group === focusedGroupId;
+      })
+      .map(n => ({ id: n.id }));
+    if (focusedNodes.length > 0) {
+      fitView({ nodes: focusedNodes, padding: 0.3, duration: 300 });
+    }
+  }, [focusedGroupId, nodes, fitView]);
 
   // Load graph from URL if provided
   useEffect(() => {
@@ -181,10 +227,11 @@ function NavMapInner({
 
     const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
 
-    // Inject onToggle into group nodes
+    // Inject onToggle and onDoubleClick into group nodes
     for (const node of rfNodes) {
       if (node.type === 'groupNode') {
         (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+        (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
       }
     }
 
@@ -207,28 +254,8 @@ function NavMapInner({
     }
   }, [showSharedNav, layoutDone, setEdges]);
 
-  // Compute bundled edges when toggle is enabled
-  useEffect(() => {
-    if (!layoutDone || !useBundledEdges) return;
-    const currentEdges = showSharedNav
-      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
-      : baseEdgesRef.current;
-    const bundledResults = computeBundledEdges(nodes, currentEdges);
-    const bundledPathMap = new Map(bundledResults.map(r => [r.edgeId, r.path]));
-    const bundled = currentEdges.map(edge => {
-      const bp = bundledPathMap.get(edge.id);
-      return bp ? { ...edge, type: 'bundledEdge', data: { ...edge.data, bundledPath: bp } } : edge;
-    });
-    setEdges(bundled);
-  }, [useBundledEdges, layoutDone, nodes, showSharedNav, setEdges]);
-
-  // When bundling is turned off, restore original edges
-  useEffect(() => {
-    if (!layoutDone || useBundledEdges) return;
-    setEdges(
-      showSharedNav ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current] : baseEdgesRef.current
-    );
-  }, [useBundledEdges, layoutDone, showSharedNav, setEdges]);
+  // Routed edges toggle is handled via context — NavEdge reads useRoutedEdges
+  // and switches between getSmoothStepPath and the ELK-computed elkPath.
 
   // Re-layout when view mode changes
   useEffect(() => {
@@ -335,6 +362,7 @@ function NavMapInner({
       for (const node of rfNodes) {
         if (node.type === 'groupNode') {
           (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
+          (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
         }
       }
       computeElkLayout(rfNodes, rfEdges).then(({ nodes: ln, edges: le }) => {
@@ -348,14 +376,43 @@ function NavMapInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, selectedFlowIndex, treeRootId]);
 
+  // Identify nodes that have gallery data from any flow
+  const galleryNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const flow of graph?.flows ?? []) {
+      for (const nodeId of Object.keys(flow.gallery ?? {})) {
+        if ((flow.gallery?.[nodeId]?.length ?? 0) > 0) ids.add(nodeId);
+      }
+    }
+    return ids;
+  }, [graph]);
+
+  // Map node IDs to their group for edge dimming in group focus mode
+  const nodeGroupMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const node of graph?.nodes ?? []) {
+      map.set(node.id, node.group);
+    }
+    return map;
+  }, [graph]);
+
   // Semantic zoom: swap node types based on zoom level (skip group nodes)
+  // Also inject hasGallery flag into node data
   const zoomedNodes = useMemo(() => {
-    if (showDetail) return nodes;
+    const addGalleryFlag = (node: Node) => {
+      if (node.type === 'groupNode') return node;
+      const hasGallery = galleryNodeIds.has(node.id);
+      if (!hasGallery) return node;
+      return { ...node, data: { ...node.data, hasGallery: true } };
+    };
+
+    if (showDetail) return nodes.map(addGalleryFlag);
     return nodes.map(node => {
       if (node.type === 'groupNode') return node;
-      return { ...node, type: 'compactNode' };
+      const withGallery = addGalleryFlag(node);
+      return { ...withGallery, type: 'compactNode' };
     });
-  }, [nodes, showDetail]);
+  }, [nodes, showDetail, galleryNodeIds]);
 
   // Use refs to avoid stale closures in callbacks
   const ctxRef = useRef(ctx);
@@ -416,6 +473,12 @@ function NavMapInner({
     navigateToNode,
     baseEdgesRef,
     sharedNavEdgesRef,
+    focusedGroupId,
+    setFocusedGroupId,
+    setShowRedirects,
+    undo,
+    canUndo,
+    setCollapsedGroups,
   });
 
   // Node hover for preview
@@ -433,6 +496,25 @@ function NavMapInner({
   const onNodeMouseLeave = useCallback(() => {
     setHoverPreview(null);
   }, []);
+
+  // Capture node positions before drag for undo
+  const onNodeDragStart = useCallback(() => {
+    beforeDragRef.current = {
+      type: 'node-drag',
+      nodePositions: nodesRef.current.map(n => ({
+        id: n.id,
+        position: { ...n.position },
+        parentId: n.parentId,
+      })),
+    };
+  }, []);
+
+  const onNodeDragStop = useCallback(() => {
+    if (beforeDragRef.current) {
+      pushSnapshot(beforeDragRef.current);
+      beforeDragRef.current = null;
+    }
+  }, [pushSnapshot]);
 
   // Track mouse position for hover preview
   useEffect(() => {
@@ -461,12 +543,26 @@ function NavMapInner({
     focusMode,
     viewMode,
     activeFlow,
+    focusedGroupId,
+    nodeGroupMap,
+    showRedirects,
   });
+
+  // Double-click opens gallery if ANY flow has gallery data for this node
+  const onNodeDoubleClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
+      if (hasGallery) {
+        setGalleryNodeId(node.id);
+      }
+    },
+    [graph]
+  );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
   return (
-    <NavMapContext.Provider value={ctx}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, useRoutedEdges }}>
       <div
         ref={containerRef}
         className={className}
@@ -488,8 +584,9 @@ function NavMapInner({
             viewMode={viewMode}
             selectedFlowIndex={selectedFlowIndex}
             showSharedNav={showSharedNav}
+            showRedirects={showRedirects}
             focusMode={focusMode}
-            useBundledEdges={useBundledEdges}
+            useRoutedEdges={useRoutedEdges}
             isAnimatingFlow={isAnimatingFlow}
             showAnalytics={showAnalytics}
             analyticsAdapter={analyticsAdapter}
@@ -498,11 +595,18 @@ function NavMapInner({
               if (mode !== 'flow') setSelectedFlowIndex(null);
               if (mode !== 'tree') setTreeRootId(null);
             }}
-            onFlowSelect={setSelectedFlowIndex}
-            onResetView={() => fitView({ padding: 0.15, duration: 300 })}
+            onFlowSelect={idx => {
+              setSelectedFlowIndex(idx);
+              setFocusedGroupId(null);
+            }}
+            onResetView={() => {
+              setFocusedGroupId(null);
+              fitView({ padding: 0.15, duration: 300 });
+            }}
             onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+            onToggleRedirects={() => setShowRedirects(prev => !prev)}
             onToggleFocusMode={() => setFocusMode(prev => !prev)}
-            onToggleBundledEdges={() => setUseBundledEdges(prev => !prev)}
+            onToggleRoutedEdges={() => setUseRoutedEdges(prev => !prev)}
             onAnimate={() => setIsAnimatingFlow(true)}
             onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
             onSearch={() => setShowSearch(true)}
@@ -572,6 +676,45 @@ function NavMapInner({
             </div>
           )}
 
+          {/* Group focus indicator */}
+          {focusedGroupId && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 50,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: ctx.isDark ? 'rgba(16,16,24,0.92)' : 'rgba(255,255,255,0.94)',
+                border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#e0e2ea'}`,
+                borderRadius: 8,
+                padding: '6px 16px',
+                zIndex: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                color: ctx.isDark ? '#7aacff' : '#3355aa',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              Focused: {graph?.groups?.find(g => g.id === focusedGroupId)?.label ?? focusedGroupId}
+              <button
+                onClick={() => setFocusedGroupId(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: ctx.isDark ? '#555' : '#aaa',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+              >
+                &#x2715;
+              </button>
+            </div>
+          )}
+
           {/* Walkthrough breadcrumb */}
           {graph && (
             <WalkthroughBar
@@ -597,8 +740,11 @@ function NavMapInner({
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onSelectionChange={onSelectionChange}
+              onNodeDragStart={onNodeDragStart}
+              onNodeDragStop={onNodeDragStop}
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
+              onNodeDoubleClick={onNodeDoubleClick}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               fitView
@@ -766,6 +912,21 @@ function NavMapInner({
             screenshotBasePath={screenshotBasePath}
           />
         )}
+
+        {/* Gallery Viewer */}
+        {galleryNodeId &&
+          (() => {
+            const flow = graph?.flows?.find(f => f.gallery?.[galleryNodeId]?.length);
+            if (!flow?.gallery?.[galleryNodeId]) return null;
+            return (
+              <GalleryViewer
+                nodeLabel={graph?.nodes.find(n => n.id === galleryNodeId)?.label ?? galleryNodeId}
+                steps={flow.gallery[galleryNodeId]}
+                flowName={flow.name}
+                onClose={() => setGalleryNodeId(null)}
+              />
+            );
+          })()}
       </div>
     </NavMapContext.Provider>
   );

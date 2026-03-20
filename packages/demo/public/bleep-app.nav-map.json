@@ -35,14 +35,18 @@
       "label": "Studio",
       "group": "studio",
       "screenshot": "screenshots/studio.jpeg",
-      "metadata": { "authRequired": true }
+      "metadata": {
+        "authRequired": true
+      }
     },
     {
       "id": "studio-project",
       "route": "/studio/[id]",
       "label": "Project",
       "group": "studio",
-      "metadata": { "authRequired": true }
+      "metadata": {
+        "authRequired": true
+      }
     },
     {
       "id": "studio-settings",
@@ -50,7 +54,9 @@
       "label": "Settings",
       "group": "studio",
       "screenshot": "screenshots/studio-settings.jpeg",
-      "metadata": { "authRequired": true }
+      "metadata": {
+        "authRequired": true
+      }
     },
     {
       "id": "blog",
@@ -108,7 +114,12 @@
       "group": "auth",
       "screenshot": "screenshots/reset-pw.jpeg"
     },
-    { "id": "update-pw", "route": "/auth/update-password", "label": "Update PW", "group": "auth" },
+    {
+      "id": "update-pw",
+      "route": "/auth/update-password",
+      "label": "Update PW",
+      "group": "auth"
+    },
     {
       "id": "waitlist",
       "route": "/auth/waitlist",
@@ -130,7 +141,12 @@
       "group": "legal",
       "screenshot": "screenshots/privacy.jpeg"
     },
-    { "id": "email-prefs", "route": "/email-preferences", "label": "Email Prefs", "group": "legal" }
+    {
+      "id": "email-prefs",
+      "route": "/email-preferences",
+      "label": "Email Prefs",
+      "group": "legal"
+    }
   ],
   "edges": [
     {
@@ -189,7 +205,13 @@
       "label": "post cards",
       "type": "link"
     },
-    { "id": "e-blog-bleep", "source": "blog", "target": "bleep", "label": "CTA", "type": "link" },
+    {
+      "id": "e-blog-bleep",
+      "source": "blog",
+      "target": "bleep",
+      "label": "CTA",
+      "type": "link"
+    },
     {
       "id": "e-blogpost-home",
       "source": "blog-post",
@@ -297,12 +319,42 @@
     }
   ],
   "groups": [
-    { "id": "marketing", "label": "Marketing", "color": "#5b9bf5", "routePrefix": "/" },
-    { "id": "product", "label": "Product", "color": "#4eca6a", "routePrefix": "/bleep" },
-    { "id": "studio", "label": "Studio", "color": "#b07ce8", "routePrefix": "/studio" },
-    { "id": "premium", "label": "Premium", "color": "#f0a050", "routePrefix": "/premium" },
-    { "id": "auth", "label": "Auth", "color": "#6e8ca8", "routePrefix": "/auth" },
-    { "id": "legal", "label": "Legal", "color": "#556878", "routePrefix": "/terms" }
+    {
+      "id": "marketing",
+      "label": "Marketing",
+      "color": "#5b9bf5",
+      "routePrefix": "/"
+    },
+    {
+      "id": "product",
+      "label": "Product",
+      "color": "#4eca6a",
+      "routePrefix": "/bleep"
+    },
+    {
+      "id": "studio",
+      "label": "Studio",
+      "color": "#b07ce8",
+      "routePrefix": "/studio"
+    },
+    {
+      "id": "premium",
+      "label": "Premium",
+      "color": "#f0a050",
+      "routePrefix": "/premium"
+    },
+    {
+      "id": "auth",
+      "label": "Auth",
+      "color": "#6e8ca8",
+      "routePrefix": "/auth"
+    },
+    {
+      "id": "legal",
+      "label": "Legal",
+      "color": "#556878",
+      "routePrefix": "/terms"
+    }
   ],
   "sharedNav": {
     "navbar": {
@@ -369,6 +421,42 @@
     {
       "name": "Password Reset",
       "steps": ["login", "reset-pw", "update-pw", "login", "studio"]
+    },
+    {
+      "name": "Studio Dashboard",
+      "steps": ["studio"],
+      "gallery": {
+        "studio": [
+          {
+            "action": "goto",
+            "title": "Navigate to /studio",
+            "screenshot": "screenshots/studio.jpeg"
+          },
+          {
+            "action": "waitFor",
+            "title": "Projects list loaded",
+            "screenshot": "screenshots/studio.jpeg"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Studio Settings",
+      "steps": ["studio-settings"],
+      "gallery": {
+        "studio-settings": [
+          {
+            "action": "goto",
+            "title": "Navigate to /studio/settings",
+            "screenshot": "screenshots/studio-settings.jpeg"
+          },
+          {
+            "action": "waitFor",
+            "title": "Profile and billing loaded",
+            "screenshot": "screenshots/studio-settings.jpeg"
+          }
+        ]
+      }
     }
   ]
 }
