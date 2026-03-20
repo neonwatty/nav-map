@@ -14,7 +14,14 @@
     "react-flow",
     "next.js",
     "visualization",
-    "graph"
+    "graph",
+    "route-visualizer",
+    "interactive-sitemap",
+    "navigation-map",
+    "website-architecture",
+    "page-hierarchy",
+    "app-directory",
+    "route-tree"
   ],
   "type": "module",
   "main": "./dist/index.cjs",
