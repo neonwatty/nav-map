@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { NavMapGraph } from '../types';
+import type { HistoryEntry } from './useUndoHistory';
 import { computeElkLayout } from '../layout/elkLayout';
 
 interface KeyboardNavDeps {
@@ -20,7 +21,7 @@ interface KeyboardNavDeps {
   setShowHelp: (v: boolean | ((p: boolean) => boolean)) => void;
   setShowSharedNav: (v: boolean | ((p: boolean) => boolean)) => void;
   setFocusMode: (v: boolean | ((p: boolean) => boolean)) => void;
-  setNodes: (nodes: Node[]) => void;
+  setNodes: (nodes: Node[] | ((prev: Node[]) => Node[])) => void;
   setEdges: (edges: Edge[]) => void;
   fitView: (opts?: { padding?: number; duration?: number }) => void;
   setCenter: (x: number, y: number, opts?: { zoom?: number; duration?: number }) => void;
@@ -30,6 +31,9 @@ interface KeyboardNavDeps {
   focusedGroupId: string | null;
   setFocusedGroupId: (id: string | null) => void;
   setShowRedirects: (v: boolean | ((p: boolean) => boolean)) => void;
+  undo: () => HistoryEntry | null;
+  canUndo: boolean;
+  setCollapsedGroups: (fn: (prev: Set<string>) => Set<string>) => void;
 }
 
 export function useKeyboardNav(deps: KeyboardNavDeps) {
@@ -56,6 +60,9 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     focusedGroupId,
     setFocusedGroupId,
     setShowRedirects,
+    undo,
+    canUndo,
+    setCollapsedGroups,
   } = deps;
 
   useEffect(() => {
@@ -141,6 +148,33 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
         case 'N':
           setShowSharedNav((prev: boolean) => !prev);
           break;
+        case 'z':
+        case 'Z': {
+          if (!(e.metaKey || e.ctrlKey) || !canUndo) break;
+          e.preventDefault();
+          const entry = undo();
+          if (!entry) break;
+          if (entry.type === 'node-drag') {
+            setNodes(prev =>
+              prev.map(n => {
+                const saved = entry.nodePositions.find(p => p.id === n.id);
+                if (!saved) return n;
+                return { ...n, position: saved.position, parentId: saved.parentId };
+              })
+            );
+          } else if (entry.type === 'collapse') {
+            setCollapsedGroups(() => new Set(entry.collapsedGroups));
+            // Sync GroupNode internal state
+            setNodes(prev =>
+              prev.map(n => {
+                if (n.type !== 'groupNode') return n;
+                const groupId = (n.data as Record<string, unknown>).groupId as string;
+                return { ...n, data: { ...n.data, collapsed: entry.collapsedGroups.has(groupId) } };
+              })
+            );
+          }
+          break;
+        }
         case 'r':
         case 'R':
           setShowRedirects((prev: boolean) => !prev);
@@ -186,5 +220,8 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     focusedGroupId,
     setFocusedGroupId,
     setShowRedirects,
+    undo,
+    canUndo,
+    setCollapsedGroups,
   ]);
 }

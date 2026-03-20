@@ -27,6 +27,8 @@ import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
+import { useUndoHistory } from '../hooks/useUndoHistory';
+import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
 import { computeElkLayout } from '../layout/elkLayout';
 import { useWalkthrough } from '../hooks/useWalkthrough';
@@ -132,17 +134,26 @@ function NavMapInner({
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
 
-  const handleGroupToggle = useCallback((groupId: string, collapsed: boolean) => {
-    setCollapsedGroups(prev => {
-      const next = new Set(prev);
-      if (collapsed) next.add(groupId);
-      else next.delete(groupId);
-      return next;
-    });
-    if (collapsed) {
-      setFocusedGroupId(prev => (prev === groupId ? null : prev));
-    }
-  }, []);
+  // Undo history for node drags and group collapse
+  const { pushSnapshot, undo, canUndo } = useUndoHistory();
+  const beforeDragRef = useRef<HistoryEntry | null>(null);
+
+  const handleGroupToggle = useCallback(
+    (groupId: string, collapsed: boolean) => {
+      // Capture before-state for undo
+      setCollapsedGroups(prev => {
+        pushSnapshot({ type: 'collapse', collapsedGroups: new Set(prev) });
+        const next = new Set(prev);
+        if (collapsed) next.add(groupId);
+        else next.delete(groupId);
+        return next;
+      });
+      if (collapsed) {
+        setFocusedGroupId(prev => (prev === groupId ? null : prev));
+      }
+    },
+    [pushSnapshot]
+  );
   const handleGroupToggleRef = useRef(handleGroupToggle);
   handleGroupToggleRef.current = handleGroupToggle;
   const handleGroupDoubleClick = useCallback((groupId: string) => {
@@ -465,6 +476,9 @@ function NavMapInner({
     focusedGroupId,
     setFocusedGroupId,
     setShowRedirects,
+    undo,
+    canUndo,
+    setCollapsedGroups,
   });
 
   // Node hover for preview
@@ -482,6 +496,25 @@ function NavMapInner({
   const onNodeMouseLeave = useCallback(() => {
     setHoverPreview(null);
   }, []);
+
+  // Capture node positions before drag for undo
+  const onNodeDragStart = useCallback(() => {
+    beforeDragRef.current = {
+      type: 'node-drag',
+      nodePositions: nodesRef.current.map(n => ({
+        id: n.id,
+        position: { ...n.position },
+        parentId: n.parentId,
+      })),
+    };
+  }, []);
+
+  const onNodeDragStop = useCallback(() => {
+    if (beforeDragRef.current) {
+      pushSnapshot(beforeDragRef.current);
+      beforeDragRef.current = null;
+    }
+  }, [pushSnapshot]);
 
   // Track mouse position for hover preview
   useEffect(() => {
@@ -707,6 +740,8 @@ function NavMapInner({
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onSelectionChange={onSelectionChange}
+              onNodeDragStart={onNodeDragStart}
+              onNodeDragStop={onNodeDragStop}
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
               onNodeDoubleClick={onNodeDoubleClick}
