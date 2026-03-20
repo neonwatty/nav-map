@@ -374,12 +374,7 @@
         "privacy",
         "email-prefs"
       ],
-      "targets": [
-        "home",
-        "bleep",
-        "studio",
-        "sampler"
-      ]
+      "targets": ["home", "bleep", "studio", "sampler"]
     },
     "footer": {
       "pages": [
@@ -413,47 +408,23 @@
   "flows": [
     {
       "name": "New User Signup",
-      "steps": [
-        "home",
-        "bleep",
-        "signup",
-        "studio"
-      ]
+      "steps": ["home", "bleep", "signup", "studio"]
     },
     {
       "name": "Blog to Conversion",
-      "steps": [
-        "blog",
-        "blog-post",
-        "home",
-        "bleep",
-        "premium"
-      ]
+      "steps": ["blog", "blog-post", "home", "bleep", "premium"]
     },
     {
       "name": "Educator Onboarding",
-      "steps": [
-        "for-educators",
-        "premium-edu",
-        "signup",
-        "studio"
-      ]
+      "steps": ["for-educators", "premium-edu", "signup", "studio"]
     },
     {
       "name": "Password Reset",
-      "steps": [
-        "login",
-        "reset-pw",
-        "update-pw",
-        "login",
-        "studio"
-      ]
+      "steps": ["login", "reset-pw", "update-pw", "login", "studio"]
     },
     {
       "name": "Studio Dashboard",
-      "steps": [
-        "studio"
-      ],
+      "steps": ["studio"],
       "gallery": {
         "studio": [
           {
@@ -471,9 +442,7 @@
     },
     {
       "name": "Studio Settings",
-      "steps": [
-        "studio-settings"
-      ],
+      "steps": ["studio-settings"],
       "gallery": {
         "studio-settings": [
           {
