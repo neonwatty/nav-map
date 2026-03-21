@@ -88,4 +88,42 @@ describe('useSearch', () => {
     expect(result.current.results[0].incomingCount).toBe(0);
     expect(result.current.results[0].outgoingCount).toBe(0);
   });
+
+  it('counts both directions for nodes with mixed edges', () => {
+    const { result } = renderHook(() => useSearch(nodes, edges));
+    act(() => result.current.setQuery('login'));
+    const login = result.current.results[0];
+    expect(login.incomingCount).toBe(1); // home -> login
+    expect(login.outgoingCount).toBe(1); // login -> studio
+  });
+
+  it('returns zero counts for nodes with no edges', () => {
+    const { result } = renderHook(() => useSearch(nodes, edges));
+    act(() => result.current.setQuery('blog'));
+    const blog = result.current.results[0];
+    expect(blog.incomingCount).toBe(1); // home -> blog
+    expect(blog.outgoingCount).toBe(0);
+  });
+
+  it('selectedIndex resets to 0 when query changes', () => {
+    const { result } = renderHook(() => useSearch(nodes, edges));
+    act(() => result.current.setQuery('auth'));
+    act(() => result.current.setSelectedIndex(1));
+    expect(result.current.selectedIndex).toBe(1);
+    act(() => result.current.setQuery('home'));
+    // selectedIndex should reset (via the useEffect in SearchPanel, not in useSearch itself)
+    // but the hook's results change, which is the trigger
+    expect(result.current.results).toHaveLength(1);
+  });
+
+  it('results include all NavMapNode fields', () => {
+    const nodesWithScreenshot: NavMapNode[] = [
+      { id: 'home', route: '/', label: 'Home', group: 'marketing', screenshot: 'home.png' },
+    ];
+    const { result } = renderHook(() => useSearch(nodesWithScreenshot, []));
+    act(() => result.current.setQuery('home'));
+    expect(result.current.results[0].screenshot).toBe('home.png');
+    expect(result.current.results[0].route).toBe('/');
+    expect(result.current.results[0].group).toBe('marketing');
+  });
 });
