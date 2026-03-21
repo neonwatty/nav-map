@@ -34,6 +34,7 @@ interface KeyboardNavDeps {
   undo: () => HistoryEntry | null;
   canUndo: boolean;
   setCollapsedGroups: (fn: (prev: Set<string>) => Set<string>) => void;
+  setHierarchyExpandedGroups: (fn: (prev: Set<string>) => Set<string>) => void;
 }
 
 export function useKeyboardNav(deps: KeyboardNavDeps) {
@@ -63,6 +64,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     undo,
     canUndo,
     setCollapsedGroups,
+    setHierarchyExpandedGroups,
   } = deps;
 
   useEffect(() => {
@@ -172,6 +174,8 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
                 return { ...n, data: { ...n.data, collapsed: entry.collapsedGroups.has(groupId) } };
               })
             );
+          } else if (entry.type === 'hierarchy-toggle') {
+            setHierarchyExpandedGroups(() => new Set(entry.expandedGroups));
           }
           break;
         }
@@ -223,5 +227,6 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     undo,
     canUndo,
     setCollapsedGroups,
+    setHierarchyExpandedGroups,
   ]);
 }

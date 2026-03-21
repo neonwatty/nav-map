@@ -6,7 +6,8 @@ export type HistoryEntry =
       type: 'node-drag';
       nodePositions: Array<{ id: string; position: XYPosition; parentId?: string }>;
     }
-  | { type: 'collapse'; collapsedGroups: Set<string> };
+  | { type: 'collapse'; collapsedGroups: Set<string> }
+  | { type: 'hierarchy-toggle'; expandedGroups: Set<string> };
 
 export interface UndoHistory {
   pushSnapshot: (entry: HistoryEntry) => void;
