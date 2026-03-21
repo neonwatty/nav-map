@@ -169,7 +169,8 @@ export function useGraphStyling(deps: GraphStylingDeps): {
       });
     }
 
-    if (!selectedNodeId) return visibleNodes;
+    // Only dim non-connected nodes when focus mode is active
+    if (!selectedNodeId || !focusMode) return visibleNodes;
 
     const connectedNodeIds = new Set<string>([selectedNodeId]);
     for (const edge of filteredEdges) {
@@ -189,6 +190,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     visibleNodes,
     filteredEdges,
     selectedNodeId,
+    focusMode,
     viewMode,
     activeFlow,
     focusedGroupId,
