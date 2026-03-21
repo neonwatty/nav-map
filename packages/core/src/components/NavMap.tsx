@@ -161,7 +161,7 @@ function NavMapInner({
 
   const ctx = useNavMapState(graph, screenshotBasePath);
   const walkthrough = useWalkthrough();
-  const { showDetail } = useSemanticZoom();
+  const { zoomTier } = useSemanticZoom();
   const { isNarrow } = useResponsive();
   const viewportX = useStore(s => s.transform[0]);
   const viewportY = useStore(s => s.transform[1]);
@@ -312,8 +312,10 @@ function NavMapInner({
     return map;
   }, [graph]);
 
-  // Semantic zoom: swap node types based on zoom level (skip group nodes)
-  // Also inject hasGallery flag into node data
+  // Semantic zoom: 3 tiers based on zoom level
+  // overview (<0.12): hide child nodes, show only group containers
+  // compact (0.12-0.25): compact labels, no screenshots
+  // detail (>0.25): full page nodes with screenshots
   const zoomedNodes = useMemo(() => {
     const addGalleryFlag = (node: Node) => {
       if (node.type === 'groupNode') return node;
@@ -322,13 +324,27 @@ function NavMapInner({
       return { ...node, data: { ...node.data, hasGallery: true } };
     };
 
-    if (showDetail) return nodes.map(addGalleryFlag);
+    if (zoomTier === 'overview') {
+      // Only show group nodes; hide individual pages
+      return nodes.map(node => {
+        if (node.type === 'groupNode') return node;
+        return {
+          ...node,
+          type: 'compactNode',
+          style: { ...node.style, opacity: 0, pointerEvents: 'none' as const },
+        };
+      });
+    }
+
+    if (zoomTier === 'detail') return nodes.map(addGalleryFlag);
+
+    // compact tier: all page nodes become compact
     return nodes.map(node => {
       if (node.type === 'groupNode') return node;
       const withGallery = addGalleryFlag(node);
       return { ...withGallery, type: 'compactNode' };
     });
-  }, [nodes, showDetail, galleryNodeIds]);
+  }, [nodes, zoomTier, galleryNodeIds]);
 
   // Use refs to avoid stale closures in callbacks
   const ctxRef = useRef(ctx);
