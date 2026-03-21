@@ -9,9 +9,17 @@ interface SearchPanelProps {
   onClose: () => void;
   onSelect: (nodeId: string) => void;
   isDark: boolean;
+  onQueryChange?: (query: string) => void;
 }
 
-export function SearchPanel({ nodes, isOpen, onClose, onSelect, isDark }: SearchPanelProps) {
+export function SearchPanel({
+  nodes,
+  isOpen,
+  onClose,
+  onSelect,
+  isDark,
+  onQueryChange,
+}: SearchPanelProps) {
   const { query, setQuery, results, selectedIndex, setSelectedIndex } = useSearch(nodes);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,8 +35,9 @@ export function SearchPanel({ nodes, isOpen, onClose, onSelect, isDark }: Search
     if (!isOpen) {
       setQuery('');
       setSelectedIndex(0);
+      onQueryChange?.('');
     }
-  }, [isOpen, setQuery, setSelectedIndex]);
+  }, [isOpen, setQuery, setSelectedIndex, onQueryChange]);
 
   // Reset selectedIndex when results change
   useEffect(() => {
@@ -90,7 +99,10 @@ export function SearchPanel({ nodes, isOpen, onClose, onSelect, isDark }: Search
             type="text"
             placeholder="Search pages..."
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => {
+              setQuery(e.target.value);
+              onQueryChange?.(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             style={{
               width: '100%',

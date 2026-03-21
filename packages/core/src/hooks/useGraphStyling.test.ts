@@ -35,6 +35,7 @@ const baseDeps = {
   focusedGroupId: null,
   nodeGroupMap: new Map<string, string>(),
   showRedirects: true,
+  searchMatchIds: null,
 };
 
 describe('useGraphStyling', () => {

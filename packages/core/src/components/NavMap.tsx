@@ -42,6 +42,8 @@ import { ConnectionPanel } from './panels/ConnectionPanel';
 import { LegendPanel } from './panels/LegendPanel';
 import { WalkthroughBar } from './panels/WalkthroughBar';
 import { StatusBanners } from './panels/StatusBanners';
+import { HierarchyControls } from './panels/HierarchyControls';
+import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
 
 const nodeTypes = {
@@ -87,6 +89,14 @@ function NavMapInner({
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+    route: string;
+    filePath?: string;
+  } | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
@@ -423,6 +433,19 @@ function NavMapInner({
     }
   }, [pushSnapshot]);
 
+  // Right-click context menu
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    const data = node.data as Record<string, unknown>;
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+      route: (data.route as string) ?? '',
+      filePath: data.filePath as string | undefined,
+    });
+  }, []);
+
   // Track mouse position for hover preview
   useEffect(() => {
     if (!hoverPreview) return;
@@ -441,6 +464,23 @@ function NavMapInner({
     return graph.flows[selectedFlowIndex] ?? null;
   }, [selectedFlowIndex, graph]);
 
+  // Compute search match IDs for canvas highlighting
+  const searchMatchIds = useMemo(() => {
+    if (!showSearch || !searchQuery.trim() || !graph) return null;
+    const q = searchQuery.toLowerCase().trim();
+    const ids = new Set<string>();
+    for (const n of graph.nodes) {
+      if (
+        n.label.toLowerCase().includes(q) ||
+        n.route.toLowerCase().includes(q) ||
+        n.group.toLowerCase().includes(q)
+      ) {
+        ids.add(n.id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [showSearch, searchQuery, graph]);
+
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
     edges,
@@ -453,6 +493,7 @@ function NavMapInner({
     focusedGroupId,
     nodeGroupMap,
     showRedirects,
+    searchMatchIds,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -571,6 +612,7 @@ function NavMapInner({
               onSelectionChange={onSelectionChange}
               onNodeDragStart={onNodeDragStart}
               onNodeDragStop={onNodeDragStop}
+              onNodeContextMenu={onNodeContextMenu}
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
               onNodeDoubleClick={onNodeDoubleClick}
@@ -616,6 +658,27 @@ function NavMapInner({
           )}
           {graph && <LegendPanel groups={graph.groups} />}
 
+          {viewMode === 'hierarchy' && graph && (
+            <HierarchyControls
+              allGroupIds={graph.groups.map(g => g.id)}
+              expandedGroups={hierarchyExpandedGroups}
+              onExpandAll={() => {
+                pushSnapshot({
+                  type: 'hierarchy-toggle',
+                  expandedGroups: new Set(hierarchyExpandedGroups),
+                });
+                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+              }}
+              onCollapseAll={() => {
+                pushSnapshot({
+                  type: 'hierarchy-toggle',
+                  expandedGroups: new Set(hierarchyExpandedGroups),
+                });
+                setHierarchyExpandedGroups(new Set());
+              }}
+            />
+          )}
+
           <FlowAnimationOverlay
             isDark={ctx.isDark}
             isAnimatingFlow={isAnimatingFlow}
@@ -639,6 +702,18 @@ function NavMapInner({
           />
         )}
 
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            nodeId={contextMenu.nodeId}
+            route={contextMenu.route}
+            filePath={contextMenu.filePath}
+            baseUrl={graph?.meta.baseUrl}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+
         <NavMapOverlays
           graph={graph}
           isDark={ctx.isDark}
@@ -656,8 +731,10 @@ function NavMapInner({
           onCloseAnalytics={() => setShowAnalytics(false)}
           onSearchSelect={nodeId => {
             setShowSearch(false);
+            setSearchQuery('');
             navigateToNode(nodeId);
           }}
+          onSearchQueryChange={setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
           onCloseGallery={() => setGalleryNodeId(null)}
         />
