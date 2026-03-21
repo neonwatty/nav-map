@@ -228,6 +228,12 @@ function NavMapInner({
   useEffect(() => {
     if (!graph) return;
 
+    // For non-map default views, just mark layoutDone so useViewModeLayout runs
+    if (viewModeRef.current !== 'map') {
+      setLayoutDone(true);
+      return;
+    }
+
     const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
 
     // Inject onToggle and onDoubleClick into group nodes
