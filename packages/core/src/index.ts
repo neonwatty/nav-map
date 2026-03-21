@@ -30,6 +30,7 @@ export { useWalkthrough } from './hooks/useWalkthrough';
 export type { WalkthroughState } from './hooks/useWalkthrough';
 export { useSemanticZoom } from './hooks/useSemanticZoom';
 export { useSearch } from './hooks/useSearch';
+export type { SearchResult } from './hooks/useSearch';
 
 // Layout
 export { computeElkLayout } from './layout/elkLayout';

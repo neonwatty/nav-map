@@ -400,6 +400,22 @@ function NavMapInner({
     [setCenter]
   );
 
+  // Search navigation: longer flight with closer zoom
+  const navigateToNodeFromSearch = useCallback(
+    (nodeId: string) => {
+      ctxRef.current.setSelectedNodeId(nodeId);
+      walkthroughRef.current.push(nodeId);
+      const node = nodesRef.current.find(n => n.id === nodeId);
+      if (node) {
+        setCenter(node.position.x + 90, node.position.y + 70, {
+          zoom: 1.0,
+          duration: 600,
+        });
+      }
+    },
+    [setCenter]
+  );
+
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
     ctx,
@@ -765,9 +781,8 @@ function NavMapInner({
           onCloseSearch={() => setShowSearch(false)}
           onCloseAnalytics={() => setShowAnalytics(false)}
           onSearchSelect={nodeId => {
-            setShowSearch(false);
             setSearchQuery('');
-            navigateToNode(nodeId);
+            navigateToNodeFromSearch(nodeId);
           }}
           onSearchQueryChange={setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}

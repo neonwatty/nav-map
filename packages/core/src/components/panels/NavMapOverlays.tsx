@@ -35,7 +35,7 @@ interface NavMapOverlaysProps {
 
 export function NavMapOverlays({
   graph,
-  isDark,
+  isDark: _isDark,
   showHelp,
   showSearch,
   showAnalytics,
@@ -60,10 +60,10 @@ export function NavMapOverlays({
       {graph && (
         <SearchPanel
           nodes={graph.nodes}
+          edges={graph.edges}
           isOpen={showSearch}
           onClose={onCloseSearch}
           onSelect={onSearchSelect}
-          isDark={isDark}
           onQueryChange={onSearchQueryChange}
         />
       )}
