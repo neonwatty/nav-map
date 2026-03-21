@@ -292,6 +292,22 @@ function NavMapInner({
     handleHierarchyToggleRef,
   });
 
+  // In hierarchy view, auto-collapse groups at overview zoom, auto-expand at detail
+  const prevZoomTierRef = useRef(zoomTier);
+  useEffect(() => {
+    if (viewMode !== 'hierarchy' || !graph || zoomTier === prevZoomTierRef.current) return;
+    const prev = prevZoomTierRef.current;
+    prevZoomTierRef.current = zoomTier;
+
+    if (zoomTier === 'overview' && prev !== 'overview') {
+      // Zoomed out → collapse all
+      setHierarchyExpandedGroups(new Set());
+    } else if (zoomTier === 'detail' && prev === 'overview') {
+      // Zoomed back in from overview → expand all
+      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+    }
+  }, [zoomTier, viewMode, graph]);
+
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
     const ids = new Set<string>();
