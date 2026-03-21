@@ -1,36 +1,36 @@
 import { useEffect, useRef } from 'react';
-import type { NavMapNode } from '../../types';
+import type { NavMapNode, NavMapEdge } from '../../types';
 import { getGroupColors } from '../../utils/colors';
+import { useNavMapContext } from '../../hooks/useNavMap';
 import { useSearch } from '../../hooks/useSearch';
+import { SearchPreviewPane } from './SearchPreviewPane';
 
 interface SearchPanelProps {
   nodes: NavMapNode[];
+  edges?: NavMapEdge[];
   isOpen: boolean;
   onClose: () => void;
   onSelect: (nodeId: string) => void;
-  isDark: boolean;
+  isDark?: boolean;
   onQueryChange?: (query: string) => void;
 }
 
 export function SearchPanel({
   nodes,
+  edges = [],
   isOpen,
   onClose,
   onSelect,
-  isDark,
   onQueryChange,
 }: SearchPanelProps) {
-  const { query, setQuery, results, selectedIndex, setSelectedIndex } = useSearch(nodes);
+  const { isDark, screenshotBasePath } = useNavMapContext();
+  const { query, setQuery, results, selectedIndex, setSelectedIndex } = useSearch(nodes, edges);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus input when opened
   useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+    if (isOpen) requestAnimationFrame(() => inputRef.current?.focus());
   }, [isOpen]);
 
-  // Reset query and selectedIndex when overlay closes
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
@@ -39,7 +39,6 @@ export function SearchPanel({
     }
   }, [isOpen, setQuery, setSelectedIndex, onQueryChange]);
 
-  // Reset selectedIndex when results change
   useEffect(() => {
     setSelectedIndex(0);
   }, [results, setSelectedIndex]);
@@ -61,12 +60,16 @@ export function SearchPanel({
     }
     if (e.key === 'Enter' && results.length > 0) {
       e.preventDefault();
-      onSelect(results[selectedIndex].id);
+      const nodeId = results[selectedIndex].id;
       onClose();
+      onSelect(nodeId);
     }
   };
 
   if (!isOpen) return null;
+
+  const showPreview =
+    results.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 760;
 
   return (
     <div
@@ -86,10 +89,11 @@ export function SearchPanel({
         style={{
           background: isDark ? '#14141e' : '#fff',
           borderRadius: 12,
-          maxWidth: 480,
+          maxWidth: showPreview ? 700 : 480,
           width: '100%',
           boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.6)' : '0 16px 48px rgba(0,0,0,0.15)',
           overflow: 'hidden',
+          transition: 'max-width 150ms ease',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -119,71 +123,122 @@ export function SearchPanel({
         </div>
 
         {results.length > 0 && (
-          <div style={{ padding: '8px 0', maxHeight: 320, overflowY: 'auto' }}>
-            {results.map((node, index) => {
-              const isSelected = index === selectedIndex;
-              const groupColors = getGroupColors(node.group, isDark);
-              return (
-                <div
-                  key={node.id}
-                  style={{
-                    padding: '10px 16px',
-                    cursor: 'pointer',
-                    background: isSelected ? (isDark ? '#1e1e30' : '#e8ecf8') : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                  }}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  onClick={() => {
-                    onSelect(node.id);
-                    onClose();
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: isDark ? '#e0e0e8' : '#222',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {node.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: isDark ? '#666' : '#999',
-                        marginTop: 2,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {node.route}
-                    </div>
-                  </div>
-                  <span
+          <div style={{ display: 'flex' }}>
+            {/* Results list */}
+            <div
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                maxHeight: 380,
+                overflowY: 'auto',
+              }}
+            >
+              {results.map((node, index) => {
+                const isSelected = index === selectedIndex;
+                const groupColors = getGroupColors(node.group, isDark);
+                return (
+                  <div
+                    key={node.id}
                     style={{
-                      fontSize: 11,
-                      padding: '2px 8px',
-                      borderRadius: 9999,
-                      background: groupColors.bg,
-                      color: groupColors.text,
-                      border: `1px solid ${groupColors.border}`,
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      background: isSelected ? (isDark ? '#1e1e30' : '#e8ecf8') : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                    }}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    onClick={() => {
+                      onClose();
+                      onSelect(node.id);
                     }}
                   >
-                    {node.group}
-                  </span>
-                </div>
-              );
-            })}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                          color: isDark ? '#e0e0e8' : '#222',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {node.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: isDark ? '#666' : '#999',
+                          marginTop: 2,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {node.route}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 5px',
+                          borderRadius: 9999,
+                          background: isDark ? '#1a2538' : '#e0ecff',
+                          color: isDark ? '#6688bb' : '#3355aa',
+                        }}
+                        title="Outgoing"
+                      >
+                        {'→'} {node.outgoingCount}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 5px',
+                          borderRadius: 9999,
+                          background: isDark ? '#1a2538' : '#e0ecff',
+                          color: isDark ? '#6688bb' : '#3355aa',
+                        }}
+                        title="Incoming"
+                      >
+                        {'←'} {node.incomingCount}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          padding: '2px 8px',
+                          borderRadius: 9999,
+                          background: groupColors.bg,
+                          color: groupColors.text,
+                          border: `1px solid ${groupColors.border}`,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {node.group}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Preview pane */}
+            {showPreview && results[selectedIndex] && (
+              <SearchPreviewPane
+                node={results[selectedIndex]}
+                isDark={isDark}
+                screenshotBasePath={screenshotBasePath}
+              />
+            )}
           </div>
         )}
 
