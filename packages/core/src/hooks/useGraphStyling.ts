@@ -14,6 +14,7 @@ interface GraphStylingDeps {
   focusedGroupId: string | null;
   nodeGroupMap: Map<string, string>;
   showRedirects: boolean;
+  searchMatchIds: Set<string> | null;
 }
 
 export function useGraphStyling(deps: GraphStylingDeps): {
@@ -32,6 +33,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     focusedGroupId,
     nodeGroupMap,
     showRedirects,
+    searchMatchIds,
   } = deps;
 
   // Filter collapsed group children
@@ -103,8 +105,26 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     });
   }, [visibleEdges, showRedirects]);
 
-  // Dimming: flow highlighting > group focus > selection > default
+  // Dimming: search > flow highlighting > group focus > selection > default
   const styledNodes = useMemo(() => {
+    // Search highlighting takes top priority
+    if (searchMatchIds && searchMatchIds.size > 0) {
+      return visibleNodes.map(node => {
+        const isMatch = searchMatchIds.has(node.id);
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            opacity: isMatch ? 1 : 0.12,
+            transition: 'opacity 200ms ease',
+            ...(isMatch
+              ? { filter: 'drop-shadow(0 0 6px rgba(91,155,245,0.5))' }
+              : { pointerEvents: 'none' as React.CSSProperties['pointerEvents'] }),
+          },
+        };
+      });
+    }
+
     if (viewMode === 'map' && activeFlow) {
       const flowStepSet = new Set(activeFlow.steps);
       const flowStepMap = new Map(activeFlow.steps.map((id, i) => [id, i + 1]));
@@ -165,7 +185,15 @@ export function useGraphStyling(deps: GraphStylingDeps): {
         transition: 'opacity 0.2s',
       },
     }));
-  }, [visibleNodes, filteredEdges, selectedNodeId, viewMode, activeFlow, focusedGroupId]);
+  }, [
+    visibleNodes,
+    filteredEdges,
+    selectedNodeId,
+    viewMode,
+    activeFlow,
+    focusedGroupId,
+    searchMatchIds,
+  ]);
 
   const styledEdges = useMemo(() => {
     if (viewMode === 'map' && activeFlow) {

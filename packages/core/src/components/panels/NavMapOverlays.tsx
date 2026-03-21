@@ -28,6 +28,7 @@ interface NavMapOverlaysProps {
   onCloseSearch: () => void;
   onCloseAnalytics: () => void;
   onSearchSelect: (nodeId: string) => void;
+  onSearchQueryChange?: (query: string) => void;
   onPeriodChange: (period: { start: string; end: string }) => void;
   onCloseGallery: () => void;
 }
@@ -48,6 +49,7 @@ export function NavMapOverlays({
   onCloseSearch,
   onCloseAnalytics,
   onSearchSelect,
+  onSearchQueryChange,
   onPeriodChange,
   onCloseGallery,
 }: NavMapOverlaysProps) {
@@ -62,6 +64,7 @@ export function NavMapOverlays({
           onClose={onCloseSearch}
           onSelect={onSearchSelect}
           isDark={isDark}
+          onQueryChange={onSearchQueryChange}
         />
       )}
 

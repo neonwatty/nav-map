@@ -87,6 +87,7 @@ function NavMapInner({
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
@@ -441,6 +442,23 @@ function NavMapInner({
     return graph.flows[selectedFlowIndex] ?? null;
   }, [selectedFlowIndex, graph]);
 
+  // Compute search match IDs for canvas highlighting
+  const searchMatchIds = useMemo(() => {
+    if (!showSearch || !searchQuery.trim() || !graph) return null;
+    const q = searchQuery.toLowerCase().trim();
+    const ids = new Set<string>();
+    for (const n of graph.nodes) {
+      if (
+        n.label.toLowerCase().includes(q) ||
+        n.route.toLowerCase().includes(q) ||
+        n.group.toLowerCase().includes(q)
+      ) {
+        ids.add(n.id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [showSearch, searchQuery, graph]);
+
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
     edges,
@@ -453,6 +471,7 @@ function NavMapInner({
     focusedGroupId,
     nodeGroupMap,
     showRedirects,
+    searchMatchIds,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -656,8 +675,10 @@ function NavMapInner({
           onCloseAnalytics={() => setShowAnalytics(false)}
           onSearchSelect={nodeId => {
             setShowSearch(false);
+            setSearchQuery('');
             navigateToNode(nodeId);
           }}
+          onSearchQueryChange={setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
           onCloseGallery={() => setGalleryNodeId(null)}
         />
