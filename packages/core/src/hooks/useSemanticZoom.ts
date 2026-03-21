@@ -1,16 +1,28 @@
 import { useState, useCallback } from 'react';
 import { useOnViewportChange, type Viewport } from '@xyflow/react';
 
-const ZOOM_THRESHOLD = 0.15;
+export type ZoomTier = 'overview' | 'compact' | 'detail';
+
+const OVERVIEW_THRESHOLD = 0.12;
+const DETAIL_THRESHOLD = 0.25;
+
+function getZoomTier(zoom: number): ZoomTier {
+  if (zoom < OVERVIEW_THRESHOLD) return 'overview';
+  if (zoom < DETAIL_THRESHOLD) return 'compact';
+  return 'detail';
+}
 
 export function useSemanticZoom() {
-  const [showDetail, setShowDetail] = useState(true);
+  const [zoomTier, setZoomTier] = useState<ZoomTier>('detail');
 
   useOnViewportChange({
     onChange: useCallback((viewport: Viewport) => {
-      setShowDetail(viewport.zoom >= ZOOM_THRESHOLD);
+      setZoomTier(getZoomTier(viewport.zoom));
     }, []),
   });
 
-  return { showDetail, zoomThreshold: ZOOM_THRESHOLD };
+  // Backward compat
+  const showDetail = zoomTier === 'detail';
+
+  return { showDetail, zoomTier };
 }
