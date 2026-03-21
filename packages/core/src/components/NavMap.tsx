@@ -78,7 +78,7 @@ function NavMapInner({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
   const [showSharedNav, setShowSharedNav] = useState(false);
-  const [focusMode, setFocusMode] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
   const [showRedirects, setShowRedirects] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
