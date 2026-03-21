@@ -89,6 +89,7 @@ function NavMapInner({
   const [showSearch, setShowSearch] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -131,6 +132,20 @@ function NavMapInner({
   }, []);
   const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
   handleGroupDoubleClickRef.current = handleGroupDoubleClick;
+  const handleHierarchyToggle = useCallback(
+    (groupId: string) => {
+      setHierarchyExpandedGroups(prev => {
+        pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
+        const next = new Set(prev);
+        if (next.has(groupId)) next.delete(groupId);
+        else next.add(groupId);
+        return next;
+      });
+    },
+    [pushSnapshot]
+  );
+  const handleHierarchyToggleRef = useRef(handleHierarchyToggle);
+  handleHierarchyToggleRef.current = handleHierarchyToggle;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -263,6 +278,8 @@ function NavMapInner({
     sharedNavEdgesRef,
     handleGroupToggleRef,
     handleGroupDoubleClickRef,
+    hierarchyExpandedGroups,
+    handleHierarchyToggleRef,
   });
 
   // Identify nodes that have gallery data from any flow
@@ -368,6 +385,7 @@ function NavMapInner({
     undo,
     canUndo,
     setCollapsedGroups,
+    setHierarchyExpandedGroups,
   });
 
   // Node hover for preview
@@ -440,12 +458,26 @@ function NavMapInner({
   // Double-click opens gallery if ANY flow has gallery data for this node
   const onNodeDoubleClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      // In hierarchy mode, toggle group expansion
+      if (viewMode === 'hierarchy') {
+        // Collapsed summary node (compact node with hier-group- prefix)
+        if (node.id.startsWith('hier-group-')) {
+          const groupId = node.id.replace('hier-group-', '');
+          setHierarchyExpandedGroups(prev => {
+            pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
+            const next = new Set(prev);
+            next.add(groupId);
+            return next;
+          });
+          return;
+        }
+      }
       const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
       if (hasGallery) {
         setGalleryNodeId(node.id);
       }
     },
-    [graph]
+    [graph, viewMode, pushSnapshot]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);

@@ -47,7 +47,7 @@ export interface NavMapFlow {
   partial?: boolean;
 }
 
-export type ViewMode = 'map' | 'flow' | 'tree';
+export type ViewMode = 'map' | 'flow' | 'tree' | 'hierarchy';
 
 export type EdgeMode = 'smooth' | 'routed' | 'bundled';
 
