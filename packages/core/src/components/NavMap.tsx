@@ -80,7 +80,7 @@ function NavMapInner({
   const [showSharedNav, setShowSharedNav] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [showRedirects, setShowRedirects] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [viewMode, setViewMode] = useState<ViewMode>('hierarchy');
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
   const [edgeMode, setEdgeMode] = useState<EdgeMode>('smooth');
@@ -204,6 +204,14 @@ function NavMapInner({
   useEffect(() => {
     if (graphProp) setGraph(graphProp);
   }, [graphProp]);
+
+  // Expand all hierarchy groups when graph first loads in hierarchy mode
+  useEffect(() => {
+    if (graph && viewMode === 'hierarchy' && hierarchyExpandedGroups.size === 0) {
+      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graph]);
 
   // Fetch analytics data
   useEffect(() => {
