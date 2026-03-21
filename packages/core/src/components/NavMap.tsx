@@ -588,6 +588,9 @@ function NavMapInner({
               setViewMode(mode);
               if (mode !== 'flow') setSelectedFlowIndex(null);
               if (mode !== 'tree') setTreeRootId(null);
+              if (mode === 'hierarchy' && graph) {
+                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+              }
             }}
             onFlowSelect={idx => {
               setSelectedFlowIndex(idx);
