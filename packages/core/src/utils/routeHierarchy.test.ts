@@ -65,4 +65,26 @@ describe('buildRouteHierarchy', () => {
     expect(edges).toHaveLength(2);
     edges.forEach(e => expect(e.parentId).toBe('home'));
   });
+
+  it('handles deeply nested routes', () => {
+    const nodes = [
+      makeNode('home', '/'),
+      makeNode('studio', '/studio'),
+      makeNode('project', '/studio/project'),
+      makeNode('settings', '/studio/project/settings'),
+    ];
+    const edges = buildRouteHierarchy(nodes);
+    expect(edges).toContainEqual({ parentId: 'home', childId: 'studio' });
+    expect(edges).toContainEqual({ parentId: 'studio', childId: 'project' });
+    expect(edges).toContainEqual({ parentId: 'project', childId: 'settings' });
+  });
+
+  it('handles empty node list', () => {
+    expect(buildRouteHierarchy([])).toEqual([]);
+  });
+
+  it('handles single node', () => {
+    const nodes = [makeNode('home', '/')];
+    expect(buildRouteHierarchy(nodes)).toEqual([]);
+  });
 });

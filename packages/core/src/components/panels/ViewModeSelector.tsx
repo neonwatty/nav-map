@@ -7,10 +7,10 @@ interface ViewModeSelectorProps {
 }
 
 const modes: { value: ViewMode; label: string }[] = [
+  { value: 'hierarchy', label: 'Hierarchy' },
   { value: 'map', label: 'Map' },
   { value: 'flow', label: 'Flow' },
   { value: 'tree', label: 'Tree' },
-  { value: 'hierarchy', label: 'Hierarchy' },
 ];
 
 export function ViewModeSelector({ viewMode, onViewModeChange }: ViewModeSelectorProps) {
@@ -35,7 +35,7 @@ export function ViewModeSelector({ viewMode, onViewModeChange }: ViewModeSelecto
               background: isActive ? (isDark ? '#1e2540' : '#e0e8ff') : isDark ? '#14141e' : '#fff',
               border: 'none',
               borderRight:
-                mode.value !== 'hierarchy' ? `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}` : 'none',
+                mode.value !== 'tree' ? `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}` : 'none',
               padding: '5px 12px',
               fontSize: 12,
               fontWeight: isActive ? 600 : 400,
