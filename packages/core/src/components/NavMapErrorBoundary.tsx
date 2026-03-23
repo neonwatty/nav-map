@@ -35,9 +35,7 @@ export class NavMapErrorBoundary extends Component<Props, State> {
           }}
         >
           <strong>Something went wrong rendering NavMap.</strong>
-          <p style={{ margin: '8px 0 0', opacity: 0.8 }}>
-            {this.state.error.message}
-          </p>
+          <p style={{ margin: '8px 0 0', opacity: 0.8 }}>{this.state.error.message}</p>
         </div>
       );
     }
