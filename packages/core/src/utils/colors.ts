@@ -23,8 +23,10 @@ const fallbackLight = { bg: '#f0f0f4', border: '#888', text: '#555' };
 
 export function getGroupColors(
   groupId: string,
-  isDark: boolean
+  isDark: boolean,
+  overrides?: GroupColorMap
 ): { bg: string; border: string; text: string } {
+  if (overrides?.[groupId]) return overrides[groupId];
   const map = isDark ? darkGroupColors : lightGroupColors;
   const fallback = isDark ? fallbackDark : fallbackLight;
   return map[groupId] ?? fallback;

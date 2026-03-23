@@ -17,7 +17,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph, ViewMode, EdgeMode } from '../types';
+import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
+import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
@@ -45,6 +46,8 @@ import { StatusBanners } from './panels/StatusBanners';
 import { HierarchyControls } from './panels/HierarchyControls';
 import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
+import { NavMapErrorBoundary } from './NavMapErrorBoundary';
+import { ContainerWarning } from './ContainerWarning';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -57,12 +60,32 @@ const edgeTypes = {
 };
 
 export interface NavMapProps {
+  /** Graph data object (pass this OR graphUrl) */
   graph?: NavMapGraph;
+  /** URL to fetch graph JSON from */
   graphUrl?: string;
+  /** Base path prepended to screenshot URLs */
   screenshotBasePath?: string;
+  /** Analytics adapter for page view / transition data */
   analytics?: AnalyticsAdapter;
+  /** Additional CSS class on the container */
   className?: string;
+  /** Additional inline styles on the container */
   style?: React.CSSProperties;
+  /** Initial view mode (default: 'hierarchy') */
+  defaultViewMode?: ViewMode;
+  /** Initial edge rendering mode (default: 'smooth') */
+  defaultEdgeMode?: EdgeMode;
+  /** Theme overrides for colors */
+  theme?: NavMapTheme;
+  /** Hide the top toolbar */
+  hideToolbar?: boolean;
+  /** Hide the search overlay (also disables Cmd+K shortcut) */
+  hideSearch?: boolean;
+  /** Hide the help overlay (also disables ? shortcut) */
+  hideHelp?: boolean;
+  /** Callback fired when graph validation fails */
+  onValidationError?: (errors: GraphValidationError[]) => void;
 }
 
 function NavMapInner({
@@ -72,6 +95,13 @@ function NavMapInner({
   analytics: analyticsAdapter,
   className,
   style,
+  defaultViewMode = 'hierarchy',
+  defaultEdgeMode = 'smooth',
+  theme,
+  hideToolbar = false,
+  hideSearch = false,
+  hideHelp = false,
+  onValidationError,
 }: NavMapProps) {
   const [graph, setGraph] = useState<NavMapGraph | null>(graphProp ?? null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -80,10 +110,10 @@ function NavMapInner({
   const [showSharedNav, setShowSharedNav] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [showRedirects, setShowRedirects] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('hierarchy');
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [edgeMode, setEdgeMode] = useState<EdgeMode>('smooth');
+  const [edgeMode, setEdgeMode] = useState<EdgeMode>(defaultEdgeMode);
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
@@ -114,6 +144,25 @@ function NavMapInner({
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
+
+  const onValidationErrorRef = useRef(onValidationError);
+  onValidationErrorRef.current = onValidationError;
+
+  const guardedSetShowSearch = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      if (hideSearch) return;
+      setShowSearch(v);
+    },
+    [hideSearch]
+  );
+
+  const guardedSetShowHelp = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      if (hideHelp) return;
+      setShowHelp(v);
+    },
+    [hideHelp]
+  );
 
   // Undo history for node drags and group collapse
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
@@ -159,7 +208,7 @@ function NavMapInner({
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const ctx = useNavMapState(graph, screenshotBasePath);
+  const ctx = useNavMapState(graph, screenshotBasePath, theme);
   const walkthrough = useWalkthrough();
   const { zoomTier } = useSemanticZoom();
   const { isNarrow } = useResponsive();
@@ -196,13 +245,27 @@ function NavMapInner({
     if (graphUrl && !graphProp) {
       fetch(graphUrl)
         .then(r => r.json())
-        .then((data: NavMapGraph) => setGraph(data));
+        .then((data: NavMapGraph) => {
+          const result = validateGraph(data);
+          if (!result.valid) {
+            onValidationErrorRef.current?.(result.errors);
+            console.warn('[NavMap] Graph validation failed:', result.errors);
+          }
+          setGraph(data);
+        });
     }
   }, [graphUrl, graphProp]);
 
   // Update graph when prop changes
   useEffect(() => {
-    if (graphProp) setGraph(graphProp);
+    if (graphProp) {
+      const result = validateGraph(graphProp);
+      if (!result.valid) {
+        onValidationErrorRef.current?.(result.errors);
+        console.warn('[NavMap] Graph validation failed:', result.errors);
+      }
+      setGraph(graphProp);
+    }
   }, [graphProp]);
 
   // Expand all hierarchy groups when graph first loads in hierarchy mode
@@ -440,8 +503,8 @@ function NavMapInner({
     showHelp,
     showSharedNav,
     focusMode,
-    setShowSearch,
-    setShowHelp,
+    setShowSearch: guardedSetShowSearch,
+    setShowHelp: guardedSetShowHelp,
     setShowSharedNav,
     setFocusMode,
     setNodes,
@@ -585,6 +648,9 @@ function NavMapInner({
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
+  const effectiveShowHelp = hideHelp ? false : showHelp;
+  const effectiveShowSearch = hideSearch ? false : showSearch;
+
   return (
     <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode }}>
       <div
@@ -596,49 +662,53 @@ function NavMapInner({
           display: 'flex',
           position: 'relative',
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-          background: ctx.isDark ? '#0a0a0f' : '#f4f5f8',
-          color: ctx.isDark ? '#c8c8d0' : '#333',
+          background: ctx.isDark
+            ? (theme?.dark?.background ?? '#0a0a0f')
+            : (theme?.light?.background ?? '#f4f5f8'),
+          color: ctx.isDark ? (theme?.dark?.text ?? '#c8c8d0') : (theme?.light?.text ?? '#333'),
           ...style,
         }}
       >
         <div style={{ flex: 1, position: 'relative' }}>
           {/* Toolbar */}
-          <NavMapToolbar
-            graph={graph}
-            viewMode={viewMode}
-            selectedFlowIndex={selectedFlowIndex}
-            showSharedNav={showSharedNav}
-            showRedirects={showRedirects}
-            focusMode={focusMode}
-            edgeMode={edgeMode}
-            isAnimatingFlow={isAnimatingFlow}
-            showAnalytics={showAnalytics}
-            analyticsAdapter={analyticsAdapter}
-            onViewModeChange={mode => {
-              setViewMode(mode);
-              if (mode !== 'flow') setSelectedFlowIndex(null);
-              if (mode !== 'tree') setTreeRootId(null);
-              if (mode === 'hierarchy' && graph) {
-                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
-              }
-            }}
-            onFlowSelect={idx => {
-              setSelectedFlowIndex(idx);
-              setFocusedGroupId(null);
-            }}
-            onResetView={() => {
-              setFocusedGroupId(null);
-              fitView({ padding: 0.15, duration: 300 });
-            }}
-            onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
-            onToggleRedirects={() => setShowRedirects(prev => !prev)}
-            onToggleFocusMode={() => setFocusMode(prev => !prev)}
-            onEdgeModeChange={setEdgeMode}
-            onAnimate={() => setIsAnimatingFlow(true)}
-            onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
-            onSearch={() => setShowSearch(true)}
-            onHelp={() => setShowHelp(true)}
-          />
+          {!hideToolbar && (
+            <NavMapToolbar
+              graph={graph}
+              viewMode={viewMode}
+              selectedFlowIndex={selectedFlowIndex}
+              showSharedNav={showSharedNav}
+              showRedirects={showRedirects}
+              focusMode={focusMode}
+              edgeMode={edgeMode}
+              isAnimatingFlow={isAnimatingFlow}
+              showAnalytics={showAnalytics}
+              analyticsAdapter={analyticsAdapter}
+              onViewModeChange={mode => {
+                setViewMode(mode);
+                if (mode !== 'flow') setSelectedFlowIndex(null);
+                if (mode !== 'tree') setTreeRootId(null);
+                if (mode === 'hierarchy' && graph) {
+                  setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+                }
+              }}
+              onFlowSelect={idx => {
+                setSelectedFlowIndex(idx);
+                setFocusedGroupId(null);
+              }}
+              onResetView={() => {
+                setFocusedGroupId(null);
+                fitView({ padding: 0.15, duration: 300 });
+              }}
+              onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+              onToggleRedirects={() => setShowRedirects(prev => !prev)}
+              onToggleFocusMode={() => setFocusMode(prev => !prev)}
+              onEdgeModeChange={setEdgeMode}
+              onAnimate={() => setIsAnimatingFlow(true)}
+              onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+              onSearch={() => guardedSetShowSearch(true)}
+              onHelp={() => guardedSetShowHelp(true)}
+            />
+          )}
 
           <StatusBanners
             isDark={ctx.isDark}
@@ -782,8 +852,8 @@ function NavMapInner({
         <NavMapOverlays
           graph={graph}
           isDark={ctx.isDark}
-          showHelp={showHelp}
-          showSearch={showSearch}
+          showHelp={effectiveShowHelp}
+          showSearch={effectiveShowSearch}
           showAnalytics={showAnalytics}
           hoverPreview={hoverPreview}
           analyticsData={analyticsData}
@@ -791,8 +861,8 @@ function NavMapInner({
           walkthrough={walkthrough}
           galleryNodeId={galleryNodeId}
           screenshotBasePath={screenshotBasePath}
-          onCloseHelp={() => setShowHelp(false)}
-          onCloseSearch={() => setShowSearch(false)}
+          onCloseHelp={() => guardedSetShowHelp(false)}
+          onCloseSearch={() => guardedSetShowSearch(false)}
           onCloseAnalytics={() => setShowAnalytics(false)}
           onSearchSelect={nodeId => {
             setSearchQuery('');
@@ -809,8 +879,12 @@ function NavMapInner({
 
 export function NavMap(props: NavMapProps) {
   return (
-    <ReactFlowProvider>
-      <NavMapInner {...props} />
-    </ReactFlowProvider>
+    <NavMapErrorBoundary>
+      <ContainerWarning>
+        <ReactFlowProvider>
+          <NavMapInner {...props} />
+        </ReactFlowProvider>
+      </ContainerWarning>
+    </NavMapErrorBoundary>
   );
 }
