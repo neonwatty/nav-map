@@ -43,7 +43,7 @@ export default function HomePage() {
         screenshotBasePath=""
         defaultViewMode="hierarchy"
         defaultEdgeMode="smooth"
-        onValidationError={(errors) => {
+        onValidationError={errors => {
           console.warn('NavMap validation:', errors);
         }}
       />
