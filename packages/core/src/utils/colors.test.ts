@@ -35,3 +35,22 @@ describe('getGroupColors', () => {
     }
   });
 });
+
+describe('getGroupColors with overrides', () => {
+  it('uses override when provided for known group', () => {
+    const override = { marketing: { bg: '#000', border: '#fff', text: '#abc' } };
+    const colors = getGroupColors('marketing', true, override);
+    expect(colors).toEqual({ bg: '#000', border: '#fff', text: '#abc' });
+  });
+
+  it('falls back to built-in when override does not cover group', () => {
+    const override = { marketing: { bg: '#000', border: '#fff', text: '#abc' } };
+    const colors = getGroupColors('product', true, override);
+    expect(colors).toEqual(darkGroupColors.product);
+  });
+
+  it('works with no override (backward-compatible)', () => {
+    const colors = getGroupColors('marketing', true);
+    expect(colors).toEqual(darkGroupColors.marketing);
+  });
+});

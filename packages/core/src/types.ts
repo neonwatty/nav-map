@@ -80,3 +80,15 @@ export interface GroupColors {
 }
 
 export type GroupColorMap = Record<string, GroupColors>;
+
+export interface NavMapTheme {
+  groupColors?: GroupColorMap;
+  dark?: {
+    background?: string;
+    text?: string;
+  };
+  light?: {
+    background?: string;
+    text?: string;
+  };
+}
