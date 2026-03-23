@@ -18,10 +18,18 @@ export { GroupNode } from './components/nodes/GroupNode';
 export { PresentationBar } from './components/panels/PresentationBar';
 export { AnalyticsOverlay } from './components/panels/AnalyticsOverlay';
 
+// Error handling
+export { NavMapErrorBoundary } from './components/NavMapErrorBoundary';
+export { ContainerWarning } from './components/ContainerWarning';
+
 // Analytics
 export { PostHogAnalytics } from './analytics/posthog';
 export { StaticAnalytics, RestAnalytics } from './analytics/generic';
 export type { AnalyticsAdapter, NavMapAnalytics as AnalyticsData } from './analytics/types';
+
+// Validation
+export { validateGraph } from './utils/validateGraph';
+export type { GraphValidationResult, GraphValidationError } from './utils/validateGraph';
 
 // Hooks
 export { useNavMapContext, NavMapContext } from './hooks/useNavMap';
@@ -63,4 +71,5 @@ export type {
   NavMapFlowGallery,
   ViewMode,
   EdgeMode,
+  NavMapTheme,
 } from './types';

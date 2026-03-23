@@ -46,6 +46,8 @@ import { StatusBanners } from './panels/StatusBanners';
 import { HierarchyControls } from './panels/HierarchyControls';
 import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
+import { NavMapErrorBoundary } from './NavMapErrorBoundary';
+import { ContainerWarning } from './ContainerWarning';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -877,8 +879,12 @@ function NavMapInner({
 
 export function NavMap(props: NavMapProps) {
   return (
-    <ReactFlowProvider>
-      <NavMapInner {...props} />
-    </ReactFlowProvider>
+    <NavMapErrorBoundary>
+      <ContainerWarning>
+        <ReactFlowProvider>
+          <NavMapInner {...props} />
+        </ReactFlowProvider>
+      </ContainerWarning>
+    </NavMapErrorBoundary>
   );
 }
