@@ -37,6 +37,7 @@ export interface CrawlOptions {
   name?: string;
   screenshotDir?: string;
   maxPages?: number;
+  context?: import('playwright').BrowserContext;
 }
 
 function normalizeUrl(raw: string): string {
@@ -83,8 +84,9 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   const edgesMap = new Map<string, NavMapGraph['edges'][number]>();
   const groupsSet = new Map<string, NavMapGraph['groups'][number]>();
 
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
+  const externalContext = options.context;
+  const browser = externalContext ? null : await chromium.launch({ headless: true });
+  const context = externalContext ?? (await browser!.newContext());
 
   try {
     while (queue.length > 0 && visited.size < maxPages) {
@@ -183,7 +185,9 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
       await page.close();
     }
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 
   const graph: NavMapGraph = {

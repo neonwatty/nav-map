@@ -36,7 +36,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -50,6 +51,7 @@
     "@types/adm-zip": "^0.5.8",
     "@types/node": "^25.5.0",
     "tsup": "^8.4.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
   }
 }
