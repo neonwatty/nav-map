@@ -7,7 +7,7 @@
     "build:core": "pnpm --filter @neonwatty/nav-map build",
     "lint": "eslint packages/*/src/",
     "lint:fix": "eslint packages/*/src/ --fix",
-    "test": "pnpm --filter @neonwatty/nav-map test",
+    "test": "pnpm --filter @neonwatty/nav-map test && pnpm --filter @neonwatty/nav-map-scanner test",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css}\"",

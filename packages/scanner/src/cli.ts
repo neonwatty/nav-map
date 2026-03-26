@@ -4,6 +4,9 @@ import { crawlUrl } from './modes/crawl.js';
 import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
+import { loadConfig, validateConfig, applyDefaults } from './config.js';
+import { runGenerate } from './modes/generate.js';
+import { startServer } from './modes/serve.js';
 import path from 'node:path';
 import fs from 'node:fs';
 
@@ -170,6 +173,55 @@ program
       console.log(`  Flows: ${graph.flows?.length ?? 0}`);
     } catch (err) {
       console.error('Record-flows failed:', err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('generate')
+  .description('Load nav-map.config.json, auto-login if configured, crawl, and output nav-map.json')
+  .option('-c, --config <path>', 'Path to config file', 'nav-map.config.json')
+  .option('--headed', 'Run browser in headed mode (useful for debugging login)')
+  .action(async opts => {
+    try {
+      const raw = loadConfig(opts.config);
+      const errors = validateConfig(raw);
+      if (errors.length > 0) {
+        console.error('Config validation errors:');
+        for (const err of errors) {
+          console.error(`  - ${err}`);
+        }
+        process.exit(1);
+      }
+
+      const config = applyDefaults(raw);
+      const result = await runGenerate(config, { headless: !opts.headed });
+
+      console.log(`\nWrote ${result.outputPath}`);
+      console.log(`  Nodes: ${result.nodeCount}`);
+      console.log(`  Edges: ${result.edgeCount}`);
+      console.log(`  Groups: ${result.groupCount}`);
+    } catch (err) {
+      console.error('Generate failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('serve')
+  .description('Start a local viewer for a nav-map.json file')
+  .argument('[file]', 'Path to nav-map.json', 'nav-map.json')
+  .option('-p, --port <port>', 'Port number', '3333')
+  .option('--screenshot-dir <dir>', 'Directory containing screenshots')
+  .action((file: string, opts) => {
+    try {
+      startServer({
+        jsonPath: file,
+        screenshotDir: opts.screenshotDir,
+        port: parseInt(opts.port, 10),
+      });
+    } catch (err) {
+      console.error('Serve failed:', err instanceof Error ? err.message : err);
       process.exit(1);
     }
   });

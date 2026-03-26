@@ -17,3 +17,11 @@ export { normalizeRoute, isLoginPage, loadRoutePatterns } from './modes/dedup.js
 export { recordFlows } from './modes/record-flows.js';
 export type { RecordFlowsOptions } from './modes/record-flows.js';
 export { parseTrace, correlateScreenshots, extractScreenshotBySha1 } from './modes/trace-parser.js';
+export { loadConfig, validateConfig, applyDefaults } from './config.js';
+export type { NavMapConfig, ResolvedConfig, NavMapAuthConfig } from './config.js';
+export { autoLogin, closeBrowser, buildLoginSteps } from './modes/auto-auth.js';
+export type { AutoLoginOptions } from './modes/auto-auth.js';
+export { runGenerate } from './modes/generate.js';
+export type { GenerateResult, GenerateOptions } from './modes/generate.js';
+export { startServer } from './modes/serve.js';
+export type { ServeOptions } from './modes/serve.js';
