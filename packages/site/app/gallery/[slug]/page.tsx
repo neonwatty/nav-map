@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { JsonLd } from '../../../components/JsonLd';
 import NavMapEmbed from '../../../components/NavMapEmbed';
-import { getGalleryData, getAllGallerySlugs } from '../../../lib/gallery';
+import { getGalleryData, getAllGallerySlugs } from '@/lib/gallery';
 import styles from './page.module.css';
 
 export function generateStaticParams() {

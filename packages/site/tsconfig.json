@@ -7,11 +7,15 @@
     "allowJs": true,
     "jsx": "preserve",
     "incremental": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
     "app/**/*.ts", "app/**/*.tsx",
     "components/**/*.ts", "components/**/*.tsx",
+    "lib/**/*.ts", "lib/**/*.tsx",
     "scripts/**/*.ts",
     "next-env.d.ts", ".next/types/**/*.ts"
   ],

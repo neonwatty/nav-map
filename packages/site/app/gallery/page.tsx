@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { JsonLd } from '../../components/JsonLd';
 import GalleryCard from '../../components/GalleryCard';
-import { getGalleryEntries } from '../../lib/gallery';
+import { getGalleryEntries } from '@/lib/gallery';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {

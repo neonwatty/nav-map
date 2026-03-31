@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { getAllDocMeta } from '../lib/docs';
-import { getAllGallerySlugs } from '../lib/gallery';
+import { getAllDocMeta } from '@/lib/docs';
+import { getAllGallerySlugs } from '@/lib/gallery';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://navmap.neonwatty.com';
