@@ -8,13 +8,19 @@
     "url": "https://github.com/neonwatty/nav-map",
     "directory": "packages/core"
   },
+  "homepage": "https://navmap.neonwatty.com",
   "keywords": [
     "navigation",
     "sitemap",
     "react-flow",
     "next.js",
     "visualization",
-    "graph"
+    "graph",
+    "nextjs-navigation",
+    "route-map",
+    "app-architecture",
+    "navigation-graph",
+    "interactive-visualization"
   ],
   "type": "module",
   "main": "./dist/index.cjs",

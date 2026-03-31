@@ -8,13 +8,18 @@
     "url": "https://github.com/neonwatty/nav-map",
     "directory": "packages/scanner"
   },
+  "homepage": "https://navmap.neonwatty.com/docs/cli/scan",
   "keywords": [
     "navigation",
     "scanner",
     "cli",
     "next.js",
     "sitemap",
-    "playwright"
+    "playwright",
+    "route-scanner",
+    "nextjs-routes",
+    "app-crawler",
+    "navigation-map-generator"
   ],
   "type": "module",
   "main": "./dist/index.js",
