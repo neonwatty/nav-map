@@ -1,0 +1,4 @@
+{
+  "buildCommand": "pnpm --filter @neonwatty/nav-map build && pnpm run build",
+  "installCommand": "pnpm install"
+}
