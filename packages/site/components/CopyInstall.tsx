@@ -9,9 +9,13 @@ export default function CopyInstall() {
   const [copied, setCopied] = useState(false);
 
   const handleClick = async () => {
-    await navigator.clipboard.writeText(INSTALL_CMD);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(INSTALL_CMD);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable or page not focused
+    }
   };
 
   return (

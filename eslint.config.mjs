@@ -36,9 +36,9 @@ export default tseslint.config(
     },
   },
 
-  // React config for core package
+  // React config for core and site packages
   {
-    files: ['packages/core/src/**/*.{ts,tsx}'],
+    files: ['packages/core/src/**/*.{ts,tsx}', 'packages/site/**/*.{ts,tsx}'],
     plugins: {
       react,
       'react-hooks': reactHooks,
