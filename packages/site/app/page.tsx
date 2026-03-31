@@ -3,15 +3,9 @@ import styles from './page.module.css';
 import CopyInstall from '../components/CopyInstall';
 import FeatureCard from '../components/FeatureCard';
 import ScrollReveal from '../components/ScrollReveal';
+import { JsonLd } from '../components/JsonLd';
 
-export const metadata: Metadata = {
-  openGraph: {
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
-  },
-  twitter: {
-    images: ['/og-image.png'],
-  },
-};
+export const metadata: Metadata = {};
 
 const FEATURES = [
   {
@@ -100,6 +94,25 @@ const CAPABILITIES = [
 export default function HomePage() {
   return (
     <>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: 'nav-map',
+          description: 'Interactive navigation map visualization for Next.js apps and websites',
+          applicationCategory: 'DeveloperApplication',
+          operatingSystem: 'Any',
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+          url: 'https://navmap.neonwatty.com',
+          codeRepository: 'https://github.com/neonwatty/nav-map',
+          sameAs: [
+            'https://www.npmjs.com/package/@neonwatty/nav-map',
+            'https://github.com/neonwatty/nav-map',
+            'https://neonwatty.com',
+          ],
+        }}
+      />
+
       <div className={styles.noiseOverlay} />
 
       {/* ═══ HERO ═══ */}
