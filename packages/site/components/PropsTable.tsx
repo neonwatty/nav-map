@@ -1,4 +1,4 @@
-import type { PropRow } from '@/lib/docs';
+import type { PropRow } from '../app/lib/docs';
 import styles from './PropsTable.module.css';
 
 interface PropsTableProps {

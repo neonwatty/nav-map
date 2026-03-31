@@ -15,7 +15,7 @@
   "include": [
     "app/**/*.ts", "app/**/*.tsx",
     "components/**/*.ts", "components/**/*.tsx",
-    "lib/**/*.ts", "lib/**/*.tsx",
+    "app/lib/**/*.ts", "app/lib/**/*.tsx",
     "scripts/**/*.ts",
     "next-env.d.ts", ".next/types/**/*.ts"
   ],

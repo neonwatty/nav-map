@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { DocsLayout } from '../../../../components/DocsLayout';
 import { JsonLd } from '../../../../components/JsonLd';
-import { getDocData } from '@/lib/docs';
-import { renderSections } from '@/lib/doc-render';
+import { getDocData } from '../../../lib/docs';
+import { renderSections } from '../../../lib/doc-render';
 
 const VIEW_SLUGS = ['hierarchy', 'flow', 'map', 'tree'];
 

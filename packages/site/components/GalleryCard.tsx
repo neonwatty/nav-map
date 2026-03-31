@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import type { GalleryEntry } from '@/lib/gallery';
+import type { GalleryEntry } from '../app/lib/gallery';
 import styles from './GalleryCard.module.css';
 
 interface GalleryCardProps {

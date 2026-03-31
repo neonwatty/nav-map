@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllDocMeta } from '@/lib/docs';
+import { getAllDocMeta } from '../app/lib/docs';
 import styles from './DocsLayout.module.css';
 
 interface DocsLayoutProps {

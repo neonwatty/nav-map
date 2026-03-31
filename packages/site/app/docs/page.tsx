@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DocsLayout } from '../../components/DocsLayout';
 import { JsonLd } from '../../components/JsonLd';
-import { getAllDocMeta } from '@/lib/docs';
+import { getAllDocMeta } from '../lib/docs';
 
 export const metadata: Metadata = {
   title: 'Documentation',
