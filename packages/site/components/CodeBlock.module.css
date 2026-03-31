@@ -1,0 +1,44 @@
+.codeBlock {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 16px 0 32px;
+}
+
+.codeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot:nth-child(1) {
+  background: #ff5f56;
+}
+
+.dot:nth-child(2) {
+  background: #ffbd2e;
+}
+
+.dot:nth-child(3) {
+  background: #27c93f;
+}
+
+.codeBody {
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-x: auto;
+  color: var(--text-primary);
+  margin: 0;
+}
