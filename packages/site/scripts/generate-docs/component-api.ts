@@ -41,22 +41,21 @@ export function generateComponentApi(rootDir: string): DocPage {
     'NavMapTheme',
   ];
 
-  const typeSections: DocSection[] = typeNames
-    .map((name): DocSection | null => {
-      const decl = typesFile.getInterface(name) || typesFile.getTypeAlias(name);
-      if (!decl) return null;
+  const typeSections: DocSection[] = typeNames.reduce<DocSection[]>((acc, name) => {
+    const decl = typesFile.getInterface(name) || typesFile.getTypeAlias(name);
+    if (!decl) return acc;
 
-      return {
-        heading: name,
-        content:
-          decl
-            .getJsDocs()
-            .map(d => d.getDescription().trim())
-            .join(' ') || `The ${name} type.`,
-        codeExample: decl.getText(),
-      };
-    })
-    .filter((s): s is DocSection => s !== null);
+    acc.push({
+      heading: name,
+      content:
+        decl
+          .getJsDocs()
+          .map(d => d.getDescription().trim())
+          .join(' ') || `The ${name} type.`,
+      codeExample: decl.getText(),
+    });
+    return acc;
+  }, []);
 
   return {
     slug: 'component-api',
