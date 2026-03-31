@@ -12,7 +12,7 @@
   "include": [
     "app/**/*.ts", "app/**/*.tsx",
     "components/**/*.ts", "components/**/*.tsx",
-    "scripts/**/*.ts", "src/**/*.ts",
+    "scripts/**/*.ts",
     "next-env.d.ts", ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

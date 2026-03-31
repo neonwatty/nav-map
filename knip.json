@@ -19,7 +19,7 @@
     "packages/site": {
       "entry": ["app/**/{layout,page}.tsx", "scripts/**/*.ts"],
       "project": ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "scripts/**/*.ts"],
-      "ignoreDependencies": ["@neonwatty/nav-map", "tsx"]
+      "ignoreDependencies": ["@neonwatty/nav-map", "tsx", "ts-morph"]
     }
   },
   "ignoreExportsUsedInFile": { "interface": true, "type": true }
