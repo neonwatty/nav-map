@@ -15,6 +15,11 @@
       "entry": ["app/**/{layout,page}.tsx"],
       "project": ["app/**/*.{ts,tsx}"],
       "ignoreDependencies": ["@neonwatty/nav-map"]
+    },
+    "packages/site": {
+      "entry": ["app/**/{layout,page}.tsx", "scripts/**/*.ts"],
+      "project": ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "scripts/**/*.ts"],
+      "ignoreDependencies": ["@neonwatty/nav-map", "tsx"]
     }
   },
   "ignoreExportsUsedInFile": { "interface": true, "type": true }

@@ -1,0 +1,26 @@
+{
+  "name": "site",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "prebuild": "tsx scripts/generate-docs.ts",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint app/ components/ scripts/"
+  },
+  "dependencies": {
+    "@neonwatty/nav-map": "workspace:*",
+    "next": "^16.1.7",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.1.0",
+    "ts-morph": "^27.0.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
