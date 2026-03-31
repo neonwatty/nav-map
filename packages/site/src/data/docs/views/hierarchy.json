@@ -1,0 +1,18 @@
+{
+  "slug": "views/hierarchy",
+  "title": "Hierarchy View",
+  "description": "Group-based hierarchical layout showing pages organized by route prefix groups with expand/collapse.",
+  "keywords": [
+    "hierarchy view",
+    "group layout",
+    "collapsible groups",
+    "route prefix",
+    "default view"
+  ],
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "Hierarchy view organizes your navigation map into collapsible groups based on route prefixes. Each group can be expanded to reveal individual page nodes or collapsed to show a summary count. This is the default view mode and is ideal for getting a high-level overview of your application structure. Groups automatically expand and collapse as you zoom in and out, thanks to semantic zoom. Double-click a collapsed group to expand it, or use the Expand All / Collapse All controls."
+    }
+  ]
+}

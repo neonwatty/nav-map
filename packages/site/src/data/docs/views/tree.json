@@ -1,0 +1,18 @@
+{
+  "slug": "views/tree",
+  "title": "Tree View",
+  "description": "Radial tree layout rooted at a selected page, showing reachable pages as a tree.",
+  "keywords": [
+    "tree view",
+    "radial tree",
+    "navigation depth",
+    "reachable pages",
+    "tree layout"
+  ],
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "Tree view renders a radial tree centered on a selected page node, showing all pages reachable from that node via navigation edges. Click any node to re-root the tree and explore a different part of your application. This view is useful for understanding the navigation depth and breadth from any given entry point. The layout is computed dynamically and animates smoothly when you change the root node."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "slug": "cli/record",
+  "title": "CLI: record",
+  "description": "Record user navigation flows using Playwright, capturing page transitions and screenshots.",
+  "keywords": [
+    "record flows",
+    "Playwright recording",
+    "e2e navigation",
+    "user flow capture"
+  ],
+  "sections": [
+    {
+      "heading": "Usage",
+      "content": "```bash\nnpx @neonwatty/nav-map-scanner record\n```"
+    },
+    {
+      "heading": "Options",
+      "content": "All available options for the `record` command.",
+      "propsTable": [
+        {
+          "name": "--playwright-config",
+          "type": "string",
+          "required": false,
+          "default": "playwright.config.ts",
+          "description": "Path to Playwright config file"
+        },
+        {
+          "name": "--storage-state",
+          "type": "string",
+          "required": false,
+          "description": "Path to Playwright storage state for auth"
+        },
+        {
+          "name": "--routes",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated routes to record"
+        },
+        {
+          "name": "--screenshot-dir",
+          "type": "string",
+          "required": false,
+          "default": "nav-screenshots",
+          "description": "Directory for screenshots"
+        },
+        {
+          "name": "-o, --output",
+          "type": "string",
+          "required": false,
+          "default": "nav-map.json",
+          "description": "Output file path"
+        },
+        {
+          "name": "-n, --name",
+          "type": "string",
+          "required": false,
+          "description": "Project name for the graph"
+        }
+      ]
+    }
+  ]
+}

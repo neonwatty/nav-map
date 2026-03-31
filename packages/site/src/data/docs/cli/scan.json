@@ -1,0 +1,66 @@
+{
+  "slug": "cli/scan",
+  "title": "CLI: scan",
+  "description": "Scan a Next.js project directory to generate a navigation map with page nodes, edges, and groups.",
+  "keywords": [
+    "scan directory",
+    "generate nav map",
+    "Next.js scanner",
+    "repo scan"
+  ],
+  "sections": [
+    {
+      "heading": "Usage",
+      "content": "```bash\nnpx @neonwatty/nav-map-scanner scan <dir>\n```"
+    },
+    {
+      "heading": "Arguments",
+      "content": "- **dir** (required) — Path to the Next.js project root"
+    },
+    {
+      "heading": "Options",
+      "content": "All available options for the `scan` command.",
+      "propsTable": [
+        {
+          "name": "-o, --output",
+          "type": "string",
+          "required": false,
+          "default": "nav-map.json",
+          "description": "Output file path"
+        },
+        {
+          "name": "-s, --screenshots",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Capture screenshots of each page"
+        },
+        {
+          "name": "--base-url",
+          "type": "string",
+          "required": false,
+          "description": "Base URL for screenshots (e.g. http://localhost:3000)"
+        },
+        {
+          "name": "--screenshot-dir",
+          "type": "string",
+          "required": false,
+          "default": "nav-screenshots",
+          "description": "Directory for screenshots"
+        },
+        {
+          "name": "-n, --name",
+          "type": "string",
+          "required": false,
+          "description": "Project name for the graph"
+        },
+        {
+          "name": "--no-shared-nav",
+          "type": "boolean",
+          "required": false,
+          "description": "Skip shared nav detection"
+        }
+      ]
+    }
+  ]
+}

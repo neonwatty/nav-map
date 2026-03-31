@@ -1,0 +1,54 @@
+{
+  "slug": "cli/crawl",
+  "title": "CLI: crawl",
+  "description": "Crawl a live website by URL and generate a navigation map by visiting pages with a headless browser.",
+  "keywords": [
+    "crawl website",
+    "URL crawler",
+    "headless browser",
+    "site crawl"
+  ],
+  "sections": [
+    {
+      "heading": "Usage",
+      "content": "```bash\nnpx @neonwatty/nav-map-scanner crawl <url>\n```"
+    },
+    {
+      "heading": "Arguments",
+      "content": "- **url** (required) — The URL to start crawling from"
+    },
+    {
+      "heading": "Options",
+      "content": "All available options for the `crawl` command.",
+      "propsTable": [
+        {
+          "name": "-o, --output",
+          "type": "string",
+          "required": false,
+          "default": "nav-map.json",
+          "description": "Output file path"
+        },
+        {
+          "name": "--screenshot-dir",
+          "type": "string",
+          "required": false,
+          "default": "nav-screenshots",
+          "description": "Directory for screenshots"
+        },
+        {
+          "name": "-n, --name",
+          "type": "string",
+          "required": false,
+          "description": "Project name for the graph"
+        },
+        {
+          "name": "--max-pages",
+          "type": "number",
+          "required": false,
+          "default": "50",
+          "description": "Maximum pages to crawl"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "slug": "keyboard-shortcuts",
+  "title": "Keyboard Shortcuts",
+  "description": "Complete list of keyboard shortcuts for navigating and controlling the NavMap component.",
+  "keywords": [
+    "keyboard shortcuts",
+    "hotkeys",
+    "nav-map controls",
+    "keyboard navigation"
+  ],
+  "sections": [
+    {
+      "heading": "All Shortcuts",
+      "content": "NavMap supports keyboard-driven navigation. These shortcuts work when the map has focus.",
+      "propsTable": [
+        {
+          "name": "Down / Right",
+          "type": "shortcut",
+          "required": false,
+          "description": "Navigate to an outgoing page"
+        },
+        {
+          "name": "Up / Left",
+          "type": "shortcut",
+          "required": false,
+          "description": "Navigate to an incoming page"
+        },
+        {
+          "name": "Backspace",
+          "type": "shortcut",
+          "required": false,
+          "description": "Go back in walkthrough path"
+        },
+        {
+          "name": "Esc",
+          "type": "shortcut",
+          "required": false,
+          "description": "Clear current selection"
+        },
+        {
+          "name": "/ or Cmd+K",
+          "type": "shortcut",
+          "required": false,
+          "description": "Open search overlay"
+        },
+        {
+          "name": "0",
+          "type": "shortcut",
+          "required": false,
+          "description": "Reset view (fit all nodes)"
+        },
+        {
+          "name": "L",
+          "type": "shortcut",
+          "required": false,
+          "description": "Cycle through view layouts"
+        },
+        {
+          "name": "F",
+          "type": "shortcut",
+          "required": false,
+          "description": "Toggle focus mode (dim unrelated nodes)"
+        },
+        {
+          "name": "N",
+          "type": "shortcut",
+          "required": false,
+          "description": "Toggle shared navigation edges"
+        },
+        {
+          "name": "O",
+          "type": "shortcut",
+          "required": false,
+          "description": "Open selected page in browser"
+        },
+        {
+          "name": "?",
+          "type": "shortcut",
+          "required": false,
+          "description": "Show keyboard shortcuts help"
+        }
+      ]
+    }
+  ]
+}

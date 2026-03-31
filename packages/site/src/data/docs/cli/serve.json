@@ -1,0 +1,41 @@
+{
+  "slug": "cli/serve",
+  "title": "CLI: serve",
+  "description": "Start a local dev server to preview a nav-map.json file in the browser with the NavMap component.",
+  "keywords": [
+    "serve preview",
+    "local dev server",
+    "preview nav map",
+    "dev server"
+  ],
+  "sections": [
+    {
+      "heading": "Usage",
+      "content": "```bash\nnpx @neonwatty/nav-map-scanner serve [file]\n```"
+    },
+    {
+      "heading": "Arguments",
+      "content": "- **file** (optional) — Path to nav-map.json file"
+    },
+    {
+      "heading": "Options",
+      "content": "All available options for the `serve` command.",
+      "propsTable": [
+        {
+          "name": "-p, --port",
+          "type": "number",
+          "required": false,
+          "default": "3333",
+          "description": "Port to serve on"
+        },
+        {
+          "name": "--screenshot-dir",
+          "type": "string",
+          "required": false,
+          "default": "nav-screenshots",
+          "description": "Directory containing screenshots"
+        }
+      ]
+    }
+  ]
+}

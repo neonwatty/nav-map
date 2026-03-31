@@ -1,0 +1,36 @@
+{
+  "slug": "cli/generate",
+  "title": "CLI: generate",
+  "description": "Generate a nav-map.json from a configuration file (nav-map.config.json) that defines scan + crawl + record steps.",
+  "keywords": [
+    "generate config",
+    "config-driven",
+    "nav-map.config.json",
+    "local-first"
+  ],
+  "sections": [
+    {
+      "heading": "Usage",
+      "content": "```bash\nnpx @neonwatty/nav-map-scanner generate\n```"
+    },
+    {
+      "heading": "Options",
+      "content": "All available options for the `generate` command.",
+      "propsTable": [
+        {
+          "name": "-c, --config",
+          "type": "string",
+          "required": false,
+          "default": "nav-map.config.json",
+          "description": "Path to the config file"
+        },
+        {
+          "name": "--headed",
+          "type": "boolean",
+          "required": false,
+          "description": "Run browsers in headed mode for debugging"
+        }
+      ]
+    }
+  ]
+}

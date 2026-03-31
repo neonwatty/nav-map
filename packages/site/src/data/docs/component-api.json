@@ -1,0 +1,142 @@
+{
+  "slug": "component-api",
+  "title": "NavMap Component API",
+  "description": "Complete API reference for the NavMap React component — props, types, and configuration.",
+  "keywords": [
+    "nav-map API",
+    "NavMap props",
+    "react navigation component",
+    "NavMapGraph type"
+  ],
+  "sections": [
+    {
+      "heading": "NavMapProps",
+      "content": "The NavMap component accepts the following props for controlling graph display, view modes, theming, and toolbar visibility.",
+      "propsTable": [
+        {
+          "name": "graph",
+          "type": "NavMapGraph | undefined",
+          "required": false,
+          "description": "Graph data object (pass this OR graphUrl)"
+        },
+        {
+          "name": "graphUrl",
+          "type": "string | undefined",
+          "required": false,
+          "description": "URL to fetch graph JSON from"
+        },
+        {
+          "name": "screenshotBasePath",
+          "type": "string | undefined",
+          "required": false,
+          "description": "Base path prepended to screenshot URLs"
+        },
+        {
+          "name": "analytics",
+          "type": "AnalyticsAdapter | undefined",
+          "required": false,
+          "description": "Analytics adapter for page view / transition data"
+        },
+        {
+          "name": "className",
+          "type": "string | undefined",
+          "required": false,
+          "description": "Additional CSS class on the container"
+        },
+        {
+          "name": "style",
+          "type": "import(\"/Users/jeremywatt/Desktop/nav-map/node_modules/.pnpm/@types+react@19.2.14/node_modules/@types/react/index\").CSSProperties | undefined",
+          "required": false,
+          "description": "Additional inline styles on the container"
+        },
+        {
+          "name": "defaultViewMode",
+          "type": "ViewMode | undefined",
+          "required": false,
+          "description": "Initial view mode (default: 'hierarchy')"
+        },
+        {
+          "name": "defaultEdgeMode",
+          "type": "EdgeMode | undefined",
+          "required": false,
+          "description": "Initial edge rendering mode (default: 'smooth')"
+        },
+        {
+          "name": "theme",
+          "type": "NavMapTheme | undefined",
+          "required": false,
+          "description": "Theme overrides for colors"
+        },
+        {
+          "name": "hideToolbar",
+          "type": "boolean | undefined",
+          "required": false,
+          "description": "Hide the top toolbar"
+        },
+        {
+          "name": "hideSearch",
+          "type": "boolean | undefined",
+          "required": false,
+          "description": "Hide the search overlay (also disables Cmd+K shortcut)"
+        },
+        {
+          "name": "hideHelp",
+          "type": "boolean | undefined",
+          "required": false,
+          "description": "Hide the help overlay (also disables ? shortcut)"
+        },
+        {
+          "name": "onValidationError",
+          "type": "((errors: GraphValidationError[]) => void) | undefined",
+          "required": false,
+          "description": "Callback fired when graph validation fails"
+        }
+      ]
+    },
+    {
+      "heading": "NavMapGraph",
+      "content": "The NavMapGraph type.",
+      "codeExample": "export interface NavMapGraph {\n  version: '1.0';\n  meta: {\n    name: string;\n    baseUrl?: string;\n    generatedAt: string;\n    generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record';\n    framework?: 'nextjs-app' | 'nextjs-pages' | 'generic';\n  };\n  nodes: NavMapNode[];\n  edges: NavMapEdge[];\n  groups: NavMapGroup[];\n  sharedNav?: NavMapSharedNav;\n  flows?: NavMapFlow[];\n}"
+    },
+    {
+      "heading": "NavMapNode",
+      "content": "The NavMapNode type.",
+      "codeExample": "export interface NavMapNode {\n  id: string;\n  route: string;\n  label: string;\n  group: string;\n  screenshot?: string;\n  filePath?: string;\n  metadata?: Record<string, unknown>;\n}"
+    },
+    {
+      "heading": "NavMapEdge",
+      "content": "The NavMapEdge type.",
+      "codeExample": "export interface NavMapEdge {\n  id: string;\n  source: string;\n  target: string;\n  label?: string;\n  type: 'link' | 'redirect' | 'router-push' | 'shared-nav';\n  sourceCode?: { file: string; line: number; component?: string };\n}"
+    },
+    {
+      "heading": "NavMapGroup",
+      "content": "The NavMapGroup type.",
+      "codeExample": "export interface NavMapGroup {\n  id: string;\n  label: string;\n  color?: string;\n  routePrefix?: string;\n}"
+    },
+    {
+      "heading": "NavMapFlow",
+      "content": "The NavMapFlow type.",
+      "codeExample": "export interface NavMapFlow {\n  name: string;\n  steps: string[];\n  gallery?: NavMapFlowGallery;\n  partial?: boolean;\n}"
+    },
+    {
+      "heading": "NavMapFlowStep",
+      "content": "The NavMapFlowStep type.",
+      "codeExample": "export interface NavMapFlowStep {\n  action: 'goto' | 'waitFor' | 'click' | 'fill' | 'end';\n  title: string;\n  screenshot?: string;\n  timestamp?: number;\n}"
+    },
+    {
+      "heading": "ViewMode",
+      "content": "The ViewMode type.",
+      "codeExample": "export type ViewMode = 'map' | 'flow' | 'tree' | 'hierarchy';"
+    },
+    {
+      "heading": "EdgeMode",
+      "content": "The EdgeMode type.",
+      "codeExample": "export type EdgeMode = 'smooth' | 'routed' | 'bundled';"
+    },
+    {
+      "heading": "NavMapTheme",
+      "content": "The NavMapTheme type.",
+      "codeExample": "export interface NavMapTheme {\n  groupColors?: GroupColorMap;\n  dark?: {\n    background?: string;\n    text?: string;\n  };\n  light?: {\n    background?: string;\n    text?: string;\n  };\n}"
+    }
+  ]
+}

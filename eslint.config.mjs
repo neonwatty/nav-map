@@ -7,7 +7,14 @@ import prettier from 'eslint-plugin-prettier/recommended';
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['**/dist/', '**/.next/', '**/node_modules/', '*.config.js', '*.config.cjs'],
+    ignores: [
+      '**/dist/',
+      '**/.next/',
+      '**/node_modules/',
+      '*.config.js',
+      '*.config.cjs',
+      'packages/site/src/data/',
+    ],
   },
 
   // Base config for all TS files

@@ -1,0 +1,29 @@
+{
+  "slug": "analytics",
+  "title": "Analytics Integration",
+  "description": "Overlay page view and transition analytics on your navigation map using the AnalyticsAdapter interface.",
+  "keywords": [
+    "analytics",
+    "page views",
+    "PostHog analytics",
+    "custom analytics",
+    "AnalyticsAdapter"
+  ],
+  "sections": [
+    {
+      "heading": "AnalyticsAdapter Interface",
+      "content": "Implement this interface to connect any analytics provider. Pass the adapter to the NavMap `analytics` prop to enable the analytics overlay.",
+      "codeExample": "interface AnalyticsAdapter {\n  fetchPageViews(period: { start: string; end: string }): Promise<Record<string, number>>;\n  fetchTransitions(period: { start: string; end: string }): Promise<Record<string, number>>;\n}"
+    },
+    {
+      "heading": "PostHog Example",
+      "content": "The built-in PostHog adapter queries the PostHog HogQL API for page views.",
+      "codeExample": "import { NavMap } from '@neonwatty/nav-map';\nimport { PostHogAnalytics } from '@neonwatty/nav-map/analytics/posthog';\n\nconst analytics = new PostHogAnalytics({\n  apiKey: 'phx_...',\n  projectId: '12345',\n});\n\n<NavMap graph={data} analytics={analytics} />"
+    },
+    {
+      "heading": "Custom Adapter",
+      "content": "Build your own adapter for Google Analytics, Plausible, or any data source.",
+      "codeExample": "import type { AnalyticsAdapter } from '@neonwatty/nav-map';\n\nconst myAdapter: AnalyticsAdapter = {\n  async fetchPageViews(period) {\n    const res = await fetch(`/api/analytics?start=${period.start}&end=${period.end}`);\n    return res.json();\n  },\n  async fetchTransitions(period) {\n    const res = await fetch(`/api/transitions?start=${period.start}&end=${period.end}`);\n    return res.json();\n  },\n};\n\n<NavMap graph={data} analytics={myAdapter} />"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "slug": "getting-started",
+  "title": "Getting Started",
+  "description": "Install nav-map, generate a navigation graph from your project, and add the NavMap component to your React app.",
+  "keywords": [
+    "getting started",
+    "install nav-map",
+    "quick start",
+    "setup guide",
+    "react navigation map"
+  ],
+  "sections": [
+    {
+      "heading": "Install",
+      "content": "Install the NavMap component library and the scanner CLI as a dev dependency.",
+      "codeExample": "npm install @neonwatty/nav-map\nnpm install -D @neonwatty/nav-map-scanner"
+    },
+    {
+      "heading": "Generate Your Navigation Graph",
+      "content": "Use the scanner CLI to generate a `nav-map.json` file from your project. Choose the method that fits your setup: scan a local repo, crawl a live URL, or record user flows.",
+      "codeExample": "# Scan a local Next.js project\nnpx @neonwatty/nav-map-scanner scan ./my-app\n\n# Crawl a live site\nnpx @neonwatty/nav-map-scanner crawl https://example.com\n\n# Record flows with Playwright\nnpx @neonwatty/nav-map-scanner record"
+    },
+    {
+      "heading": "Add the Component",
+      "content": "Import the NavMap component and pass your graph data. The component needs a sized container (set width and height).",
+      "codeExample": "import { NavMap } from '@neonwatty/nav-map';\nimport graphData from './nav-map.json';\n\nexport default function NavigationPage() {\n  return (\n    <div style={{ width: \"100vw\", height: \"100vh\" }}>\n      <NavMap graph={graphData} />\n    </div>\n  );\n}"
+    },
+    {
+      "heading": "Preview Locally",
+      "content": "Use the built-in serve command to preview your nav map without writing any code.",
+      "codeExample": "npx @neonwatty/nav-map-scanner serve nav-map.json\n# Opens http://localhost:3333"
+    }
+  ]
+}

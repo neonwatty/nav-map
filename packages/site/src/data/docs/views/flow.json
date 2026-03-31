@@ -1,0 +1,18 @@
+{
+  "slug": "views/flow",
+  "title": "Flow View",
+  "description": "Visualize user flows as step-by-step sequences through your application pages.",
+  "keywords": [
+    "flow view",
+    "user flows",
+    "flow animation",
+    "step sequence",
+    "flow gallery"
+  ],
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "Flow view highlights a selected user flow, showing the sequence of pages a user visits in order. Select a flow from the toolbar dropdown to see its path highlighted on the graph. Press the play button to animate the flow, watching a dot travel along the route. Each step can include gallery screenshots captured during recording, which you can view by double-clicking a node that has gallery data. Flow view is powered by the flows array in your nav-map.json, populated by the record and record-flows CLI commands."
+    }
+  ]
+}

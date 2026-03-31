@@ -1,0 +1,18 @@
+{
+  "slug": "views/map",
+  "title": "Map View",
+  "description": "Full graph layout with ELK-powered automatic positioning of all nodes and edges.",
+  "keywords": [
+    "map view",
+    "graph layout",
+    "ELK algorithm",
+    "full graph",
+    "edge bundling"
+  ],
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "Map view displays the complete navigation graph with automatic layout computed by the ELK algorithm. All page nodes and navigation edges are visible, with group containers drawn around related pages. You can drag nodes to customize the layout, toggle shared navigation edges, and enter focus mode to highlight only the connections of the selected node. The minimap in the corner helps you orient within large graphs. Map view supports three edge rendering modes: smooth (default curved edges), routed (orthogonal edges), and bundled (edges grouped by shared paths)."
+    }
+  ]
+}
