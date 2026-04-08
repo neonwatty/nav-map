@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@neonwatty/nav-map": "workspace:*",
-    "next": "^16.1.7",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "next": "^16.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/react": "^19.1.0",
     "typescript": "^5.7.0"
   }
