@@ -40,18 +40,18 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.5.17",
     "commander": "^14.0.3",
     "glob": "^11.0.0",
-    "playwright": "^1.50.0",
+    "playwright": "^1.59.1",
     "sharp": "^0.34.5",
     "ts-morph": "^27.0.2"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.4"
   }
 }
