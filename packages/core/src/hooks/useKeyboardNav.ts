@@ -29,12 +29,14 @@ interface KeyboardNavDeps {
   baseEdgesRef: React.MutableRefObject<Edge[]>;
   sharedNavEdgesRef: React.MutableRefObject<Edge[]>;
   focusedGroupId: string | null;
-  setFocusedGroupId: (id: string | null) => void;
+  groups: {
+    setFocusedGroup: (id: string | null) => void;
+    restoreCollapsed: (groups: Set<string>) => void;
+    setHierarchyExpanded: (groups: Set<string>) => void;
+  };
   setShowRedirects: (v: boolean | ((p: boolean) => boolean)) => void;
   undo: () => HistoryEntry | null;
   canUndo: boolean;
-  setCollapsedGroups: (fn: (prev: Set<string>) => Set<string>) => void;
-  setHierarchyExpandedGroups: (fn: (prev: Set<string>) => Set<string>) => void;
 }
 
 export function useKeyboardNav(deps: KeyboardNavDeps) {
@@ -59,12 +61,10 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     baseEdgesRef,
     sharedNavEdgesRef,
     focusedGroupId,
-    setFocusedGroupId,
+    groups,
     setShowRedirects,
     undo,
     canUndo,
-    setCollapsedGroups,
-    setHierarchyExpandedGroups,
   } = deps;
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
         case 'Escape':
           if (showSearch) setShowSearch(false);
           else if (showHelp) setShowHelp(false);
-          else if (focusedGroupId) setFocusedGroupId(null);
+          else if (focusedGroupId) groups.setFocusedGroup(null);
           else {
             ctx.setSelectedNodeId(null);
             walkthrough.clear();
@@ -165,7 +165,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
               })
             );
           } else if (entry.type === 'collapse') {
-            setCollapsedGroups(() => new Set(entry.collapsedGroups));
+            groups.restoreCollapsed(new Set(entry.collapsedGroups));
             // Sync GroupNode internal state
             setNodes(prev =>
               prev.map(n => {
@@ -175,7 +175,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
               })
             );
           } else if (entry.type === 'hierarchy-toggle') {
-            setHierarchyExpandedGroups(() => new Set(entry.expandedGroups));
+            groups.setHierarchyExpanded(new Set(entry.expandedGroups));
           }
           break;
         }
@@ -222,11 +222,9 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     baseEdgesRef,
     sharedNavEdgesRef,
     focusedGroupId,
-    setFocusedGroupId,
+    groups,
     setShowRedirects,
     undo,
     canUndo,
-    setCollapsedGroups,
-    setHierarchyExpandedGroups,
   ]);
 }

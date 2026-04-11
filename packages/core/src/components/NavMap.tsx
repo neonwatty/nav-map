@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react-hooks/refs */
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -22,6 +22,8 @@ import { rootReducer, initialRootState } from '../state/reducer';
 import { useOverlaysActions } from '../state/slices/overlays';
 import { useDisplayActions } from '../state/slices/display';
 import { useFlowActions } from '../state/slices/flow';
+import { useViewActions, createInitialViewState } from '../state/slices/view';
+import { useGroupsActions } from '../state/slices/groups';
 import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
@@ -111,11 +113,10 @@ function NavMapInner({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
-  const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [edgeMode, setEdgeMode] = useState<EdgeMode>(defaultEdgeMode);
-  const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
-  const [state, dispatch] = useReducer(rootReducer, initialRootState);
+  const [state, dispatch] = useReducer(rootReducer, undefined, () => ({
+    ...initialRootState,
+    view: createInitialViewState(defaultViewMode, defaultEdgeMode),
+  }));
   const overlays = useOverlaysActions(dispatch);
   const { showHelp, showSearch, searchQuery, showAnalytics, contextMenu, hoverPreview } =
     state.overlays;
@@ -123,8 +124,10 @@ function NavMapInner({
   const { showSharedNav, focusMode, showRedirects } = state.display;
   const flow = useFlowActions(dispatch);
   const { selectedFlowIndex, isAnimatingFlow, galleryNodeId } = state.flow;
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
+  const view = useViewActions(dispatch);
+  const { viewMode, edgeMode, treeRootId } = state.view;
+  const groups = useGroupsActions(dispatch);
+  const { focusedGroupId, collapsedGroups, hierarchyExpandedGroups } = state.groups;
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -189,43 +192,29 @@ function NavMapInner({
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
   const beforeDragRef = useRef<HistoryEntry | null>(null);
 
-  const handleGroupToggle = useCallback(
-    (groupId: string, collapsed: boolean) => {
-      // Capture before-state for undo
-      setCollapsedGroups(prev => {
-        pushSnapshot({ type: 'collapse', collapsedGroups: new Set(prev) });
-        const next = new Set(prev);
-        if (collapsed) next.add(groupId);
-        else next.delete(groupId);
-        return next;
-      });
-      if (collapsed) {
-        setFocusedGroupId(prev => (prev === groupId ? null : prev));
-      }
-    },
-    [pushSnapshot]
-  );
-  const handleGroupToggleRef = useRef(handleGroupToggle);
-  handleGroupToggleRef.current = handleGroupToggle;
-  const handleGroupDoubleClick = useCallback((groupId: string) => {
-    setFocusedGroupId(prev => (prev === groupId ? null : groupId));
-  }, []);
-  const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
-  handleGroupDoubleClickRef.current = handleGroupDoubleClick;
-  const handleHierarchyToggle = useCallback(
-    (groupId: string) => {
-      setHierarchyExpandedGroups(prev => {
-        pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
-        const next = new Set(prev);
-        if (next.has(groupId)) next.delete(groupId);
-        else next.add(groupId);
-        return next;
-      });
-    },
-    [pushSnapshot]
-  );
-  const handleHierarchyToggleRef = useRef(handleHierarchyToggle);
-  handleHierarchyToggleRef.current = handleHierarchyToggle;
+  // Refs to read current state inside stable callbacks (for undo snapshots)
+  const collapsedGroupsRef = useRef(collapsedGroups);
+  collapsedGroupsRef.current = collapsedGroups;
+  const hierarchyExpandedGroupsRef = useRef(hierarchyExpandedGroups);
+  hierarchyExpandedGroupsRef.current = hierarchyExpandedGroups;
+
+  // Stable callbacks for GroupNode onToggle/onDoubleClick (passed via useViewModeLayout)
+  const handleGroupToggleRef = useRef((groupId: string, collapsed: boolean) => {
+    pushSnapshot({ type: 'collapse', collapsedGroups: new Set(collapsedGroupsRef.current) });
+    if (collapsed) groups.collapseGroup(groupId);
+    else groups.expandGroup(groupId);
+    if (collapsed) groups.clearFocusIfMatch(groupId);
+  });
+  const handleGroupDoubleClickRef = useRef((groupId: string) => {
+    groups.toggleFocusedGroup(groupId);
+  });
+  const handleHierarchyToggleRef = useRef((groupId: string) => {
+    pushSnapshot({
+      type: 'hierarchy-toggle',
+      expandedGroups: new Set(hierarchyExpandedGroupsRef.current),
+    });
+    groups.toggleHierarchyGroup(groupId);
+  });
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -292,7 +281,7 @@ function NavMapInner({
   // Expand all hierarchy groups when graph first loads in hierarchy mode
   useEffect(() => {
     if (graph && viewMode === 'hierarchy' && hierarchyExpandedGroups.size === 0) {
-      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+      groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph]);
@@ -399,12 +388,12 @@ function NavMapInner({
 
     if (zoomTier === 'overview' && prev !== 'overview') {
       // Zoomed out → collapse all
-      setHierarchyExpandedGroups(new Set());
+      groups.clearHierarchyExpanded();
     } else if (zoomTier === 'detail' && prev === 'overview') {
       // Zoomed back in from overview → expand all
-      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+      groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
     }
-  }, [zoomTier, viewMode, graph]);
+  }, [zoomTier, viewMode, graph, groups]);
 
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
@@ -469,16 +458,19 @@ function NavMapInner({
   nodesRef.current = nodes;
 
   // Handle node selection (from React Flow click)
-  const onSelectionChange = useCallback(({ nodes: selectedNodes }: OnSelectionChangeParams) => {
-    const selected = selectedNodes[0];
-    if (selected) {
-      ctxRef.current.setSelectedNodeId(selected.id);
-      walkthroughRef.current.push(selected.id);
-      if (viewModeRef.current === 'tree') {
-        setTreeRootId(selected.id);
+  const onSelectionChange = useCallback(
+    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      const selected = selectedNodes[0];
+      if (selected) {
+        ctxRef.current.setSelectedNodeId(selected.id);
+        walkthroughRef.current.push(selected.id);
+        if (viewModeRef.current === 'tree') {
+          view.setTreeRootId(selected.id);
+        }
       }
-    }
-  }, []);
+    },
+    [view]
+  );
 
   // Navigate to a node programmatically
   const navigateToNode = useCallback(
@@ -536,12 +528,10 @@ function NavMapInner({
     baseEdgesRef,
     sharedNavEdgesRef,
     focusedGroupId,
-    setFocusedGroupId,
+    groups,
     setShowRedirects: toggleableSetShowRedirects,
     undo,
     canUndo,
-    setCollapsedGroups,
-    setHierarchyExpandedGroups,
   });
 
   // Node hover for preview
@@ -660,12 +650,11 @@ function NavMapInner({
         // Collapsed summary node (compact node with hier-group- prefix)
         if (node.id.startsWith('hier-group-')) {
           const groupId = node.id.replace('hier-group-', '');
-          setHierarchyExpandedGroups(prev => {
-            pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
-            const next = new Set(prev);
-            next.add(groupId);
-            return next;
+          pushSnapshot({
+            type: 'hierarchy-toggle',
+            expandedGroups: new Set(hierarchyExpandedGroups),
           });
+          groups.toggleHierarchyGroup(groupId);
           return;
         }
       }
@@ -674,7 +663,7 @@ function NavMapInner({
         flow.openGallery(node.id);
       }
     },
-    [graph, viewMode, pushSnapshot, flow]
+    [graph, viewMode, pushSnapshot, flow, hierarchyExpandedGroups, groups]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
@@ -715,26 +704,26 @@ function NavMapInner({
               showAnalytics={showAnalytics}
               analyticsAdapter={analyticsAdapter}
               onViewModeChange={mode => {
-                setViewMode(mode);
+                view.setViewMode(mode);
                 if (mode !== 'flow') flow.clearFlow();
-                if (mode !== 'tree') setTreeRootId(null);
+                if (mode !== 'tree') view.setTreeRootId(null);
                 if (mode === 'hierarchy' && graph) {
-                  setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+                  groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
                 }
               }}
               onFlowSelect={idx => {
                 if (idx === null) flow.clearFlow();
                 else flow.selectFlow(idx);
-                setFocusedGroupId(null);
+                groups.setFocusedGroup(null);
               }}
               onResetView={() => {
-                setFocusedGroupId(null);
+                groups.setFocusedGroup(null);
                 fitView({ padding: 0.15, duration: 300 });
               }}
               onToggleSharedNav={() => display.toggleSharedNav()}
               onToggleRedirects={() => display.toggleRedirects()}
               onToggleFocusMode={() => display.toggleFocusMode()}
-              onEdgeModeChange={setEdgeMode}
+              onEdgeModeChange={view.setEdgeMode}
               onAnimate={() => flow.startAnimation()}
               onToggleAnalytics={() => {
                 if (showAnalytics) overlays.closeAnalytics();
@@ -752,7 +741,7 @@ function NavMapInner({
             treeRootId={treeRootId}
             focusedGroupId={focusedGroupId}
             graph={graph}
-            onClearFocus={() => setFocusedGroupId(null)}
+            onClearFocus={() => groups.setFocusedGroup(null)}
           />
 
           {/* Walkthrough breadcrumb */}
@@ -837,14 +826,14 @@ function NavMapInner({
                   type: 'hierarchy-toggle',
                   expandedGroups: new Set(hierarchyExpandedGroups),
                 });
-                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+                groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
               }}
               onCollapseAll={() => {
                 pushSnapshot({
                   type: 'hierarchy-toggle',
                   expandedGroups: new Set(hierarchyExpandedGroups),
                 });
-                setHierarchyExpandedGroups(new Set());
+                groups.clearHierarchyExpanded();
               }}
             />
           )}
