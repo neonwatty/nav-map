@@ -4,10 +4,18 @@ import type { Action } from '../types';
 
 describe('rootReducer', () => {
   it('routes overlays actions to the overlays slice', () => {
-    const result = rootReducer(initialRootState, {
-      type: 'overlays/openSearch',
-    });
+    const result = rootReducer(initialRootState, { type: 'overlays/openSearch' });
     expect(result.overlays.showSearch).toBe(true);
+  });
+
+  it('routes display actions to the display slice', () => {
+    const result = rootReducer(initialRootState, { type: 'display/toggleSharedNav' });
+    expect(result.display.showSharedNav).toBe(true);
+  });
+
+  it('routes flow actions to the flow slice', () => {
+    const result = rootReducer(initialRootState, { type: 'flow/selectFlow', index: 1 });
+    expect(result.flow.selectedFlowIndex).toBe(1);
   });
 
   it('returns the same root reference when no slice changed', () => {
@@ -16,24 +24,20 @@ describe('rootReducer', () => {
     expect(result).toBe(initialRootState);
   });
 
-  it('returns a new root reference when the overlays slice changed', () => {
-    const result = rootReducer(initialRootState, {
-      type: 'overlays/openSearch',
-    });
+  it('returns a new root reference when a slice changed', () => {
+    const result = rootReducer(initialRootState, { type: 'overlays/openSearch' });
     expect(result).not.toBe(initialRootState);
   });
 
-  it('produces a new slice reference when the slice changed', () => {
-    const result = rootReducer(initialRootState, {
-      type: 'overlays/openSearch',
-    });
-    expect(result.overlays).not.toBe(initialRootState.overlays);
+  it('produces a new slice reference only for the changed slice', () => {
+    const result = rootReducer(initialRootState, { type: 'display/toggleFocusMode' });
+    expect(result.display).not.toBe(initialRootState.display);
+    expect(result.overlays).toBe(initialRootState.overlays);
+    expect(result.flow).toBe(initialRootState.flow);
   });
 
   it('returns the same root reference on idempotent dispatch', () => {
-    const first = rootReducer(initialRootState, {
-      type: 'overlays/openSearch',
-    });
+    const first = rootReducer(initialRootState, { type: 'overlays/openSearch' });
     const second = rootReducer(first, { type: 'overlays/openSearch' });
     expect(second).toBe(first);
   });
