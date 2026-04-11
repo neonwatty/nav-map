@@ -31,6 +31,7 @@ import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
+import { useSetterWrappers } from '../hooks/useSetterWrappers';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
@@ -142,52 +143,23 @@ function NavMapInner({
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
 
-  const guardedSetShowSearch = useCallback(
-    (v: boolean | ((p: boolean) => boolean)) => {
-      if (hideSearch) return;
-      const next = typeof v === 'function' ? v(showSearch) : v;
-      if (next) overlays.openSearch();
-      else overlays.closeSearch();
-    },
-    [hideSearch, overlays, showSearch]
-  );
-
-  const guardedSetShowHelp = useCallback(
-    (v: boolean | ((p: boolean) => boolean)) => {
-      if (hideHelp) return;
-      const next = typeof v === 'function' ? v(showHelp) : v;
-      if (next) overlays.openHelp();
-      else overlays.closeHelp();
-    },
-    [hideHelp, overlays, showHelp]
-  );
-
-  const toggleableSetShowSharedNav = useCallback(
-    (v: boolean | ((p: boolean) => boolean)) => {
-      const next = typeof v === 'function' ? v(showSharedNav) : v;
-      if (next) display.showSharedNav();
-      else display.hideSharedNav();
-    },
-    [display, showSharedNav]
-  );
-
-  const toggleableSetFocusMode = useCallback(
-    (v: boolean | ((p: boolean) => boolean)) => {
-      const next = typeof v === 'function' ? v(focusMode) : v;
-      if (next) display.enableFocusMode();
-      else display.disableFocusMode();
-    },
-    [display, focusMode]
-  );
-
-  const toggleableSetShowRedirects = useCallback(
-    (v: boolean | ((p: boolean) => boolean)) => {
-      const next = typeof v === 'function' ? v(showRedirects) : v;
-      if (next) display.showRedirects();
-      else display.hideRedirects();
-    },
-    [display, showRedirects]
-  );
+  const {
+    guardedSetShowSearch,
+    guardedSetShowHelp,
+    toggleableSetShowSharedNav,
+    toggleableSetFocusMode,
+    toggleableSetShowRedirects,
+  } = useSetterWrappers({
+    hideSearch,
+    hideHelp,
+    showSearch,
+    showHelp,
+    showSharedNav,
+    focusMode,
+    showRedirects,
+    overlays,
+    display,
+  });
 
   // Undo history for node drags and group collapse
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
