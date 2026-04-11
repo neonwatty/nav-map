@@ -571,18 +571,21 @@ function NavMapInner({
     [overlays]
   );
 
-  // Track mouse position for hover preview
+  // Track mouse position for hover preview. Uses `updateHoverPosition` so
+  // the handler does not need to spread prior `hoverPreview` from a stale
+  // closure — the reducer reads the latest preview and only swaps the
+  // position field. The effect depends on whether the preview is active
+  // (boolean), not on the preview value itself, so the listener is
+  // attached once per hover session rather than reattached on every move.
+  const hasHoverPreview = hoverPreview !== null;
   useEffect(() => {
-    if (!hoverPreview) return;
+    if (!hasHoverPreview) return;
     const handler = (e: MouseEvent) => {
-      overlays.showHoverPreview({
-        ...hoverPreview,
-        position: { x: e.clientX, y: e.clientY },
-      });
+      overlays.updateHoverPosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener('mousemove', handler);
     return () => window.removeEventListener('mousemove', handler);
-  }, [hoverPreview, overlays]);
+  }, [hasHoverPreview, overlays]);
 
   // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
@@ -872,7 +875,7 @@ function NavMapInner({
             overlays.setSearchQuery('');
             navigateToNodeFromSearch(nodeId);
           }}
-          onSearchQueryChange={query => overlays.setSearchQuery(query)}
+          onSearchQueryChange={overlays.setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
           onCloseGallery={() => setGalleryNodeId(null)}
         />

@@ -217,6 +217,27 @@ describe('overlaysReducer', () => {
       expect(result.hoverPreview).toEqual(next);
     });
 
+    it('updateHoverPosition updates only the position while preserving screenshot and label', () => {
+      const prior = { ...initialOverlaysState, hoverPreview: samplePreview };
+      const result = overlaysReducer(prior, {
+        type: 'overlays/updateHoverPosition',
+        position: { x: 123, y: 456 },
+      });
+      expect(result.hoverPreview).toEqual({
+        screenshot: samplePreview.screenshot,
+        label: samplePreview.label,
+        position: { x: 123, y: 456 },
+      });
+    });
+
+    it('updateHoverPosition is a no-op when hoverPreview is null', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/updateHoverPosition',
+        position: { x: 1, y: 2 },
+      });
+      expect(result).toBe(initialOverlaysState);
+    });
+
     it('hideHoverPreview clears the preview', () => {
       const prior = { ...initialOverlaysState, hoverPreview: samplePreview };
       const result = overlaysReducer(prior, {

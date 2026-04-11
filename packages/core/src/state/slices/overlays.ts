@@ -43,6 +43,7 @@ export type OverlaysAction =
   | { type: 'overlays/showContextMenu'; menu: ContextMenuState }
   | { type: 'overlays/hideContextMenu' }
   | { type: 'overlays/showHoverPreview'; preview: HoverPreviewState }
+  | { type: 'overlays/updateHoverPosition'; position: { x: number; y: number } }
   | { type: 'overlays/hideHoverPreview' };
 
 export function overlaysReducer(state: OverlaysState, action: OverlaysAction): OverlaysState {
@@ -85,6 +86,13 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
     case 'overlays/showHoverPreview':
       return { ...state, hoverPreview: action.preview };
 
+    case 'overlays/updateHoverPosition':
+      if (state.hoverPreview === null) return state;
+      return {
+        ...state,
+        hoverPreview: { ...state.hoverPreview, position: action.position },
+      };
+
     case 'overlays/hideHoverPreview':
       if (state.hoverPreview === null) return state;
       return { ...state, hoverPreview: null };
@@ -109,6 +117,8 @@ export function useOverlaysActions(dispatch: Dispatch<OverlaysAction>) {
       hideContextMenu: () => dispatch({ type: 'overlays/hideContextMenu' }),
       showHoverPreview: (preview: HoverPreviewState) =>
         dispatch({ type: 'overlays/showHoverPreview', preview }),
+      updateHoverPosition: (position: { x: number; y: number }) =>
+        dispatch({ type: 'overlays/updateHoverPosition', position }),
       hideHoverPreview: () => dispatch({ type: 'overlays/hideHoverPreview' }),
     }),
     [dispatch]
