@@ -23,10 +23,18 @@ describe('rootReducer', () => {
     expect(result).not.toBe(initialRootState);
   });
 
-  it('leaves unchanged slices referentially equal (structural sharing)', () => {
+  it('produces a new slice reference when the slice changed', () => {
     const result = rootReducer(initialRootState, {
       type: 'overlays/openSearch',
     });
     expect(result.overlays).not.toBe(initialRootState.overlays);
+  });
+
+  it('returns the same root reference on idempotent dispatch', () => {
+    const first = rootReducer(initialRootState, {
+      type: 'overlays/openSearch',
+    });
+    const second = rootReducer(first, { type: 'overlays/openSearch' });
+    expect(second).toBe(first);
   });
 });
