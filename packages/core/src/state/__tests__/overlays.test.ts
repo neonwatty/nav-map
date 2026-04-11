@@ -207,6 +207,16 @@ describe('overlaysReducer', () => {
       expect(result.hoverPreview?.label).toBe('About');
     });
 
+    it('showHoverPreview replaces an existing preview', () => {
+      const prior = { ...initialOverlaysState, hoverPreview: samplePreview };
+      const next = { ...samplePreview, label: 'About' };
+      const result = overlaysReducer(prior, {
+        type: 'overlays/showHoverPreview',
+        preview: next,
+      });
+      expect(result.hoverPreview).toEqual(next);
+    });
+
     it('hideHoverPreview clears the preview', () => {
       const prior = { ...initialOverlaysState, hoverPreview: samplePreview };
       const result = overlaysReducer(prior, {
