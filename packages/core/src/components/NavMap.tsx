@@ -20,6 +20,8 @@ import '@xyflow/react/dist/style.css';
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import { rootReducer, initialRootState } from '../state/reducer';
 import { useOverlaysActions } from '../state/slices/overlays';
+import { useDisplayActions } from '../state/slices/display';
+import { useFlowActions } from '../state/slices/flow';
 import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
@@ -109,20 +111,18 @@ function NavMapInner({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
-  const [showSharedNav, setShowSharedNav] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
-  const [showRedirects, setShowRedirects] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
-  const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
   const [edgeMode, setEdgeMode] = useState<EdgeMode>(defaultEdgeMode);
-  const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
-  const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [state, dispatch] = useReducer(rootReducer, initialRootState);
   const overlays = useOverlaysActions(dispatch);
   const { showHelp, showSearch, searchQuery, showAnalytics, contextMenu, hoverPreview } =
     state.overlays;
+  const display = useDisplayActions(dispatch);
+  const { showSharedNav, focusMode, showRedirects } = state.display;
+  const flow = useFlowActions(dispatch);
+  const { selectedFlowIndex, isAnimatingFlow, galleryNodeId } = state.flow;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
@@ -156,6 +156,33 @@ function NavMapInner({
       else overlays.closeHelp();
     },
     [hideHelp, overlays, showHelp]
+  );
+
+  const toggleableSetShowSharedNav = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      const next = typeof v === 'function' ? v(showSharedNav) : v;
+      if (next) display.showSharedNav();
+      else display.hideSharedNav();
+    },
+    [display, showSharedNav]
+  );
+
+  const toggleableSetFocusMode = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      const next = typeof v === 'function' ? v(focusMode) : v;
+      if (next) display.enableFocusMode();
+      else display.disableFocusMode();
+    },
+    [display, focusMode]
+  );
+
+  const toggleableSetShowRedirects = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      const next = typeof v === 'function' ? v(showRedirects) : v;
+      if (next) display.showRedirects();
+      else display.hideRedirects();
+    },
+    [display, showRedirects]
   );
 
   // Undo history for node drags and group collapse
@@ -499,8 +526,8 @@ function NavMapInner({
     focusMode,
     setShowSearch: guardedSetShowSearch,
     setShowHelp: guardedSetShowHelp,
-    setShowSharedNav,
-    setFocusMode,
+    setShowSharedNav: toggleableSetShowSharedNav,
+    setFocusMode: toggleableSetFocusMode,
     setNodes,
     setEdges,
     fitView,
@@ -510,7 +537,7 @@ function NavMapInner({
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
-    setShowRedirects,
+    setShowRedirects: toggleableSetShowRedirects,
     undo,
     canUndo,
     setCollapsedGroups,
@@ -644,10 +671,10 @@ function NavMapInner({
       }
       const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
       if (hasGallery) {
-        setGalleryNodeId(node.id);
+        flow.openGallery(node.id);
       }
     },
-    [graph, viewMode, pushSnapshot]
+    [graph, viewMode, pushSnapshot, flow]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
@@ -689,25 +716,26 @@ function NavMapInner({
               analyticsAdapter={analyticsAdapter}
               onViewModeChange={mode => {
                 setViewMode(mode);
-                if (mode !== 'flow') setSelectedFlowIndex(null);
+                if (mode !== 'flow') flow.clearFlow();
                 if (mode !== 'tree') setTreeRootId(null);
                 if (mode === 'hierarchy' && graph) {
                   setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
                 }
               }}
               onFlowSelect={idx => {
-                setSelectedFlowIndex(idx);
+                if (idx === null) flow.clearFlow();
+                else flow.selectFlow(idx);
                 setFocusedGroupId(null);
               }}
               onResetView={() => {
                 setFocusedGroupId(null);
                 fitView({ padding: 0.15, duration: 300 });
               }}
-              onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
-              onToggleRedirects={() => setShowRedirects(prev => !prev)}
-              onToggleFocusMode={() => setFocusMode(prev => !prev)}
+              onToggleSharedNav={() => display.toggleSharedNav()}
+              onToggleRedirects={() => display.toggleRedirects()}
+              onToggleFocusMode={() => display.toggleFocusMode()}
               onEdgeModeChange={setEdgeMode}
-              onAnimate={() => setIsAnimatingFlow(true)}
+              onAnimate={() => flow.startAnimation()}
               onToggleAnalytics={() => {
                 if (showAnalytics) overlays.closeAnalytics();
                 else overlays.openAnalytics();
@@ -829,8 +857,8 @@ function NavMapInner({
             layoutDone={layoutDone}
             nodes={nodes}
             viewport={viewport}
-            onAnimationEnd={() => setIsAnimatingFlow(false)}
-            onStop={() => setIsAnimatingFlow(false)}
+            onAnimationEnd={() => flow.stopAnimation()}
+            onStop={() => flow.stopAnimation()}
           />
         </div>
 
@@ -877,7 +905,7 @@ function NavMapInner({
           }}
           onSearchQueryChange={overlays.setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
-          onCloseGallery={() => setGalleryNodeId(null)}
+          onCloseGallery={() => flow.closeGallery()}
         />
       </div>
     </NavMapContext.Provider>
