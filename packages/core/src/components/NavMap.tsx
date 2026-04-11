@@ -1,5 +1,5 @@
 /* eslint-disable max-lines, react-hooks/refs */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -13,7 +13,6 @@ import {
   useStore,
   type Node,
   type Edge,
-  type OnSelectionChangeParams,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -33,12 +32,12 @@ import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useSetterWrappers } from '../hooks/useSetterWrappers';
 import { useNavMapMemos } from '../hooks/useNavMapMemos';
+import { useNavMapHandlers } from '../hooks/useNavMapHandlers';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
-import type { HistoryEntry } from '../hooks/useUndoHistory';
-import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import { buildGraphFromJson } from '../utils/graphHelpers';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { useWalkthrough } from '../hooks/useWalkthrough';
@@ -164,8 +163,6 @@ function NavMapInner({
 
   // Undo history for node drags and group collapse
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
-  const beforeDragRef = useRef<HistoryEntry | null>(null);
-
   // Refs to read current state inside stable callbacks (for undo snapshots)
   const collapsedGroupsRef = useRef(collapsedGroups);
   collapsedGroupsRef.current = collapsedGroups;
@@ -298,61 +295,31 @@ function NavMapInner({
     nodes,
   });
 
-  // Use refs to avoid stale closures in callbacks
-  const ctxRef = useRef(ctx);
-  ctxRef.current = ctx;
-  const walkthroughRef = useRef(walkthrough);
-  walkthroughRef.current = walkthrough;
-  const nodesRef = useRef(nodes);
-  nodesRef.current = nodes;
-
-  // Handle node selection (from React Flow click)
-  const onSelectionChange = useCallback(
-    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
-      const selected = selectedNodes[0];
-      if (selected) {
-        ctxRef.current.setSelectedNodeId(selected.id);
-        walkthroughRef.current.push(selected.id);
-        if (viewModeRef.current === 'tree') {
-          view.setTreeRootId(selected.id);
-        }
-      }
-    },
-    [view]
-  );
-
-  // Navigate to a node programmatically
-  const navigateToNode = useCallback(
-    (nodeId: string) => {
-      ctxRef.current.setSelectedNodeId(nodeId);
-      walkthroughRef.current.push(nodeId);
-
-      const node = nodesRef.current.find(n => n.id === nodeId);
-      if (node) {
-        setCenter(node.position.x + 90, node.position.y + 70, {
-          zoom: 0.8,
-          duration: 300,
-        });
-      }
-    },
-    [setCenter]
-  );
-
-  // Search navigation: longer flight with closer zoom
-  const navigateToNodeFromSearch = useCallback(
-    (nodeId: string) => {
-      ctxRef.current.setSelectedNodeId(nodeId);
-      walkthroughRef.current.push(nodeId);
-      const node = nodesRef.current.find(n => n.id === nodeId);
-      if (node) {
-        setCenter(node.position.x + 90, node.position.y + 70, {
-          zoom: 1.0,
-          duration: 600,
-        });
-      }
-    },
-    [setCenter]
-  );
+  const {
+    onSelectionChange,
+    navigateToNode,
+    navigateToNodeFromSearch,
+    onNodeMouseEnter,
+    onNodeMouseLeave,
+    onNodeDragStart,
+    onNodeDragStop,
+    onNodeContextMenu,
+    onNodeDoubleClick,
+  } = useNavMapHandlers({
+    ctx,
+    walkthrough,
+    nodes,
+    graph,
+    viewMode,
+    viewModeRef,
+    hierarchyExpandedGroups,
+    setCenter,
+    pushSnapshot,
+    overlays,
+    flow,
+    view,
+    groups,
+  });
 
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
@@ -382,60 +349,6 @@ function NavMapInner({
     canUndo,
   });
 
-  // Node hover for preview
-  const onNodeMouseEnter = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      const data = node.data as RFNodeData;
-      if (data.screenshot) {
-        overlays.showHoverPreview({
-          screenshot: data.screenshot,
-          label: data.label,
-          position: null,
-        });
-      }
-    },
-    [overlays]
-  );
-
-  const onNodeMouseLeave = useCallback(() => {
-    overlays.hideHoverPreview();
-  }, [overlays]);
-
-  // Capture node positions before drag for undo
-  const onNodeDragStart = useCallback(() => {
-    beforeDragRef.current = {
-      type: 'node-drag',
-      nodePositions: nodesRef.current.map(n => ({
-        id: n.id,
-        position: { ...n.position },
-        parentId: n.parentId,
-      })),
-    };
-  }, []);
-
-  const onNodeDragStop = useCallback(() => {
-    if (beforeDragRef.current) {
-      pushSnapshot(beforeDragRef.current);
-      beforeDragRef.current = null;
-    }
-  }, [pushSnapshot]);
-
-  // Right-click context menu
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      const data = node.data as Record<string, unknown>;
-      overlays.showContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        nodeId: node.id,
-        route: (data.route as string) ?? '',
-        filePath: data.filePath as string | undefined,
-      });
-    },
-    [overlays]
-  );
-
   // Track mouse position for hover preview
   const hasHoverPreview = hoverPreview !== null;
   useEffect(() => {
@@ -461,28 +374,6 @@ function NavMapInner({
     showRedirects,
     searchMatchIds,
   });
-
-  // Double-click opens gallery if ANY flow has gallery data for this node
-  const onNodeDoubleClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      if (viewMode === 'hierarchy') {
-        if (node.id.startsWith('hier-group-')) {
-          const groupId = node.id.replace('hier-group-', '');
-          pushSnapshot({
-            type: 'hierarchy-toggle',
-            expandedGroups: new Set(hierarchyExpandedGroups),
-          });
-          groups.toggleHierarchyGroup(groupId);
-          return;
-        }
-      }
-      const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
-      if (hasGallery) {
-        flow.openGallery(node.id);
-      }
-    },
-    [graph, viewMode, pushSnapshot, flow, hierarchyExpandedGroups, groups]
-  );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
