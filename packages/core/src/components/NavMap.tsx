@@ -1,5 +1,5 @@
-/* eslint-disable max-lines */
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+/* eslint-disable max-lines, react-hooks/refs */
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -24,10 +24,12 @@ import { useDisplayActions } from '../state/slices/display';
 import { useFlowActions } from '../state/slices/flow';
 import { useViewActions, createInitialViewState } from '../state/slices/view';
 import { useGroupsActions } from '../state/slices/groups';
-import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
+import { useGraphActions } from '../state/slices/graph';
+import { useAnalyticsActions } from '../state/slices/analytics';
+import type { GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
-import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
+import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
@@ -37,10 +39,14 @@ import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
-import { computeBundledEdges } from '../layout/edgeBundling';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
+import { useGraphLoading } from '../effects/useGraphLoading';
+import { useFocusEffects } from '../effects/useFocusEffects';
+import { useAnalyticsFetch } from '../effects/useAnalyticsFetch';
+import { useEdgeEffects } from '../effects/useEdgeEffects';
+import { useZoomEffects } from '../effects/useZoomEffects';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -109,13 +115,12 @@ function NavMapInner({
   hideHelp = false,
   onValidationError,
 }: NavMapProps) {
-  const [graph, setGraph] = useState<NavMapGraph | null>(graphProp ?? null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [layoutDone, setLayoutDone] = useState(false);
   const [state, dispatch] = useReducer(rootReducer, undefined, () => ({
     ...initialRootState,
     view: createInitialViewState(defaultViewMode, defaultEdgeMode),
+    graph: { graph: graphProp ?? null, layoutDone: false },
   }));
   const overlays = useOverlaysActions(dispatch);
   const { showHelp, showSearch, searchQuery, showAnalytics, contextMenu, hoverPreview } =
@@ -128,18 +133,14 @@ function NavMapInner({
   const { viewMode, edgeMode, treeRootId } = state.view;
   const groups = useGroupsActions(dispatch);
   const { focusedGroupId, collapsedGroups, hierarchyExpandedGroups } = state.groups;
-  const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
-  const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    end: new Date().toISOString().slice(0, 10),
-  }));
+  const graphActions = useGraphActions(dispatch);
+  const { graph, layoutDone } = state.graph;
+  const analyticsActions = useAnalyticsActions(dispatch);
+  const { data: analyticsData, period: analyticsPeriod } = state.analytics;
 
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
-
-  const onValidationErrorRef = useRef(onValidationError);
-  onValidationErrorRef.current = onValidationError;
 
   const guardedSetShowSearch = useCallback(
     (v: boolean | ((p: boolean) => boolean)) => {
@@ -228,74 +229,25 @@ function NavMapInner({
   const viewport = { x: viewportX, y: viewportY, zoom: viewportZoom };
   const { fitView, setCenter } = useReactFlow();
 
-  // Zoom to focused group when entering group focus mode
-  const prevFocusedGroupRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (focusedGroupId === prevFocusedGroupRef.current) return;
-    prevFocusedGroupRef.current = focusedGroupId;
-    if (!focusedGroupId) {
-      fitView({ padding: 0.15, duration: 300 });
-      return;
-    }
-    const focusedNodes = nodes
-      .filter(n => {
-        if (n.type === 'groupNode') {
-          return (n.data as Record<string, unknown>).groupId === focusedGroupId;
-        }
-        return (n.data as Record<string, unknown>).group === focusedGroupId;
-      })
-      .map(n => ({ id: n.id }));
-    if (focusedNodes.length > 0) {
-      fitView({ nodes: focusedNodes, padding: 0.3, duration: 300 });
-    }
-  }, [focusedGroupId, nodes, fitView]);
+  // Effect hooks: graph loading, focus, analytics
+  useGraphLoading({
+    graphProp,
+    graphUrl,
+    viewMode,
+    hierarchyExpandedGroups,
+    onValidationError,
+    setGraph: graphActions.setGraph,
+    setHierarchyExpanded: groups.setHierarchyExpanded,
+  });
 
-  // Load graph from URL if provided
-  useEffect(() => {
-    if (graphUrl && !graphProp) {
-      fetch(graphUrl)
-        .then(r => r.json())
-        .then((data: NavMapGraph) => {
-          const result = validateGraph(data);
-          if (!result.valid) {
-            onValidationErrorRef.current?.(result.errors);
-            console.warn('[NavMap] Graph validation failed:', result.errors);
-          }
-          setGraph(data);
-        });
-    }
-  }, [graphUrl, graphProp]);
+  useFocusEffects({ focusedGroupId, nodes, fitView });
 
-  // Update graph when prop changes
-  useEffect(() => {
-    if (graphProp) {
-      const result = validateGraph(graphProp);
-      if (!result.valid) {
-        onValidationErrorRef.current?.(result.errors);
-        console.warn('[NavMap] Graph validation failed:', result.errors);
-      }
-      setGraph(graphProp);
-    }
-  }, [graphProp]);
-
-  // Expand all hierarchy groups when graph first loads in hierarchy mode
-  useEffect(() => {
-    if (graph && viewMode === 'hierarchy' && hierarchyExpandedGroups.size === 0) {
-      groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph]);
-
-  // Fetch analytics data
-  useEffect(() => {
-    if (!analyticsAdapter || !showAnalytics) return;
-    Promise.all([
-      analyticsAdapter.fetchPageViews(analyticsPeriod),
-      analyticsAdapter.fetchTransitions(analyticsPeriod),
-    ]).then(([pageViews, transitions]) => {
-      setAnalyticsData({ period: analyticsPeriod, pageViews, transitions });
-    });
-  }, [analyticsAdapter, showAnalytics, analyticsPeriod]);
+  useAnalyticsFetch({
+    analyticsAdapter,
+    showAnalytics,
+    analyticsPeriod,
+    setData: analyticsActions.setData,
+  });
 
   // Convert graph to React Flow elements and compute layout
   useEffect(() => {
@@ -303,7 +255,7 @@ function NavMapInner({
 
     // For non-map default views, just mark layoutDone so useViewModeLayout runs
     if (viewModeRef.current !== 'map') {
-      setLayoutDone(true);
+      graphActions.setLayoutDone(true);
       return;
     }
 
@@ -322,44 +274,20 @@ function NavMapInner({
       setEdges(layoutedEdges);
       baseEdgesRef.current = layoutedEdges;
       sharedNavEdgesRef.current = buildSharedNavEdges(graph);
-      setLayoutDone(true);
+      graphActions.setLayoutDone(true);
     });
-  }, [graph, setNodes, setEdges]);
+  }, [graph, setNodes, setEdges, graphActions]);
 
-  // Toggle shared nav edges
-  useEffect(() => {
-    if (!layoutDone) return;
-    if (showSharedNav) {
-      setEdges([...baseEdgesRef.current, ...sharedNavEdgesRef.current]);
-    } else {
-      setEdges(baseEdgesRef.current);
-    }
-  }, [showSharedNav, layoutDone, setEdges]);
-
-  // Compute bundled edge paths when edge mode is 'bundled'
-  useEffect(() => {
-    if (!layoutDone || edgeMode !== 'bundled') return;
-    const currentEdges = showSharedNav
-      ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current]
-      : baseEdgesRef.current;
-    const results = computeBundledEdges(nodes, currentEdges);
-    const pathMap = new Map(results.map(r => [r.edgeId, r.path]));
-    setEdges(
-      currentEdges.map(edge => {
-        const bundledPath = pathMap.get(edge.id);
-        if (!bundledPath) return edge;
-        return { ...edge, data: { ...edge.data, bundledPath } };
-      })
-    );
-  }, [edgeMode, layoutDone, nodes, showSharedNav, setEdges]);
-
-  // Restore original edges when leaving bundled mode
-  useEffect(() => {
-    if (!layoutDone || edgeMode === 'bundled') return;
-    setEdges(
-      showSharedNav ? [...baseEdgesRef.current, ...sharedNavEdgesRef.current] : baseEdgesRef.current
-    );
-  }, [edgeMode, layoutDone, showSharedNav, setEdges]);
+  // Edge effects: shared nav toggle, bundled edges, mode restore
+  useEdgeEffects({
+    layoutDone,
+    showSharedNav,
+    edgeMode,
+    nodes,
+    setEdges,
+    baseEdgesRef,
+    sharedNavEdgesRef,
+  });
 
   // Re-layout when view mode changes (extracted to hook)
   useViewModeLayout({
@@ -379,21 +307,14 @@ function NavMapInner({
     handleHierarchyToggleRef,
   });
 
-  // In hierarchy view, auto-collapse groups at overview zoom, auto-expand at detail
-  const prevZoomTierRef = useRef(zoomTier);
-  useEffect(() => {
-    if (viewMode !== 'hierarchy' || !graph || zoomTier === prevZoomTierRef.current) return;
-    const prev = prevZoomTierRef.current;
-    prevZoomTierRef.current = zoomTier;
-
-    if (zoomTier === 'overview' && prev !== 'overview') {
-      // Zoomed out → collapse all
-      groups.clearHierarchyExpanded();
-    } else if (zoomTier === 'detail' && prev === 'overview') {
-      // Zoomed back in from overview → expand all
-      groups.setHierarchyExpanded(new Set(graph.groups.map(g => g.id)));
-    }
-  }, [zoomTier, viewMode, graph, groups]);
+  // Zoom effects: auto-collapse/expand hierarchy on zoom tier change
+  useZoomEffects({
+    zoomTier,
+    viewMode,
+    graph,
+    clearHierarchyExpanded: groups.clearHierarchyExpanded,
+    setHierarchyExpanded: groups.setHierarchyExpanded,
+  });
 
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
@@ -416,9 +337,6 @@ function NavMapInner({
   }, [graph]);
 
   // Semantic zoom: 3 tiers based on zoom level
-  // overview (<0.12): hide child nodes, show only group containers
-  // compact (0.12-0.25): compact labels, no screenshots
-  // detail (>0.25): full page nodes with screenshots
   const zoomedNodes = useMemo(() => {
     const addGalleryFlag = (node: Node) => {
       if (node.type === 'groupNode') return node;
@@ -428,7 +346,6 @@ function NavMapInner({
     };
 
     if (zoomTier === 'overview') {
-      // Only show group nodes; hide individual pages
       return nodes.map(node => {
         if (node.type === 'groupNode') return node;
         return {
@@ -441,7 +358,6 @@ function NavMapInner({
 
     if (zoomTier === 'detail') return nodes.map(addGalleryFlag);
 
-    // compact tier: all page nodes become compact
     return nodes.map(node => {
       if (node.type === 'groupNode') return node;
       const withGallery = addGalleryFlag(node);
@@ -478,7 +394,6 @@ function NavMapInner({
       ctxRef.current.setSelectedNodeId(nodeId);
       walkthroughRef.current.push(nodeId);
 
-      // Center the view on the node
       const node = nodesRef.current.find(n => n.id === nodeId);
       if (node) {
         setCenter(node.position.x + 90, node.position.y + 70, {
@@ -588,12 +503,7 @@ function NavMapInner({
     [overlays]
   );
 
-  // Track mouse position for hover preview. Uses `updateHoverPosition` so
-  // the handler does not need to spread prior `hoverPreview` from a stale
-  // closure — the reducer reads the latest preview and only swaps the
-  // position field. The effect depends on whether the preview is active
-  // (boolean), not on the preview value itself, so the listener is
-  // attached once per hover session rather than reattached on every move.
+  // Track mouse position for hover preview
   const hasHoverPreview = hoverPreview !== null;
   useEffect(() => {
     if (!hasHoverPreview) return;
@@ -645,9 +555,7 @@ function NavMapInner({
   // Double-click opens gallery if ANY flow has gallery data for this node
   const onNodeDoubleClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      // In hierarchy mode, toggle group expansion
       if (viewMode === 'hierarchy') {
-        // Collapsed summary node (compact node with hier-group- prefix)
         if (node.id.startsWith('hier-group-')) {
           const groupId = node.id.replace('hier-group-', '');
           pushSnapshot({
@@ -893,7 +801,7 @@ function NavMapInner({
             navigateToNodeFromSearch(nodeId);
           }}
           onSearchQueryChange={overlays.setSearchQuery}
-          onPeriodChange={setAnalyticsPeriod}
+          onPeriodChange={analyticsActions.setPeriod}
           onCloseGallery={() => flow.closeGallery()}
         />
       </div>
