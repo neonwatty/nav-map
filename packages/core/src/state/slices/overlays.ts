@@ -47,6 +47,18 @@ export type OverlaysAction =
 
 export function overlaysReducer(state: OverlaysState, action: OverlaysAction): OverlaysState {
   switch (action.type) {
+    case 'overlays/openSearch':
+      if (state.showSearch) return state;
+      return { ...state, showSearch: true };
+
+    case 'overlays/closeSearch':
+      if (!state.showSearch && state.searchQuery === '') return state;
+      return { ...state, showSearch: false, searchQuery: '' };
+
+    case 'overlays/setSearchQuery':
+      if (state.searchQuery === action.query) return state;
+      return { ...state, searchQuery: action.query };
+
     default:
       return state;
   }
