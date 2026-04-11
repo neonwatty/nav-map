@@ -1,5 +1,5 @@
 /* eslint-disable max-lines, react-hooks/refs */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -18,6 +18,8 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
+import { rootReducer, initialRootState } from '../state/reducer';
+import { useOverlaysActions } from '../state/slices/overlays';
 import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
@@ -117,17 +119,10 @@ function NavMapInner({
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    nodeId: string;
-    route: string;
-    filePath?: string;
-  } | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [state, dispatch] = useReducer(rootReducer, initialRootState);
+  const overlays = useOverlaysActions(dispatch);
+  const { showHelp, showSearch, searchQuery, showAnalytics, contextMenu, hoverPreview } =
+    state.overlays;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
@@ -135,11 +130,6 @@ function NavMapInner({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     end: new Date().toISOString().slice(0, 10),
   }));
-  const [hoverPreview, setHoverPreview] = useState<{
-    screenshot?: string;
-    label: string;
-    position: { x: number; y: number } | null;
-  } | null>(null);
 
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
@@ -151,17 +141,21 @@ function NavMapInner({
   const guardedSetShowSearch = useCallback(
     (v: boolean | ((p: boolean) => boolean)) => {
       if (hideSearch) return;
-      setShowSearch(v);
+      const next = typeof v === 'function' ? v(showSearch) : v;
+      if (next) overlays.openSearch();
+      else overlays.closeSearch();
     },
-    [hideSearch]
+    [hideSearch, overlays, showSearch]
   );
 
   const guardedSetShowHelp = useCallback(
     (v: boolean | ((p: boolean) => boolean)) => {
       if (hideHelp) return;
-      setShowHelp(v);
+      const next = typeof v === 'function' ? v(showHelp) : v;
+      if (next) overlays.openHelp();
+      else overlays.closeHelp();
     },
-    [hideHelp]
+    [hideHelp, overlays, showHelp]
   );
 
   // Undo history for node drags and group collapse
@@ -524,20 +518,23 @@ function NavMapInner({
   });
 
   // Node hover for preview
-  const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
-    const data = node.data as RFNodeData;
-    if (data.screenshot) {
-      setHoverPreview({
-        screenshot: data.screenshot,
-        label: data.label,
-        position: null,
-      });
-    }
-  }, []);
+  const onNodeMouseEnter = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      const data = node.data as RFNodeData;
+      if (data.screenshot) {
+        overlays.showHoverPreview({
+          screenshot: data.screenshot,
+          label: data.label,
+          position: null,
+        });
+      }
+    },
+    [overlays]
+  );
 
   const onNodeMouseLeave = useCallback(() => {
-    setHoverPreview(null);
-  }, []);
+    overlays.hideHoverPreview();
+  }, [overlays]);
 
   // Capture node positions before drag for undo
   const onNodeDragStart = useCallback(() => {
@@ -559,29 +556,33 @@ function NavMapInner({
   }, [pushSnapshot]);
 
   // Right-click context menu
-  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-    const data = node.data as Record<string, unknown>;
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      nodeId: node.id,
-      route: (data.route as string) ?? '',
-      filePath: data.filePath as string | undefined,
-    });
-  }, []);
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      const data = node.data as Record<string, unknown>;
+      overlays.showContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        nodeId: node.id,
+        route: (data.route as string) ?? '',
+        filePath: data.filePath as string | undefined,
+      });
+    },
+    [overlays]
+  );
 
   // Track mouse position for hover preview
   useEffect(() => {
     if (!hoverPreview) return;
     const handler = (e: MouseEvent) => {
-      setHoverPreview(prev =>
-        prev ? { ...prev, position: { x: e.clientX, y: e.clientY } } : null
-      );
+      overlays.showHoverPreview({
+        ...hoverPreview,
+        position: { x: e.clientX, y: e.clientY },
+      });
     };
     window.addEventListener('mousemove', handler);
     return () => window.removeEventListener('mousemove', handler);
-  }, [hoverPreview]);
+  }, [hoverPreview, overlays]);
 
   // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
@@ -704,7 +705,10 @@ function NavMapInner({
               onToggleFocusMode={() => setFocusMode(prev => !prev)}
               onEdgeModeChange={setEdgeMode}
               onAnimate={() => setIsAnimatingFlow(true)}
-              onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+              onToggleAnalytics={() => {
+                if (showAnalytics) overlays.closeAnalytics();
+                else overlays.openAnalytics();
+              }}
               onSearch={() => guardedSetShowSearch(true)}
               onHelp={() => guardedSetShowHelp(true)}
             />
@@ -845,7 +849,7 @@ function NavMapInner({
             route={contextMenu.route}
             filePath={contextMenu.filePath}
             baseUrl={graph?.meta.baseUrl}
-            onClose={() => setContextMenu(null)}
+            onClose={() => overlays.hideContextMenu()}
           />
         )}
 
@@ -863,12 +867,12 @@ function NavMapInner({
           screenshotBasePath={screenshotBasePath}
           onCloseHelp={() => guardedSetShowHelp(false)}
           onCloseSearch={() => guardedSetShowSearch(false)}
-          onCloseAnalytics={() => setShowAnalytics(false)}
+          onCloseAnalytics={() => overlays.closeAnalytics()}
           onSearchSelect={nodeId => {
-            setSearchQuery('');
+            overlays.setSearchQuery('');
             navigateToNodeFromSearch(nodeId);
           }}
-          onSearchQueryChange={setSearchQuery}
+          onSearchQueryChange={query => overlays.setSearchQuery(query)}
           onPeriodChange={setAnalyticsPeriod}
           onCloseGallery={() => setGalleryNodeId(null)}
         />
