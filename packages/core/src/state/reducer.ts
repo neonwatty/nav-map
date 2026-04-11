@@ -1,12 +1,16 @@
 import { initialOverlaysState, overlaysReducer } from './slices/overlays';
 import { initialDisplayState, displayReducer } from './slices/display';
 import { initialFlowState, flowReducer } from './slices/flow';
+import { initialViewState, viewReducer } from './slices/view';
+import { initialGroupsState, groupsReducer } from './slices/groups';
 import type { Action, RootState } from './types';
 
 export const initialRootState: RootState = {
   overlays: initialOverlaysState,
   display: initialDisplayState,
   flow: initialFlowState,
+  view: initialViewState,
+  groups: initialGroupsState,
 };
 
 /**
@@ -18,6 +22,8 @@ export function rootReducer(state: RootState, action: Action): RootState {
     overlays: overlaysReducer(state.overlays, action as never),
     display: displayReducer(state.display, action as never),
     flow: flowReducer(state.flow, action as never),
+    view: viewReducer(state.view, action as never),
+    groups: groupsReducer(state.groups, action as never),
   };
 
   // Structural sharing: return same reference if nothing changed

@@ -18,6 +18,19 @@ describe('rootReducer', () => {
     expect(result.flow.selectedFlowIndex).toBe(1);
   });
 
+  it('routes view actions to the view slice', () => {
+    const result = rootReducer(initialRootState, { type: 'view/setViewMode', mode: 'map' });
+    expect(result.view.viewMode).toBe('map');
+  });
+
+  it('routes groups actions to the groups slice', () => {
+    const result = rootReducer(initialRootState, {
+      type: 'groups/setFocusedGroup',
+      id: 'group-1',
+    });
+    expect(result.groups.focusedGroupId).toBe('group-1');
+  });
+
   it('returns the same root reference when no slice changed', () => {
     const unknown = { type: 'unknown/action' } as unknown as Action;
     const result = rootReducer(initialRootState, unknown);
@@ -34,6 +47,8 @@ describe('rootReducer', () => {
     expect(result.display).not.toBe(initialRootState.display);
     expect(result.overlays).toBe(initialRootState.overlays);
     expect(result.flow).toBe(initialRootState.flow);
+    expect(result.view).toBe(initialRootState.view);
+    expect(result.groups).toBe(initialRootState.groups);
   });
 
   it('returns the same root reference on idempotent dispatch', () => {
