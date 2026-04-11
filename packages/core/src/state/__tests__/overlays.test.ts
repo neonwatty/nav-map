@@ -98,4 +98,32 @@ describe('overlaysReducer', () => {
       expect(result).toBe(initialOverlaysState);
     });
   });
+
+  describe('analytics visibility actions', () => {
+    it('openAnalytics sets showAnalytics to true', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/openAnalytics',
+      });
+      expect(result.showAnalytics).toBe(true);
+    });
+
+    it('openAnalytics returns the same reference when already open', () => {
+      const open = { ...initialOverlaysState, showAnalytics: true };
+      const result = overlaysReducer(open, { type: 'overlays/openAnalytics' });
+      expect(result).toBe(open);
+    });
+
+    it('closeAnalytics sets showAnalytics to false', () => {
+      const open = { ...initialOverlaysState, showAnalytics: true };
+      const result = overlaysReducer(open, { type: 'overlays/closeAnalytics' });
+      expect(result.showAnalytics).toBe(false);
+    });
+
+    it('closeAnalytics returns the same reference when already closed', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/closeAnalytics',
+      });
+      expect(result).toBe(initialOverlaysState);
+    });
+  });
 });

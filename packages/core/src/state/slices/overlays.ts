@@ -67,6 +67,14 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
       if (!state.showHelp) return state;
       return { ...state, showHelp: false };
 
+    case 'overlays/openAnalytics':
+      if (state.showAnalytics) return state;
+      return { ...state, showAnalytics: true };
+
+    case 'overlays/closeAnalytics':
+      if (!state.showAnalytics) return state;
+      return { ...state, showAnalytics: false };
+
     default:
       return state;
   }
