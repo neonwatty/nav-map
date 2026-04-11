@@ -59,6 +59,14 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
       if (state.searchQuery === action.query) return state;
       return { ...state, searchQuery: action.query };
 
+    case 'overlays/openHelp':
+      if (state.showHelp) return state;
+      return { ...state, showHelp: true };
+
+    case 'overlays/closeHelp':
+      if (!state.showHelp) return state;
+      return { ...state, showHelp: false };
+
     default:
       return state;
   }

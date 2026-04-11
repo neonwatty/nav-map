@@ -70,4 +70,32 @@ describe('overlaysReducer', () => {
       expect(result).toBe(state);
     });
   });
+
+  describe('help actions', () => {
+    it('openHelp sets showHelp to true', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/openHelp',
+      });
+      expect(result.showHelp).toBe(true);
+    });
+
+    it('openHelp returns the same reference when already open', () => {
+      const open = { ...initialOverlaysState, showHelp: true };
+      const result = overlaysReducer(open, { type: 'overlays/openHelp' });
+      expect(result).toBe(open);
+    });
+
+    it('closeHelp sets showHelp to false', () => {
+      const open = { ...initialOverlaysState, showHelp: true };
+      const result = overlaysReducer(open, { type: 'overlays/closeHelp' });
+      expect(result.showHelp).toBe(false);
+    });
+
+    it('closeHelp returns the same reference when already closed', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/closeHelp',
+      });
+      expect(result).toBe(initialOverlaysState);
+    });
+  });
 });
