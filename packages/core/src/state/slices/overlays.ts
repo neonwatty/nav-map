@@ -82,6 +82,13 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
       if (state.contextMenu === null) return state;
       return { ...state, contextMenu: null };
 
+    case 'overlays/showHoverPreview':
+      return { ...state, hoverPreview: action.preview };
+
+    case 'overlays/hideHoverPreview':
+      if (state.hoverPreview === null) return state;
+      return { ...state, hoverPreview: null };
+
     default:
       return state;
   }

@@ -172,4 +172,54 @@ describe('overlaysReducer', () => {
       expect(result).toBe(initialOverlaysState);
     });
   });
+
+  describe('hover preview actions', () => {
+    const samplePreview = {
+      screenshot: '/screenshots/home.png',
+      label: 'Home',
+      position: { x: 42, y: 84 },
+    };
+
+    it('showHoverPreview sets the preview payload', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/showHoverPreview',
+        preview: samplePreview,
+      });
+      expect(result.hoverPreview).toEqual(samplePreview);
+    });
+
+    it('showHoverPreview accepts a preview with null position', () => {
+      const preview = { ...samplePreview, position: null };
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/showHoverPreview',
+        preview,
+      });
+      expect(result.hoverPreview?.position).toBeNull();
+    });
+
+    it('showHoverPreview accepts a preview without a screenshot', () => {
+      const preview = { label: 'About', position: { x: 1, y: 2 } };
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/showHoverPreview',
+        preview,
+      });
+      expect(result.hoverPreview?.screenshot).toBeUndefined();
+      expect(result.hoverPreview?.label).toBe('About');
+    });
+
+    it('hideHoverPreview clears the preview', () => {
+      const prior = { ...initialOverlaysState, hoverPreview: samplePreview };
+      const result = overlaysReducer(prior, {
+        type: 'overlays/hideHoverPreview',
+      });
+      expect(result.hoverPreview).toBeNull();
+    });
+
+    it('hideHoverPreview returns the same reference when already hidden', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/hideHoverPreview',
+      });
+      expect(result).toBe(initialOverlaysState);
+    });
+  });
 });
