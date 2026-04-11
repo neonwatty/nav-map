@@ -37,9 +37,6 @@ import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
-import { buildGraphFromJson } from '../utils/graphHelpers';
-import { buildSharedNavEdges } from '../utils/sharedNavEdges';
-import { computeElkLayout } from '../layout/elkLayout';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
@@ -48,6 +45,7 @@ import { useFocusEffects } from '../effects/useFocusEffects';
 import { useAnalyticsFetch } from '../effects/useAnalyticsFetch';
 import { useEdgeEffects } from '../effects/useEdgeEffects';
 import { useZoomEffects } from '../effects/useZoomEffects';
+import { useLayoutEffects } from '../effects/useLayoutEffects';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -220,33 +218,17 @@ function NavMapInner({
   });
 
   // Convert graph to React Flow elements and compute layout
-  useEffect(() => {
-    if (!graph) return;
-
-    // For non-map default views, just mark layoutDone so useViewModeLayout runs
-    if (viewModeRef.current !== 'map') {
-      graphActions.setLayoutDone(true);
-      return;
-    }
-
-    const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
-
-    // Inject onToggle and onDoubleClick into group nodes
-    for (const node of rfNodes) {
-      if (node.type === 'groupNode') {
-        (node.data as Record<string, unknown>).onToggle = handleGroupToggleRef.current;
-        (node.data as Record<string, unknown>).onDoubleClick = handleGroupDoubleClickRef.current;
-      }
-    }
-
-    computeElkLayout(rfNodes, rfEdges).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      baseEdgesRef.current = layoutedEdges;
-      sharedNavEdgesRef.current = buildSharedNavEdges(graph);
-      graphActions.setLayoutDone(true);
-    });
-  }, [graph, setNodes, setEdges, graphActions]);
+  useLayoutEffects({
+    graph,
+    viewModeRef,
+    setNodes,
+    setEdges,
+    baseEdgesRef,
+    sharedNavEdgesRef,
+    handleGroupToggleRef,
+    handleGroupDoubleClickRef,
+    graphActions,
+  });
 
   // Edge effects: shared nav toggle, bundled edges, mode restore
   useEdgeEffects({
