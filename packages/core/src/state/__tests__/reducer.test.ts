@@ -31,6 +31,19 @@ describe('rootReducer', () => {
     expect(result.groups.focusedGroupId).toBe('group-1');
   });
 
+  it('routes graph actions to the graph slice', () => {
+    const result = rootReducer(initialRootState, { type: 'graph/setLayoutDone', done: true });
+    expect(result.graph.layoutDone).toBe(true);
+  });
+
+  it('routes analytics actions to the analytics slice', () => {
+    const result = rootReducer(initialRootState, {
+      type: 'analytics/setPeriod',
+      period: { start: '2025-01-01', end: '2025-01-31' },
+    });
+    expect(result.analytics.period).toEqual({ start: '2025-01-01', end: '2025-01-31' });
+  });
+
   it('returns the same root reference when no slice changed', () => {
     const unknown = { type: 'unknown/action' } as unknown as Action;
     const result = rootReducer(initialRootState, unknown);
@@ -49,6 +62,8 @@ describe('rootReducer', () => {
     expect(result.flow).toBe(initialRootState.flow);
     expect(result.view).toBe(initialRootState.view);
     expect(result.groups).toBe(initialRootState.groups);
+    expect(result.graph).toBe(initialRootState.graph);
+    expect(result.analytics).toBe(initialRootState.analytics);
   });
 
   it('returns the same root reference on idempotent dispatch', () => {

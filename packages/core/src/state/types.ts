@@ -3,6 +3,8 @@ import type { DisplayState, DisplayAction } from './slices/display';
 import type { FlowState, FlowAction } from './slices/flow';
 import type { ViewState, ViewAction } from './slices/view';
 import type { GroupsState, GroupsAction } from './slices/groups';
+import type { GraphState, GraphAction } from './slices/graph';
+import type { AnalyticsState, AnalyticsAction } from './slices/analytics';
 
 export type RootState = {
   overlays: OverlaysState;
@@ -10,6 +12,8 @@ export type RootState = {
   flow: FlowState;
   view: ViewState;
   groups: GroupsState;
+  graph: GraphState;
+  analytics: AnalyticsState;
 };
 
 /**
@@ -17,4 +21,11 @@ export type RootState = {
  * pattern-match on `action.type` and must return state unchanged for actions
  * they don't own.
  */
-export type Action = OverlaysAction | DisplayAction | FlowAction | ViewAction | GroupsAction;
+export type Action =
+  | OverlaysAction
+  | DisplayAction
+  | FlowAction
+  | ViewAction
+  | GroupsAction
+  | GraphAction
+  | AnalyticsAction;
