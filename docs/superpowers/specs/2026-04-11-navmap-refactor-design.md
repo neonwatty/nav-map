@@ -119,9 +119,11 @@ export type OverlaysAction =
   | { type: 'overlays/setSearchQuery'; query: string }
   | { type: 'overlays/openHelp' }
   | { type: 'overlays/closeHelp' }
-  | { type: 'overlays/showContextMenu'; x: number; y: number; nodeId: string }
+  | { type: 'overlays/openAnalytics' }
+  | { type: 'overlays/closeAnalytics' }
+  | { type: 'overlays/showContextMenu'; menu: ContextMenuState }
   | { type: 'overlays/hideContextMenu' }
-  | { type: 'overlays/showHoverPreview'; nodeId: string; x: number; y: number }
+  | { type: 'overlays/showHoverPreview'; preview: HoverPreviewState }
   | { type: 'overlays/hideHoverPreview' };
 
 export const initialOverlaysState: OverlaysState = {
@@ -154,11 +156,13 @@ export function useOverlaysActions(dispatch: Dispatch<Action>) {
     setSearchQuery: (query: string) => dispatch({ type: 'overlays/setSearchQuery', query }),
     openHelp: () => dispatch({ type: 'overlays/openHelp' }),
     closeHelp: () => dispatch({ type: 'overlays/closeHelp' }),
-    showContextMenu: (args: { x: number; y: number; nodeId: string }) =>
-      dispatch({ type: 'overlays/showContextMenu', ...args }),
+    openAnalytics: () => dispatch({ type: 'overlays/openAnalytics' }),
+    closeAnalytics: () => dispatch({ type: 'overlays/closeAnalytics' }),
+    showContextMenu: (menu: ContextMenuState) =>
+      dispatch({ type: 'overlays/showContextMenu', menu }),
     hideContextMenu: () => dispatch({ type: 'overlays/hideContextMenu' }),
-    showHoverPreview: (args: { nodeId: string; x: number; y: number }) =>
-      dispatch({ type: 'overlays/showHoverPreview', ...args }),
+    showHoverPreview: (preview: HoverPreviewState) =>
+      dispatch({ type: 'overlays/showHoverPreview', preview }),
     hideHoverPreview: () => dispatch({ type: 'overlays/hideHoverPreview' }),
   }), [dispatch]);
 }
