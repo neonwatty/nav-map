@@ -1,4 +1,6 @@
 /* eslint-disable max-lines, react-hooks/refs */
+// max-lines: orchestration layer wiring 7 slices, 6 effect hooks, ~15 panels.
+// react-hooks/refs: render-time ref syncs for useViewModeLayout compatibility.
 import { useEffect, useReducer, useRef } from 'react';
 import {
   ReactFlow,
