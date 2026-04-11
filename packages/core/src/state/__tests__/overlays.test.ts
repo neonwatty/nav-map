@@ -126,4 +126,50 @@ describe('overlaysReducer', () => {
       expect(result).toBe(initialOverlaysState);
     });
   });
+
+  describe('context menu actions', () => {
+    const sampleMenu = {
+      x: 100,
+      y: 200,
+      nodeId: 'page-home',
+      route: '/home',
+      filePath: 'app/home/page.tsx',
+    };
+
+    it('showContextMenu sets the menu payload', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/showContextMenu',
+        menu: sampleMenu,
+      });
+      expect(result.contextMenu).toEqual(sampleMenu);
+    });
+
+    it('showContextMenu replaces an existing menu', () => {
+      const prior = {
+        ...initialOverlaysState,
+        contextMenu: { ...sampleMenu, nodeId: 'old' },
+      };
+      const result = overlaysReducer(prior, {
+        type: 'overlays/showContextMenu',
+        menu: sampleMenu,
+      });
+      expect(result.contextMenu).toEqual(sampleMenu);
+      expect(result.contextMenu?.nodeId).toBe('page-home');
+    });
+
+    it('hideContextMenu clears the menu', () => {
+      const prior = { ...initialOverlaysState, contextMenu: sampleMenu };
+      const result = overlaysReducer(prior, {
+        type: 'overlays/hideContextMenu',
+      });
+      expect(result.contextMenu).toBeNull();
+    });
+
+    it('hideContextMenu returns the same reference when already hidden', () => {
+      const result = overlaysReducer(initialOverlaysState, {
+        type: 'overlays/hideContextMenu',
+      });
+      expect(result).toBe(initialOverlaysState);
+    });
+  });
 });

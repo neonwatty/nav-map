@@ -75,6 +75,13 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
       if (!state.showAnalytics) return state;
       return { ...state, showAnalytics: false };
 
+    case 'overlays/showContextMenu':
+      return { ...state, contextMenu: action.menu };
+
+    case 'overlays/hideContextMenu':
+      if (state.contextMenu === null) return state;
+      return { ...state, contextMenu: null };
+
     default:
       return state;
   }
