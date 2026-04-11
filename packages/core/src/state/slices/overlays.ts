@@ -53,6 +53,9 @@ export function overlaysReducer(state: OverlaysState, action: OverlaysAction): O
       return { ...state, showSearch: true };
 
     case 'overlays/closeSearch':
+      // Two-condition guard: setSearchQuery can write a query while
+      // showSearch is false (nothing in the action set prevents it), so
+      // both flags must be at their closed-state values to early-exit.
       if (!state.showSearch && state.searchQuery === '') return state;
       return { ...state, showSearch: false, searchQuery: '' };
 
