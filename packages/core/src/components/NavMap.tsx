@@ -652,7 +652,7 @@ function NavMapInner({
   const effectiveShowSearch = hideSearch ? false : showSearch;
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage: false }}>
       <div
         ref={containerRef}
         className={className}
