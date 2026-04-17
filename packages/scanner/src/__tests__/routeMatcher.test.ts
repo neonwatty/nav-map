@@ -46,4 +46,21 @@ describe('matchRoute', () => {
     expect(result.matched).toBe(true);
     expect(result.nodeId).toBe('dashboard');
   });
+
+  it('pattern match for catch-all routes', () => {
+    const nodesWithCatchAll = [
+      ...baseNodes,
+      { id: 'docs-catchall', route: '/docs/[*]', label: 'Docs Catchall', group: 'docs' },
+    ];
+    // [*] is treated as a single-segment dynamic param (same as [slug])
+    const result = matchRoute('/docs/getting-started', nodesWithCatchAll);
+    expect(result.matched).toBe(true);
+    expect(result.nodeId).toBe('docs-catchall');
+  });
+
+  it('exact match for root route', () => {
+    const result = matchRoute('/', baseNodes);
+    expect(result.matched).toBe(true);
+    expect(result.nodeId).toBe('home');
+  });
 });

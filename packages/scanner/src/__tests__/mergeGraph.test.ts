@@ -156,4 +156,54 @@ describe('mergeGraph', () => {
     const merged = mergeGraph(baseGraph, testCoverage);
     expect(merged.meta.generatedBy).toBe('merged');
   });
+
+  it('marks nodes as failing when any test failed', () => {
+    const failingCoverage = {
+      testRuns: [
+        {
+          id: 'run1',
+          name: 'Failing test',
+          specFile: 'tests/fail.spec.ts',
+          status: 'failed' as const,
+          duration: 1000,
+          startTime: '2026-04-17T10:00:00Z',
+          routesVisited: ['/dashboard'],
+          flow: { name: 'Failing test', steps: ['dashboard'], gallery: {} },
+        },
+      ],
+      routeCoverage: {
+        '/dashboard': {
+          testCount: 1,
+          passCount: 0,
+          failCount: 1,
+          tests: [
+            {
+              id: 'run1',
+              name: 'Failing test',
+              specFile: 'tests/fail.spec.ts',
+              status: 'failed' as const,
+            },
+          ],
+          lastRun: '2026-04-17T10:00:00Z',
+        },
+      },
+    };
+    const merged = mergeGraph(baseGraph, failingCoverage);
+    const dashboard = merged.nodes.find(n => n.id === 'dashboard');
+    expect(dashboard?.coverage?.status).toBe('failing');
+    expect(dashboard?.coverage?.failCount).toBe(1);
+  });
+
+  it('populates correct coverage counts on matched nodes', () => {
+    const merged = mergeGraph(baseGraph, testCoverage);
+    const dashboard = merged.nodes.find(n => n.id === 'dashboard');
+    expect(dashboard?.coverage).toMatchObject({
+      status: 'covered',
+      testCount: 1,
+      passCount: 1,
+      failCount: 0,
+    });
+    expect(dashboard?.coverage?.tests).toHaveLength(1);
+    expect(dashboard?.coverage?.tests[0].name).toBe('Dashboard test');
+  });
 });

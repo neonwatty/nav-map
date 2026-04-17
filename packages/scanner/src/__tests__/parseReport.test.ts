@@ -40,4 +40,79 @@ describe('parseReport', () => {
     const empty = { config: {}, suites: [], stats: {} };
     expect(parseReport(empty)).toEqual([]);
   });
+
+  it('extracts tests from nested suites (describe blocks)', () => {
+    const nestedReport = {
+      suites: [
+        {
+          title: 'outer.spec.ts',
+          file: 'tests/outer.spec.ts',
+          specs: [],
+          suites: [
+            {
+              title: 'describe block',
+              file: 'tests/outer.spec.ts',
+              specs: [
+                {
+                  title: 'nested test',
+                  file: 'tests/outer.spec.ts',
+                  tests: [
+                    {
+                      status: 'expected',
+                      results: [
+                        {
+                          status: 'passed',
+                          duration: 100,
+                          startTime: '2026-04-17T00:00:00Z',
+                          attachments: [],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              suites: [],
+            },
+          ],
+        },
+      ],
+    };
+    const runs = parseReport(nestedReport);
+    expect(runs).toHaveLength(1);
+    expect(runs[0].name).toBe('nested test');
+  });
+
+  it('normalizes skipped status correctly', () => {
+    const skippedReport = {
+      suites: [
+        {
+          title: 'skip.spec.ts',
+          file: 'tests/skip.spec.ts',
+          specs: [
+            {
+              title: 'skipped test',
+              file: 'tests/skip.spec.ts',
+              tests: [
+                {
+                  status: 'skipped',
+                  results: [
+                    {
+                      status: 'skipped',
+                      duration: 0,
+                      startTime: '2026-04-17T00:00:00Z',
+                      attachments: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          suites: [],
+        },
+      ],
+    };
+    const runs = parseReport(skippedReport);
+    expect(runs).toHaveLength(1);
+    expect(runs[0].status).toBe('skipped');
+  });
 });
