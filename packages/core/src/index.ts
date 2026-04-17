@@ -72,4 +72,6 @@ export type {
   ViewMode,
   EdgeMode,
   NavMapTheme,
+  CoverageData,
+  CoverageTestRef,
 } from './types';
