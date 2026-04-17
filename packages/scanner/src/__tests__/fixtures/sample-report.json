@@ -1,9 +1,7 @@
 {
   "config": {
     "rootDir": "/project",
-    "projects": [
-      { "name": "desktop", "testDir": "tests" }
-    ]
+    "projects": [{ "name": "desktop", "testDir": "tests" }]
   },
   "suites": [
     {
