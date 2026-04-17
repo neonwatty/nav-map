@@ -7,11 +7,24 @@ function PageNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
-  const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
+  const { isDark, getGroupColors, screenshotBasePath, showCoverage } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
     ? `${screenshotBasePath}/${nodeData.screenshot}`
     : undefined;
+
+  const coverageStatus = showCoverage
+    ? (nodeData.metadata?.coverage as { status?: string } | undefined)?.status
+    : undefined;
+
+  const coverageBorderColor =
+    coverageStatus === 'covered'
+      ? '#22c55e'
+      : coverageStatus === 'failing'
+        ? '#eab308'
+        : coverageStatus === 'uncovered'
+          ? '#ef4444'
+          : undefined;
 
   return (
     <div
@@ -19,7 +32,7 @@ function PageNodeComponent({ data, selected }: NodeProps) {
         width: 180,
         borderRadius: 8,
         position: 'relative' as const,
-        border: `2px solid ${selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8'}`,
+        border: `2px solid ${coverageBorderColor ?? (selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8')}`,
         background: isDark ? '#14141e' : '#fff',
         overflow: 'visible',
         cursor: 'pointer',
@@ -108,6 +121,40 @@ function PageNodeComponent({ data, selected }: NodeProps) {
               title="Authentication required"
             >
               &#x1F512;
+            </span>
+          )}
+          {coverageStatus && (
+            <span
+              style={{
+                fontSize: 8,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background:
+                  coverageStatus === 'covered'
+                    ? isDark
+                      ? '#0a2a10'
+                      : '#dcfce7'
+                    : coverageStatus === 'failing'
+                      ? isDark
+                        ? '#2a2a0a'
+                        : '#fef9c3'
+                      : isDark
+                        ? '#2a0a0a'
+                        : '#fee2e2',
+                color:
+                  coverageStatus === 'covered'
+                    ? '#22c55e'
+                    : coverageStatus === 'failing'
+                      ? '#eab308'
+                      : '#ef4444',
+              }}
+              title={`Coverage: ${coverageStatus}`}
+            >
+              {coverageStatus === 'covered'
+                ? '\u2713'
+                : coverageStatus === 'failing'
+                  ? '!'
+                  : '\u2717'}
             </span>
           )}
         </div>
