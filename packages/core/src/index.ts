@@ -17,6 +17,8 @@ export { ExportButton } from './components/panels/ExportButton';
 export { GroupNode } from './components/nodes/GroupNode';
 export { PresentationBar } from './components/panels/PresentationBar';
 export { AnalyticsOverlay } from './components/panels/AnalyticsOverlay';
+export { CoverageSummary } from './components/panels/CoverageSummary';
+export { CoverageBadge, getCoverageBorderColor } from './components/nodes/CoverageBadge';
 
 // Error handling
 export { NavMapErrorBoundary } from './components/NavMapErrorBoundary';
@@ -72,4 +74,7 @@ export type {
   ViewMode,
   EdgeMode,
   NavMapTheme,
+  CoverageData,
+  CoverageTestRef,
+  TestStatus,
 } from './types';

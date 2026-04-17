@@ -40,6 +40,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@neonwatty/nav-map": "workspace:*",
     "adm-zip": "^0.5.16",
     "commander": "^14.0.3",
     "glob": "^11.0.0",

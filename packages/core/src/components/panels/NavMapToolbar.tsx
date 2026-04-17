@@ -29,6 +29,9 @@ interface NavMapToolbarProps {
   onToggleAnalytics: () => void;
   onSearch: () => void;
   onHelp: () => void;
+  showCoverage: boolean;
+  hasCoverageData: boolean;
+  onToggleCoverage: () => void;
 }
 
 export function NavMapToolbar({
@@ -53,6 +56,9 @@ export function NavMapToolbar({
   onToggleAnalytics,
   onSearch,
   onHelp,
+  showCoverage,
+  hasCoverageData,
+  onToggleCoverage,
 }: NavMapToolbarProps) {
   const { isDark } = useNavMapContext();
   const [showEdgePanel, setShowEdgePanel] = useState(false);
@@ -191,6 +197,16 @@ export function NavMapToolbar({
           title="Animate the selected flow"
         >
           {isAnimatingFlow ? 'Animating...' : 'Animate'}
+        </button>
+      )}
+
+      {hasCoverageData && (
+        <button
+          onClick={onToggleCoverage}
+          style={btnStyle(isDark, showCoverage)}
+          title="Toggle test coverage overlay"
+        >
+          Coverage
         </button>
       )}
 

@@ -2,13 +2,17 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
 
 function CompactNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
-  const { isDark, getGroupColors } = useNavMapContext();
+  const { isDark, getGroupColors, showCoverage } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
+
+  const coverageStatus = showCoverage ? nodeData.coverage?.status : undefined;
+  const coverageBorderColor = getCoverageBorderColor(coverageStatus);
 
   return (
     <div
@@ -16,7 +20,7 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
         padding: '8px 16px',
         borderRadius: 6,
         position: 'relative' as const,
-        border: `2px solid ${selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8'}`,
+        border: `2px solid ${coverageBorderColor ?? (selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8')}`,
         background: colors.bg,
         cursor: 'pointer',
         transition: 'border-color 0.15s, box-shadow 0.15s',
@@ -69,6 +73,7 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
             &#x1F512;
           </span>
         )}
+        {coverageStatus && <CoverageBadge status={coverageStatus} />}
       </div>
       <div
         style={{

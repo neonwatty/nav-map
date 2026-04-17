@@ -1,3 +1,5 @@
+export type TestStatus = 'passed' | 'failed' | 'skipped';
+
 export interface NavMapNode {
   id: string;
   route: string;
@@ -6,6 +8,7 @@ export interface NavMapNode {
   screenshot?: string;
   filePath?: string;
   metadata?: Record<string, unknown>;
+  coverage?: CoverageData;
 }
 
 export interface NavMapEdge {
@@ -13,7 +16,7 @@ export interface NavMapEdge {
   source: string;
   target: string;
   label?: string;
-  type: 'link' | 'redirect' | 'router-push' | 'shared-nav';
+  type: 'link' | 'redirect' | 'router-push' | 'shared-nav' | 'test-transition';
   sourceCode?: { file: string; line: number; component?: string };
 }
 
@@ -40,6 +43,22 @@ export interface NavMapFlowGallery {
   [nodeId: string]: NavMapFlowStep[];
 }
 
+export interface CoverageTestRef {
+  id: string;
+  name: string;
+  specFile: string;
+  status: TestStatus;
+}
+
+export interface CoverageData {
+  status: 'covered' | 'failing' | 'uncovered';
+  testCount: number;
+  passCount: number;
+  failCount: number;
+  tests: CoverageTestRef[];
+  lastRun: string;
+}
+
 export interface NavMapFlow {
   name: string;
   steps: string[];
@@ -57,7 +76,7 @@ export interface NavMapGraph {
     name: string;
     baseUrl?: string;
     generatedAt: string;
-    generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record';
+    generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record' | 'merged';
     framework?: 'nextjs-app' | 'nextjs-pages' | 'generic';
   };
   nodes: NavMapNode[];

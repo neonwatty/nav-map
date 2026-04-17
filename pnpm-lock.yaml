@@ -142,6 +142,9 @@ importers:
 
   packages/scanner:
     dependencies:
+      '@neonwatty/nav-map':
+        specifier: workspace:*
+        version: link:../core
       adm-zip:
         specifier: ^0.5.16
         version: 0.5.16

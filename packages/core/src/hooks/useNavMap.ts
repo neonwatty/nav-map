@@ -11,6 +11,7 @@ export interface NavMapContextValue {
   getGroupColors: (groupId: string) => GroupColors;
   focusedGroupId: string | null;
   edgeMode: EdgeMode;
+  showCoverage: boolean;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -22,6 +23,7 @@ const defaultContext: NavMapContextValue = {
   getGroupColors: () => ({ bg: '#1e1e2a', border: '#888', text: '#aaa' }),
   focusedGroupId: null,
   edgeMode: 'smooth',
+  showCoverage: false,
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -34,7 +36,7 @@ export function useNavMapState(
   graph: NavMapGraph | null,
   screenshotBasePath: string,
   theme?: NavMapTheme
-): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode'> {
+): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage'> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;

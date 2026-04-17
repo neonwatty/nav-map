@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react-hooks/refs */
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -21,6 +21,7 @@ import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
+import { CoverageSummary } from './panels/CoverageSummary';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
@@ -128,6 +129,7 @@ function NavMapInner({
     filePath?: string;
   } | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showCoverage, setShowCoverage] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
@@ -606,6 +608,11 @@ function NavMapInner({
     return ids.size > 0 ? ids : null;
   }, [showSearch, searchQuery, graph]);
 
+  const hasCoverageData = useMemo(
+    () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
+    [graph]
+  );
+
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
     edges,
@@ -652,7 +659,7 @@ function NavMapInner({
   const effectiveShowSearch = hideSearch ? false : showSearch;
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage }}>
       <div
         ref={containerRef}
         className={className}
@@ -707,6 +714,9 @@ function NavMapInner({
               onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
               onSearch={() => guardedSetShowSearch(true)}
               onHelp={() => guardedSetShowHelp(true)}
+              showCoverage={showCoverage}
+              hasCoverageData={hasCoverageData}
+              onToggleCoverage={() => setShowCoverage(prev => !prev)}
             />
           )}
 
@@ -792,6 +802,7 @@ function NavMapInner({
             </ReactFlow>
           )}
           {graph && <LegendPanel groups={graph.groups} />}
+          <CoverageSummary />
 
           {viewMode === 'hierarchy' && graph && (
             <HierarchyControls
