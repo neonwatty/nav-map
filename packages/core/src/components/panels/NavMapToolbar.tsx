@@ -204,7 +204,7 @@ export function NavMapToolbar({
         <button
           onClick={onToggleCoverage}
           style={btnStyle(isDark, showCoverage)}
-          title="Toggle test coverage overlay (C)"
+          title="Toggle test coverage overlay"
         >
           Coverage
         </button>

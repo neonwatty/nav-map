@@ -50,6 +50,8 @@ export function parseTrace(traceBuffer: Buffer, baseUrl: string): TraceResult {
   const traceEntry = zip.getEntry('0-trace.trace');
 
   if (!traceEntry) {
+    const entries = zip.getEntries().map(e => e.entryName);
+    console.warn(`parseTrace: 0-trace.trace not found in ZIP. Entries: ${entries.join(', ')}`);
     return { routes: [], actions: [], screenshots: [], resourceBuffers: new Map() };
   }
 
@@ -86,7 +88,7 @@ export function parseTrace(traceBuffer: Buffer, baseUrl: string): TraceResult {
         timestamp: event.startTime ?? 0,
         route: currentRoute,
       });
-    } else if (event.type === 'screencast-frame') {
+    } else if (event.type === 'screencast-frame' && event.sha1) {
       screenshots.push({
         sha1: event.sha1 ?? '',
         timestamp: event.timestamp ?? 0,

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react-hooks/refs */
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme, CoverageData } from '../types';
+import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
@@ -609,10 +609,7 @@ function NavMapInner({
   }, [showSearch, searchQuery, graph]);
 
   const hasCoverageData = useMemo(
-    () =>
-      graph?.nodes.some(
-        n => (n.metadata?.coverage as CoverageData | undefined)?.status !== undefined
-      ) ?? false,
+    () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
     [graph]
   );
 

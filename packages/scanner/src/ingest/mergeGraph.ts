@@ -3,18 +3,23 @@ import type {
   NavMapNode,
   NavMapEdge,
   NavMapFlow,
+  NavMapFlowStep,
   CoverageData,
-  CoverageTestRef,
+  TestStatus,
 } from '@neonwatty/nav-map';
 import { matchRoute } from './routeMatcher.js';
+import { routeToId } from './routeToId.js';
 
-export interface TestRunCoverage {
+interface TestRunBase {
   id: string;
   name: string;
   specFile: string;
-  status: 'passed' | 'failed' | 'skipped';
+  status: TestStatus;
   duration: number;
   startTime: string;
+}
+
+export interface TestRunCoverage extends TestRunBase {
   routesVisited: string[];
   flow: {
     name: string;
@@ -22,7 +27,7 @@ export interface TestRunCoverage {
     gallery: Record<
       string,
       Array<{
-        action: string;
+        action: NavMapFlowStep['action'];
         title: string;
         screenshot?: string;
         timestamp?: number;
@@ -31,13 +36,7 @@ export interface TestRunCoverage {
   };
 }
 
-export interface RouteCoverageEntry {
-  testCount: number;
-  passCount: number;
-  failCount: number;
-  tests: CoverageTestRef[];
-  lastRun: string;
-}
+export type RouteCoverageEntry = Omit<CoverageData, 'status'>;
 
 export interface TestCoverageData {
   testRuns: TestRunCoverage[];
@@ -45,12 +44,9 @@ export interface TestCoverageData {
 }
 
 function makeCoverageStatus(entry: RouteCoverageEntry): CoverageData['status'] {
+  if (entry.testCount === 0) return 'uncovered';
   if (entry.failCount > 0) return 'failing';
   return 'covered';
-}
-
-function routeToId(route: string): string {
-  return route.replace(/^\//, '').replace(/\//g, '-').replace(/[[\]]/g, '') || 'home';
 }
 
 export function mergeGraph(base: NavMapGraph, coverage: TestCoverageData): NavMapGraph {
@@ -69,18 +65,16 @@ export function mergeGraph(base: NavMapGraph, coverage: TestCoverageData): NavMa
     const match = matchRoute(route, nodes);
 
     if (match.matched && match.nodeId) {
-      const node = nodes.find(n => n.id === match.nodeId)!;
-      node.metadata = {
-        ...node.metadata,
-        coverage: {
-          status: makeCoverageStatus(entry),
-          testCount: entry.testCount,
-          passCount: entry.passCount,
-          failCount: entry.failCount,
-          tests: entry.tests,
-          lastRun: entry.lastRun,
-        } satisfies CoverageData,
-      };
+      const node = nodes.find(n => n.id === match.nodeId);
+      if (!node) continue;
+      node.coverage = {
+        status: makeCoverageStatus(entry),
+        testCount: entry.testCount,
+        passCount: entry.passCount,
+        failCount: entry.failCount,
+        tests: entry.tests,
+        lastRun: entry.lastRun,
+      } satisfies CoverageData;
     } else {
       // New node from test discovery
       const newId = routeToId(route);
@@ -90,34 +84,29 @@ export function mergeGraph(base: NavMapGraph, coverage: TestCoverageData): NavMa
         route,
         label: route.split('/').pop() || route,
         group: groupId,
-        metadata: {
-          discoveredBy: 'test',
-          coverage: {
-            status: makeCoverageStatus(entry),
-            testCount: entry.testCount,
-            passCount: entry.passCount,
-            failCount: entry.failCount,
-            tests: entry.tests,
-            lastRun: entry.lastRun,
-          } satisfies CoverageData,
-        },
+        metadata: { discoveredBy: 'test' },
+        coverage: {
+          status: makeCoverageStatus(entry),
+          testCount: entry.testCount,
+          passCount: entry.passCount,
+          failCount: entry.failCount,
+          tests: entry.tests,
+          lastRun: entry.lastRun,
+        } satisfies CoverageData,
       });
     }
   }
 
   // Mark uncovered nodes
   for (const node of nodes) {
-    if (!node.metadata?.coverage) {
-      node.metadata = {
-        ...node.metadata,
-        coverage: {
-          status: 'uncovered',
-          testCount: 0,
-          passCount: 0,
-          failCount: 0,
-          tests: [],
-          lastRun: '',
-        } satisfies CoverageData,
+    if (!node.coverage) {
+      node.coverage = {
+        status: 'uncovered',
+        testCount: 0,
+        passCount: 0,
+        failCount: 0,
+        tests: [],
+        lastRun: '',
       };
     }
   }
@@ -157,7 +146,7 @@ export function mergeGraph(base: NavMapGraph, coverage: TestCoverageData): NavMa
     flows.push({
       name: run.flow.name,
       steps: run.flow.steps,
-      gallery: run.flow.gallery as NavMapFlow['gallery'],
+      gallery: run.flow.gallery,
     });
   }
 

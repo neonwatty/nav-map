@@ -1,3 +1,5 @@
+export type TestStatus = 'passed' | 'failed' | 'skipped';
+
 export interface NavMapNode {
   id: string;
   route: string;
@@ -6,6 +8,7 @@ export interface NavMapNode {
   screenshot?: string;
   filePath?: string;
   metadata?: Record<string, unknown>;
+  coverage?: CoverageData;
 }
 
 export interface NavMapEdge {
@@ -44,7 +47,7 @@ export interface CoverageTestRef {
   id: string;
   name: string;
   specFile: string;
-  status: 'passed' | 'failed' | 'skipped';
+  status: TestStatus;
 }
 
 export interface CoverageData {

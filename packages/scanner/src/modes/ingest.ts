@@ -8,6 +8,8 @@ import {
   type TestCoverageData,
   type RouteCoverageEntry,
 } from '../ingest/mergeGraph.js';
+import { routeToId } from '../ingest/routeToId.js';
+import { validateGraph } from '@neonwatty/nav-map';
 import type {
   NavMapGraph,
   NavMapFlowGallery,
@@ -34,8 +36,10 @@ async function optimizeScreenshot(buffer: Buffer, outputPath: string): Promise<v
   try {
     const sharp = (await import('sharp')).default;
     await sharp(buffer).resize(320, 200, { fit: 'cover' }).webp({ quality: 80 }).toFile(outputPath);
-  } catch {
-    // Fallback: write raw buffer if sharp fails (e.g., stub data in tests)
+  } catch (err) {
+    console.warn(
+      `Screenshot optimization failed, writing raw buffer: ${err instanceof Error ? err.message : err}`
+    );
     fs.writeFileSync(outputPath, buffer);
   }
 }
@@ -68,7 +72,15 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     );
   }
 
-  const reportData = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
+  let reportData: Record<string, unknown>;
+  try {
+    reportData = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
+  } catch (err) {
+    throw new Error(
+      `Failed to parse Playwright report at ${reportPath}: ${err instanceof Error ? err.message : err}`,
+      { cause: err }
+    );
+  }
   const testRuns = parseReport(reportData);
 
   console.log(`Found ${testRuns.length} test runs`);
@@ -98,9 +110,8 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     const gallery: NavMapFlowGallery = {};
     const flowSteps: string[] = [];
 
-    for (let i = 0; i < trace.routes.length; i++) {
-      const route = trace.routes[i];
-      const nodeId = route.replace(/^\//, '').replace(/\//g, '-') || 'home';
+    for (const route of trace.routes) {
+      const nodeId = routeToId(route);
       flowSteps.push(nodeId);
 
       const gotoAction = trace.actions.find(a => a.method === 'goto' && a.route === route);
@@ -177,9 +188,13 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
   let resultGraph: NavMapGraph;
 
   if (baseGraphPath) {
-    const baseGraph: NavMapGraph = JSON.parse(
-      fs.readFileSync(path.resolve(baseGraphPath), 'utf-8')
-    );
+    const parsed = JSON.parse(fs.readFileSync(path.resolve(baseGraphPath), 'utf-8'));
+    const validation = validateGraph(parsed);
+    if (!validation.valid) {
+      const issues = validation.errors.map((e: { message: string }) => e.message).join(', ');
+      throw new Error(`Base graph at ${baseGraphPath} is not valid: ${issues}`);
+    }
+    const baseGraph = parsed as NavMapGraph;
     resultGraph = mergeGraph(baseGraph, coverageData);
   } else {
     // No base graph -- build from test data alone
@@ -202,9 +217,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
   fs.writeFileSync(outputPath, JSON.stringify(resultGraph, null, 2));
 
   const coveredCount = Object.keys(routeCoverage).length;
-  const uncoveredCount = resultGraph.nodes.filter(
-    n => (n.metadata?.coverage as { status: string } | undefined)?.status === 'uncovered'
-  ).length;
+  const uncoveredCount = resultGraph.nodes.filter(n => n.coverage?.status === 'uncovered').length;
 
   return {
     outputPath,

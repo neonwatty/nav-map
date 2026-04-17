@@ -1,35 +1,43 @@
+import { useMemo } from 'react';
 import { useNavMapContext } from '../../hooks/useNavMap';
-import type { CoverageData } from '../../types';
 
 export function CoverageSummary() {
   const { graph, isDark, showCoverage } = useNavMapContext();
 
+  const nodes = graph?.nodes;
+
+  const stats = useMemo(() => {
+    let covered = 0;
+    let failing = 0;
+    let uncovered = 0;
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    for (const node of nodes ?? []) {
+      const cov = node.coverage;
+      if (!cov) {
+        uncovered++;
+        continue;
+      }
+      if (cov.status === 'covered') covered++;
+      else if (cov.status === 'failing') failing++;
+      else uncovered++;
+      totalTests += cov.testCount;
+      passedTests += cov.passCount;
+      failedTests += cov.failCount;
+    }
+
+    const total = covered + failing + uncovered;
+    const coveredPercent = total > 0 ? Math.round(((covered + failing) / total) * 100) : 0;
+
+    return { covered, failing, uncovered, totalTests, passedTests, failedTests, coveredPercent };
+  }, [nodes]);
+
   if (!showCoverage || !graph) return null;
 
-  const nodes = graph.nodes;
-  let covered = 0;
-  let failing = 0;
-  let uncovered = 0;
-  let totalTests = 0;
-  let passedTests = 0;
-  let failedTests = 0;
-
-  for (const node of nodes) {
-    const cov = node.metadata?.coverage as CoverageData | undefined;
-    if (!cov) {
-      uncovered++;
-      continue;
-    }
-    if (cov.status === 'covered') covered++;
-    else if (cov.status === 'failing') failing++;
-    else uncovered++;
-    totalTests += cov.testCount;
-    passedTests += cov.passCount;
-    failedTests += cov.failCount;
-  }
-
-  const total = covered + failing + uncovered;
-  const coveredPercent = total > 0 ? Math.round(((covered + failing) / total) * 100) : 0;
+  const { covered, failing, uncovered, totalTests, passedTests, failedTests, coveredPercent } =
+    stats;
 
   return (
     <div

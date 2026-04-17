@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
 
 function CompactNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
@@ -10,18 +11,8 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
   const { isDark, getGroupColors, showCoverage } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
 
-  const coverageStatus = showCoverage
-    ? (nodeData.metadata?.coverage as { status?: string } | undefined)?.status
-    : undefined;
-
-  const coverageBorderColor =
-    coverageStatus === 'covered'
-      ? '#22c55e'
-      : coverageStatus === 'failing'
-        ? '#eab308'
-        : coverageStatus === 'uncovered'
-          ? '#ef4444'
-          : undefined;
+  const coverageStatus = showCoverage ? nodeData.coverage?.status : undefined;
+  const coverageBorderColor = getCoverageBorderColor(coverageStatus);
 
   return (
     <div
@@ -82,40 +73,7 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
             &#x1F512;
           </span>
         )}
-        {coverageStatus && (
-          <span
-            style={{
-              fontSize: 8,
-              padding: '1px 5px',
-              borderRadius: 3,
-              background:
-                coverageStatus === 'covered'
-                  ? isDark
-                    ? '#0a2a10'
-                    : '#dcfce7'
-                  : coverageStatus === 'failing'
-                    ? isDark
-                      ? '#2a2a0a'
-                      : '#fef9c3'
-                    : isDark
-                      ? '#2a0a0a'
-                      : '#fee2e2',
-              color:
-                coverageStatus === 'covered'
-                  ? '#22c55e'
-                  : coverageStatus === 'failing'
-                    ? '#eab308'
-                    : '#ef4444',
-            }}
-            title={`Coverage: ${coverageStatus}`}
-          >
-            {coverageStatus === 'covered'
-              ? '\u2713'
-              : coverageStatus === 'failing'
-                ? '!'
-                : '\u2717'}
-          </span>
-        )}
+        {coverageStatus && <CoverageBadge status={coverageStatus} />}
       </div>
       <div
         style={{

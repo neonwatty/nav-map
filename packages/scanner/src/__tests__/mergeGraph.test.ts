@@ -113,14 +113,14 @@ describe('mergeGraph', () => {
   it('annotates matched nodes with coverage data', () => {
     const merged = mergeGraph(baseGraph, testCoverage);
     const dashboard = merged.nodes.find(n => n.id === 'dashboard');
-    expect(dashboard?.metadata?.coverage).toBeDefined();
-    expect((dashboard?.metadata?.coverage as { status: string }).status).toBe('covered');
+    expect(dashboard?.coverage).toBeDefined();
+    expect(dashboard?.coverage?.status).toBe('covered');
   });
 
   it('marks unmatched base nodes as uncovered', () => {
     const merged = mergeGraph(baseGraph, testCoverage);
     const about = merged.nodes.find(n => n.id === 'about');
-    expect((about?.metadata?.coverage as { status: string }).status).toBe('uncovered');
+    expect(about?.coverage?.status).toBe('uncovered');
   });
 
   it('adds new nodes for test-discovered routes', () => {

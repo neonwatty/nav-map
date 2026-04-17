@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
+import type { TestStatus } from '@neonwatty/nav-map';
 
 export interface TestRunMeta {
   id: string;
   name: string;
   specFile: string;
-  status: 'passed' | 'failed' | 'skipped';
+  status: TestStatus;
   duration: number;
   startTime: string;
   tracePath: string | null;
@@ -39,7 +40,7 @@ function makeId(specFile: string, name: string): string {
   return createHash('sha256').update(`${specFile}::${name}`).digest('hex').slice(0, 12);
 }
 
-function normalizeStatus(resultStatus: string): 'passed' | 'failed' | 'skipped' {
+function normalizeStatus(resultStatus: string): TestStatus {
   if (resultStatus === 'passed') return 'passed';
   if (resultStatus === 'skipped') return 'skipped';
   return 'failed';
@@ -78,7 +79,14 @@ function extractFromSuite(suite: ReportSuite): TestRunMeta[] {
 
 export function parseReport(report: Record<string, unknown>): TestRunMeta[] {
   const suites = report.suites as ReportSuite[] | undefined;
-  if (!Array.isArray(suites)) return [];
+  if (!Array.isArray(suites)) {
+    if (report.suites !== undefined) {
+      console.warn(
+        'parseReport: report.suites is not an array — is this a Playwright JSON report?'
+      );
+    }
+    return [];
+  }
 
   const runs: TestRunMeta[] = [];
   for (const suite of suites) {
