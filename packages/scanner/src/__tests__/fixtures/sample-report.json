@@ -1,0 +1,89 @@
+{
+  "config": {
+    "rootDir": "/project",
+    "projects": [
+      { "name": "desktop", "testDir": "tests" }
+    ]
+  },
+  "suites": [
+    {
+      "title": "core-admin.spec.ts",
+      "file": "tests/core-admin.spec.ts",
+      "line": 1,
+      "column": 1,
+      "specs": [
+        {
+          "title": "Admin dashboard loads",
+          "ok": true,
+          "id": "abc123",
+          "file": "tests/core-admin.spec.ts",
+          "line": 5,
+          "column": 3,
+          "tests": [
+            {
+              "timeout": 30000,
+              "expectedStatus": "passed",
+              "projectName": "desktop",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 4500,
+                  "startTime": "2026-04-17T10:00:00.000Z",
+                  "retry": 0,
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/project/test-results/core-admin-dashboard/trace.zip"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "User management table",
+          "ok": false,
+          "id": "def456",
+          "file": "tests/core-admin.spec.ts",
+          "line": 20,
+          "column": 3,
+          "tests": [
+            {
+              "timeout": 30000,
+              "expectedStatus": "passed",
+              "projectName": "desktop",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 8200,
+                  "startTime": "2026-04-17T10:01:00.000Z",
+                  "retry": 0,
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/project/test-results/core-admin-users/trace.zip"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ],
+  "stats": {
+    "startTime": "2026-04-17T10:00:00.000Z",
+    "duration": 13000,
+    "expected": 1,
+    "unexpected": 1,
+    "skipped": 0,
+    "flaky": 0
+  }
+}
