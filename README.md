@@ -173,6 +173,8 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `--max-pages <n>` | Maximum pages to crawl | `50` |
 | `--no-interactions` | Skip click-based navigation discovery | off |
 | `--max-interactions <n>` | Maximum click candidates to try per page | `20` |
+| `--include-interaction <pattern...>` | Only click interactions matching these labels | — |
+| `--exclude-interaction <pattern...>` | Skip interactions matching these labels | — |
 
 ### `auth` — Capture auth state
 

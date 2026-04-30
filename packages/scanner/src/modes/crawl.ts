@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
+import { discoverInteractiveNavigations } from './crawl-interactions.js';
 
 interface NavMapGraph {
   version: '1.0';
@@ -42,6 +43,8 @@ export interface CrawlOptions {
   context?: import('playwright').BrowserContext;
   interactions?: boolean;
   maxInteractionsPerPage?: number;
+  includeInteraction?: string[];
+  excludeInteraction?: string[];
 }
 
 export interface DiscoveredNavigation {
@@ -49,8 +52,6 @@ export interface DiscoveredNavigation {
   text: string;
   discovery: 'static-link' | 'observed-interaction';
 }
-
-type InteractiveCandidate = { id: string; text: string };
 
 export function normalizeUrl(raw: string): string {
   try {
@@ -144,6 +145,8 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
     maxPages = 50,
     interactions = true,
     maxInteractionsPerPage = 20,
+    includeInteraction = [],
+    excludeInteraction = [],
   } = options;
 
   const origin = new URL(startUrl).origin;
@@ -226,7 +229,10 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
 
       if (interactions) {
         navigations.push(
-          ...(await discoverInteractiveNavigations(page, currentUrl, maxInteractionsPerPage))
+          ...(await discoverInteractiveNavigations(page, currentUrl, maxInteractionsPerPage, {
+            include: includeInteraction,
+            exclude: excludeInteraction,
+          }))
         );
       }
 
@@ -267,77 +273,4 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   };
 
   return graph;
-}
-
-async function discoverInteractiveNavigations(
-  page: import('playwright').Page,
-  currentUrl: string,
-  maxInteractions: number
-): Promise<DiscoveredNavigation[]> {
-  const results: DiscoveredNavigation[] = [];
-
-  for (let index = 0; index < maxInteractions; index++) {
-    const candidates = await markInteractiveCandidates(page);
-    const candidate = candidates[index];
-    if (!candidate) break;
-
-    try {
-      await page.locator(`[data-nav-map-candidate="${candidate.id}"]`).click({ timeout: 1_000 });
-      await page.waitForLoadState('networkidle', { timeout: 2_000 }).catch(() => undefined);
-      await page.waitForTimeout(150);
-
-      if (normalizeUrl(page.url()) !== normalizeUrl(currentUrl)) {
-        results.push({
-          href: normalizeUrl(page.url()),
-          text: candidate.text,
-          discovery: 'observed-interaction',
-        });
-        await page.goto(currentUrl, { waitUntil: 'networkidle', timeout: 30_000 });
-      }
-    } catch {
-      if (normalizeUrl(page.url()) !== normalizeUrl(currentUrl)) {
-        await page
-          .goto(currentUrl, { waitUntil: 'networkidle', timeout: 30_000 })
-          .catch(() => undefined);
-      }
-    }
-  }
-
-  return results;
-}
-
-async function markInteractiveCandidates(
-  page: import('playwright').Page
-): Promise<InteractiveCandidate[]> {
-  return page.evaluate(`() => {
-    const selector = [
-      'button',
-      '[role="button"]',
-      '[role="link"]',
-      '[data-href]',
-      '[data-url]',
-      '[onclick]',
-    ].join(',');
-
-    return Array.from(document.querySelectorAll(selector))
-      .filter((element, index) => {
-        if (element.closest('a[href]')) return false;
-        if (element.hasAttribute('disabled')) return false;
-        if (element.getAttribute('aria-disabled') === 'true') return false;
-        const rect = element.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return false;
-        const style = window.getComputedStyle(element);
-        if (style.visibility === 'hidden' || style.display === 'none') return false;
-        element.dataset.navMapCandidate = String(index);
-        return true;
-      })
-      .map(element => ({
-        id: element.dataset.navMapCandidate ?? '',
-        text:
-          element.getAttribute('aria-label') ??
-          element.getAttribute('title') ??
-          element.textContent?.trim() ??
-          '',
-      }));
-  }`) as Promise<InteractiveCandidate[]>;
 }

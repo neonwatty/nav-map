@@ -8,6 +8,7 @@ import {
   shouldCrawlUrl,
   type DiscoveredNavigation,
 } from '../modes/crawl.js';
+import { dedupeInteractionCandidates, isSafeInteractionText } from '../modes/interaction-filter.js';
 import fixtureNavigations from './fixtures/dynamic-crawl-navigations.json' with { type: 'json' };
 
 describe('crawl helpers', () => {
@@ -63,6 +64,32 @@ describe('crawl helpers', () => {
         type: 'router-push',
         discovery: 'observed-interaction',
       }),
+    ]);
+  });
+
+  it('rejects unsafe interaction labels by default', () => {
+    expect(isSafeInteractionText('Open settings')).toBe(true);
+    expect(isSafeInteractionText('Delete account')).toBe(false);
+    expect(isSafeInteractionText('Sign out')).toBe(false);
+    expect(isSafeInteractionText('Checkout now')).toBe(false);
+  });
+
+  it('supports include and exclude interaction patterns', () => {
+    expect(isSafeInteractionText('Open settings', { include: ['settings'] })).toBe(true);
+    expect(isSafeInteractionText('Open profile', { include: ['settings'] })).toBe(false);
+    expect(isSafeInteractionText('Open beta', { exclude: ['beta'] })).toBe(false);
+  });
+
+  it('dedupes equivalent interaction candidates by label', () => {
+    expect(
+      dedupeInteractionCandidates([
+        { id: '1', text: 'Open settings' },
+        { id: '2', text: ' open   settings ' },
+        { id: '3', text: 'Open profile' },
+      ])
+    ).toEqual([
+      { id: '1', text: 'Open settings' },
+      { id: '3', text: 'Open profile' },
     ]);
   });
 });
