@@ -12,6 +12,7 @@ interface RouteHealthPanelProps {
   isDark: boolean;
   onClose: () => void;
   onNavigate: (nodeId: string) => void;
+  onIssueFocus?: (issue: RouteHealthIssue) => void;
 }
 
 const severityColor = {
@@ -29,7 +30,13 @@ const issueLabels: Record<RouteHealthIssueType, string> = {
   untested: 'Untested',
 };
 
-export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHealthPanelProps) {
+export function RouteHealthPanel({
+  graph,
+  isDark,
+  onClose,
+  onNavigate,
+  onIssueFocus,
+}: RouteHealthPanelProps) {
   const [activeType, setActiveType] = useState<RouteHealthIssueType | 'all'>('all');
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const summary = useMemo(() => analyzeRouteHealth(graph), [graph]);
@@ -164,7 +171,10 @@ export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHe
           {groupedIssues.map(issue => (
             <button
               key={`${issue.type}-${issue.nodeIds.join('-')}-${issue.title}`}
-              onClick={() => onNavigate(issue.nodeIds[0])}
+              onClick={() => {
+                onIssueFocus?.(issue);
+                onNavigate(issue.nodeIds[0]);
+              }}
               style={{
                 width: '100%',
                 display: 'block',

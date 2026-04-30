@@ -6,8 +6,10 @@ interface StatusBannersProps {
   selectedFlowIndex: number | null;
   treeRootId: string | null;
   focusedGroupId: string | null;
+  auditFocusLabel?: string | null;
   graph: NavMapGraph | null;
   onClearFocus: () => void;
+  onClearAuditFocus?: () => void;
 }
 
 const bannerBase = (isDark: boolean): React.CSSProperties => ({
@@ -29,8 +31,10 @@ export function StatusBanners({
   selectedFlowIndex,
   treeRootId,
   focusedGroupId,
+  auditFocusLabel,
   graph,
   onClearFocus,
+  onClearAuditFocus,
 }: StatusBannersProps) {
   const accent = isDark ? '#7aacff' : '#3355aa';
   const muted = isDark ? '#888' : '#666';
@@ -69,6 +73,36 @@ export function StatusBanners({
           Focused: {graph?.groups?.find(g => g.id === focusedGroupId)?.label ?? focusedGroupId}
           <button
             onClick={onClearFocus}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: isDark ? '#555' : '#aaa',
+              cursor: 'pointer',
+              fontSize: 14,
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            &#x2715;
+          </button>
+        </div>
+      )}
+
+      {auditFocusLabel && (
+        <div
+          style={{
+            ...bannerBase(isDark),
+            top: focusedGroupId ? 88 : 50,
+            fontWeight: 600,
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          Audit: {auditFocusLabel}
+          <button
+            onClick={onClearAuditFocus}
             style={{
               background: 'none',
               border: 'none',

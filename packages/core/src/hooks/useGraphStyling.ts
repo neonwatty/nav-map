@@ -15,6 +15,7 @@ interface GraphStylingDeps {
   nodeGroupMap: Map<string, string>;
   showRedirects: boolean;
   searchMatchIds: Set<string> | null;
+  auditFocusNodeIds: Set<string> | null;
 }
 
 export function useGraphStyling(deps: GraphStylingDeps): {
@@ -34,6 +35,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     nodeGroupMap,
     showRedirects,
     searchMatchIds,
+    auditFocusNodeIds,
   } = deps;
 
   // Filter collapsed group children
@@ -105,7 +107,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     });
   }, [visibleEdges, showRedirects]);
 
-  // Dimming: search > flow highlighting > group focus > selection > default
+  // Dimming: search > audit focus > flow highlighting > group focus > selection > default
   const styledNodes = useMemo(() => {
     // Search highlighting takes top priority
     if (searchMatchIds && searchMatchIds.size > 0) {
@@ -120,6 +122,22 @@ export function useGraphStyling(deps: GraphStylingDeps): {
             ...(isMatch
               ? { filter: 'drop-shadow(0 0 6px rgba(91,155,245,0.5))' }
               : { pointerEvents: 'none' as React.CSSProperties['pointerEvents'] }),
+          },
+        };
+      });
+    }
+
+    if (auditFocusNodeIds && auditFocusNodeIds.size > 0) {
+      return visibleNodes.map(node => {
+        const isFocused = auditFocusNodeIds.has(node.id);
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            opacity: isFocused ? 1 : 0.18,
+            pointerEvents: (isFocused ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+            transition: 'opacity 200ms ease',
+            ...(isFocused ? { filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.55))' } : {}),
           },
         };
       });
@@ -195,9 +213,29 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     activeFlow,
     focusedGroupId,
     searchMatchIds,
+    auditFocusNodeIds,
   ]);
 
   const styledEdges = useMemo(() => {
+    if (auditFocusNodeIds && auditFocusNodeIds.size > 0) {
+      return filteredEdges.map(edge => {
+        const sourceIn = auditFocusNodeIds.has(edge.source);
+        const targetIn = auditFocusNodeIds.has(edge.target);
+        const isFocused = sourceIn && targetIn;
+        return {
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity: isFocused ? 1 : 0.08,
+            stroke: isFocused ? '#ef4444' : undefined,
+            strokeWidth: isFocused ? 2.5 : undefined,
+            pointerEvents: (isFocused ? 'auto' : 'none') as React.CSSProperties['pointerEvents'],
+            transition: 'opacity 200ms ease',
+          },
+        };
+      });
+    }
+
     if (viewMode === 'map' && activeFlow) {
       const flowEdgePairs = new Set<string>();
       for (let i = 0; i < activeFlow.steps.length - 1; i++) {
@@ -275,6 +313,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     activeFlow,
     focusedGroupId,
     nodeGroupMap,
+    auditFocusNodeIds,
   ]);
 
   return { styledNodes, styledEdges };
