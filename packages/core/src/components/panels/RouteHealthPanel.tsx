@@ -1,6 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { NavMapGraph } from '../../types';
-import { analyzeRouteHealth, type RouteHealthIssue } from '../../utils/routeHealth';
+import {
+  analyzeRouteHealth,
+  type RouteHealthIssue,
+  type RouteHealthIssueType,
+} from '../../utils/routeHealth';
 
 interface RouteHealthPanelProps {
   graph: NavMapGraph;
@@ -15,9 +19,26 @@ const severityColor = {
   low: '#60a5fa',
 };
 
+const issueLabels: Record<RouteHealthIssueType, string> = {
+  unreachable: 'Unreachable',
+  'dead-end': 'Dead ends',
+  orphan: 'No inbound',
+  'duplicate-route': 'Duplicates',
+  'redirect-loop': 'Redirect loops',
+  untested: 'Untested',
+};
+
 export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHealthPanelProps) {
+  const [activeType, setActiveType] = useState<RouteHealthIssueType | 'all'>('all');
   const summary = useMemo(() => analyzeRouteHealth(graph), [graph]);
-  const groupedIssues = useMemo(() => groupIssues(summary.issues), [summary.issues]);
+  const issueCounts = useMemo(() => countIssueTypes(summary.issues), [summary.issues]);
+  const groupedIssues = useMemo(() => {
+    const visibleIssues =
+      activeType === 'all'
+        ? summary.issues
+        : summary.issues.filter(issue => issue.type === activeType);
+    return groupIssues(visibleIssues);
+  }, [activeType, summary.issues]);
 
   return (
     <aside
@@ -75,9 +96,47 @@ export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHe
         <Metric label="Low" value={summary.totals.low} color={severityColor.low} />
       </div>
 
+      {summary.issues.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            flexWrap: 'wrap',
+            padding: '0 14px 12px',
+            borderBottom: `1px solid ${isDark ? '#222232' : '#eceef4'}`,
+          }}
+        >
+          <FilterChip
+            isDark={isDark}
+            active={activeType === 'all'}
+            label="All"
+            count={summary.issues.length}
+            onClick={() => setActiveType('all')}
+          />
+          {Object.entries(issueLabels).map(([type, label]) => {
+            const count = issueCounts[type as RouteHealthIssueType] ?? 0;
+            if (count === 0) return null;
+            return (
+              <FilterChip
+                key={type}
+                isDark={isDark}
+                active={activeType === type}
+                label={label}
+                count={count}
+                onClick={() => setActiveType(type as RouteHealthIssueType)}
+              />
+            );
+          })}
+        </div>
+      )}
+
       {summary.issues.length === 0 ? (
         <div style={{ padding: '12px 14px', fontSize: 13, color: isDark ? '#888' : '#666' }}>
           No route health issues found.
+        </div>
+      ) : groupedIssues.length === 0 ? (
+        <div style={{ padding: '12px 14px', fontSize: 13, color: isDark ? '#888' : '#666' }}>
+          No issues match this filter.
         </div>
       ) : (
         <div style={{ padding: '0 8px 10px' }}>
@@ -137,12 +196,57 @@ function Metric({ label, value, color }: { label: string; value: number; color: 
   );
 }
 
+function FilterChip({
+  isDark,
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  isDark: boolean;
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: `1px solid ${active ? (isDark ? '#4466aa' : '#6688cc') : isDark ? '#2a2a3a' : '#d8dae0'}`,
+        background: active ? (isDark ? '#1e2540' : '#e0e8ff') : 'transparent',
+        color: active ? (isDark ? '#9bc2ff' : '#3355aa') : isDark ? '#888' : '#666',
+        borderRadius: 999,
+        padding: '4px 8px',
+        fontSize: 11,
+        cursor: 'pointer',
+      }}
+    >
+      {label} {count}
+    </button>
+  );
+}
+
 function groupIssues(issues: RouteHealthIssue[]): RouteHealthIssue[] {
-  return [...issues].sort((a, b) => severityRank(a) - severityRank(b));
+  return [...issues].sort((a, b) => {
+    const severityDiff = severityRank(a) - severityRank(b);
+    if (severityDiff !== 0) return severityDiff;
+    return a.title.localeCompare(b.title);
+  });
 }
 
 function severityRank(issue: RouteHealthIssue): number {
   if (issue.severity === 'high') return 0;
   if (issue.severity === 'medium') return 1;
   return 2;
+}
+
+function countIssueTypes(
+  issues: RouteHealthIssue[]
+): Partial<Record<RouteHealthIssueType, number>> {
+  const counts: Partial<Record<RouteHealthIssueType, number>> = {};
+  for (const issue of issues) {
+    counts[issue.type] = (counts[issue.type] ?? 0) + 1;
+  }
+  return counts;
 }
