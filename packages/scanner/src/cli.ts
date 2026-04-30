@@ -4,7 +4,7 @@ import { crawlUrl } from './modes/crawl.js';
 import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
-import { loadConfig, validateConfig, applyDefaults } from './config.js';
+import { formatConfigErrors, formatConfigSummary, loadAndValidateConfig } from './config-report.js';
 import { runGenerate } from './modes/generate.js';
 import { startServer } from './modes/serve.js';
 import { runIngest } from './modes/ingest.js';
@@ -193,25 +193,39 @@ program
   .option('--headed', 'Run browser in headed mode (useful for debugging login)')
   .action(async opts => {
     try {
-      const raw = loadConfig(opts.config);
-      const errors = validateConfig(raw);
-      if (errors.length > 0) {
-        console.error('Config validation errors:');
-        for (const err of errors) {
-          console.error(`  - ${err}`);
-        }
+      const result = loadAndValidateConfig(opts.config);
+      if (!result.ok) {
+        console.error(formatConfigErrors(result.errors));
         process.exit(1);
       }
 
-      const config = applyDefaults(raw);
-      const result = await runGenerate(config, { headless: !opts.headed });
+      const generated = await runGenerate(result.config!, { headless: !opts.headed });
 
-      console.log(`\nWrote ${result.outputPath}`);
-      console.log(`  Nodes: ${result.nodeCount}`);
-      console.log(`  Edges: ${result.edgeCount}`);
-      console.log(`  Groups: ${result.groupCount}`);
+      console.log(`\nWrote ${generated.outputPath}`);
+      console.log(`  Nodes: ${generated.nodeCount}`);
+      console.log(`  Edges: ${generated.edgeCount}`);
+      console.log(`  Groups: ${generated.groupCount}`);
     } catch (err) {
       console.error('Generate failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('check-config')
+  .description('Validate nav-map.config.json without launching a browser')
+  .option('-c, --config <path>', 'Path to config file', 'nav-map.config.json')
+  .action(opts => {
+    try {
+      const result = loadAndValidateConfig(opts.config);
+      if (!result.ok) {
+        console.error(formatConfigErrors(result.errors));
+        process.exit(1);
+      }
+
+      console.log(formatConfigSummary(result.config!, opts.config));
+    } catch (err) {
+      console.error('Config check failed:', err instanceof Error ? err.message : err);
       process.exit(1);
     }
   });
