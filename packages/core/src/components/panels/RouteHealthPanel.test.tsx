@@ -42,4 +42,18 @@ describe('RouteHealthPanel', () => {
 
     expect(onNavigate).toHaveBeenCalledWith('settings');
   });
+
+  it('copies the route health report', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    render(
+      <RouteHealthPanel graph={graph} isDark={false} onClose={vi.fn()} onNavigate={vi.fn()} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('# Route Health: Panel Test'));
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
+  });
 });

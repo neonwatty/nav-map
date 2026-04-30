@@ -27,6 +27,30 @@ export interface RouteHealthSummary {
   };
 }
 
+export function formatRouteHealthReport(graph: NavMapGraph): string {
+  const summary = analyzeRouteHealth(graph);
+  const lines = [
+    `# Route Health: ${graph.meta.name}`,
+    '',
+    `Score: ${summary.score}/100`,
+    `Routes: ${summary.totals.routes}`,
+    `Issues: ${summary.issues.length} (${summary.totals.high} high, ${summary.totals.medium} medium, ${summary.totals.low} low)`,
+  ];
+
+  if (summary.issues.length === 0) {
+    lines.push('', 'No route health issues found.');
+    return lines.join('\n');
+  }
+
+  lines.push('');
+  for (const issue of groupIssues(summary.issues)) {
+    lines.push(`- [${issue.severity.toUpperCase()}] ${issue.title}`);
+    lines.push(`  ${issue.detail}`);
+  }
+
+  return lines.join('\n');
+}
+
 export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
   const nodesById = new Map(graph.nodes.map(node => [node.id, node]));
   const incoming = new Map<string, number>();
@@ -128,6 +152,20 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
   const score = Math.max(0, Math.min(100, 100 - penalty));
 
   return { issues, score, totals };
+}
+
+function groupIssues(issues: RouteHealthIssue[]): RouteHealthIssue[] {
+  return [...issues].sort((a, b) => {
+    const severityDiff = severityRank(a) - severityRank(b);
+    if (severityDiff !== 0) return severityDiff;
+    return a.title.localeCompare(b.title);
+  });
+}
+
+function severityRank(issue: RouteHealthIssue): number {
+  if (issue.severity === 'high') return 0;
+  if (issue.severity === 'medium') return 1;
+  return 2;
 }
 
 function findRootNodes(nodes: NavMapNode[]): NavMapNode[] {

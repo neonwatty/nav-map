@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NavMapGraph } from '../types';
-import { analyzeRouteHealth } from './routeHealth';
+import { analyzeRouteHealth, formatRouteHealthReport } from './routeHealth';
 
 const baseGraph: NavMapGraph = {
   version: '1.0',
@@ -85,5 +85,14 @@ describe('analyzeRouteHealth', () => {
     expect(analyzeRouteHealth(graph).issues).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'redirect-loop' })])
     );
+  });
+
+  it('formats a markdown audit report', () => {
+    const report = formatRouteHealthReport(baseGraph);
+
+    expect(report).toContain('# Route Health: Test');
+    expect(report).toContain('Score:');
+    expect(report).toContain('[HIGH] Settings is unreachable');
+    expect(report).not.toContain('[LOW] Home has no passing route coverage');
   });
 });

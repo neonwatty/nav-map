@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { NavMapGraph } from '../../types';
 import {
   analyzeRouteHealth,
+  formatRouteHealthReport,
   type RouteHealthIssue,
   type RouteHealthIssueType,
 } from '../../utils/routeHealth';
@@ -30,6 +31,7 @@ const issueLabels: Record<RouteHealthIssueType, string> = {
 
 export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHealthPanelProps) {
   const [activeType, setActiveType] = useState<RouteHealthIssueType | 'all'>('all');
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const summary = useMemo(() => analyzeRouteHealth(graph), [graph]);
   const issueCounts = useMemo(() => countIssueTypes(summary.issues), [summary.issues]);
   const groupedIssues = useMemo(() => {
@@ -39,6 +41,16 @@ export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHe
         : summary.issues.filter(issue => issue.type === activeType);
     return groupIssues(visibleIssues);
   }, [activeType, summary.issues]);
+
+  const copyReport = async () => {
+    try {
+      await navigator.clipboard.writeText(formatRouteHealthReport(graph));
+      setCopyState('copied');
+    } catch {
+      setCopyState('failed');
+    }
+    window.setTimeout(() => setCopyState('idle'), 1800);
+  };
 
   return (
     <aside
@@ -74,20 +86,29 @@ export function RouteHealthPanel({ graph, isDark, onClose, onNavigate }: RouteHe
             {summary.score}/100 · {summary.totals.routes} routes
           </div>
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: isDark ? '#777' : '#888',
-            cursor: 'pointer',
-            fontSize: 18,
-            lineHeight: 1,
-          }}
-          title="Close route health"
-        >
-          &#x2715;
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={copyReport}
+            style={smallButtonStyle(isDark)}
+            title="Copy route health report"
+          >
+            {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Failed' : 'Copy'}
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: isDark ? '#777' : '#888',
+              cursor: 'pointer',
+              fontSize: 18,
+              lineHeight: 1,
+            }}
+            title="Close route health"
+          >
+            &#x2715;
+          </button>
+        </div>
       </header>
 
       <div style={{ display: 'flex', gap: 8, padding: '12px 14px' }}>
@@ -194,6 +215,18 @@ function Metric({ label, value, color }: { label: string; value: number; color: 
       <div style={{ fontSize: 11, color: '#777' }}>{label}</div>
     </div>
   );
+}
+
+function smallButtonStyle(isDark: boolean): React.CSSProperties {
+  return {
+    background: isDark ? '#1a1a28' : '#f0f2f8',
+    border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
+    borderRadius: 6,
+    color: isDark ? '#aaa' : '#555',
+    cursor: 'pointer',
+    fontSize: 11,
+    padding: '4px 8px',
+  };
 }
 
 function FilterChip({

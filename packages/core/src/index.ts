@@ -33,7 +33,7 @@ export type { AnalyticsAdapter, NavMapAnalytics as AnalyticsData } from './analy
 // Validation
 export { validateGraph } from './utils/validateGraph';
 export type { GraphValidationResult, GraphValidationError } from './utils/validateGraph';
-export { analyzeRouteHealth } from './utils/routeHealth';
+export { analyzeRouteHealth, formatRouteHealthReport } from './utils/routeHealth';
 export type {
   RouteHealthIssue,
   RouteHealthIssueType,
