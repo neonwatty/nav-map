@@ -58,6 +58,39 @@ describe('generate', () => {
     expect(typeof mod.createCrawlOptions).toBe('function');
   });
 
+  it('detects generate diagnostic failure from config or CLI flag', async () => {
+    const mod = await import('../modes/generate.js');
+    const diagnostics = {
+      crawl: {
+        attemptedPages: 2,
+        successfulPages: 1,
+        failedPages: [{ url: 'https://example.com/fail', reason: 'timeout' }],
+        screenshotFailures: [],
+        maxPagesReached: false,
+      },
+    };
+
+    expect(
+      mod.shouldFailGenerateDiagnostics(
+        applyDefaults({ url: 'https://example.com', failOnDiagnostics: true }),
+        diagnostics
+      )
+    ).toBe(true);
+    expect(
+      mod.shouldFailGenerateDiagnostics(
+        applyDefaults({ url: 'https://example.com', failOnDiagnostics: false }),
+        diagnostics,
+        true
+      )
+    ).toBe(true);
+    expect(
+      mod.shouldFailGenerateDiagnostics(
+        applyDefaults({ url: 'https://example.com', failOnDiagnostics: false }),
+        diagnostics
+      )
+    ).toBe(false);
+  });
+
   it('writes diagnostics from generate config', async () => {
     const mod = await import('../modes/generate.js');
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-generate-'));

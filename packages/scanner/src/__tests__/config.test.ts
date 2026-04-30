@@ -90,12 +90,14 @@ describe('validateConfig', () => {
     const config = {
       url: 'https://example.com',
       interactions: 'yes',
+      failOnDiagnostics: 'yes',
       maxInteractionsPerPage: 0,
       includeInteraction: 'open',
       excludeInteraction: ['delete', 123],
     };
     const errors = validateConfig(config);
     expect(errors).toContain('interactions must be a boolean');
+    expect(errors).toContain('failOnDiagnostics must be a boolean');
     expect(errors).toContain('maxInteractionsPerPage must be a positive integer');
     expect(errors).toContain('includeInteraction must be an array of strings');
     expect(errors).toContain('excludeInteraction must be an array of strings');
@@ -153,6 +155,7 @@ describe('applyDefaults', () => {
     expect(result.maxPages).toBe(50);
     expect(result.output).toBe('nav-map.json');
     expect(result.diagnosticsOutput).toBeUndefined();
+    expect(result.failOnDiagnostics).toBe(false);
     expect(result.screenshotDir).toBe('nav-screenshots');
     expect(result.interactions).toBe(true);
     expect(result.maxInteractionsPerPage).toBe(20);
@@ -167,6 +170,7 @@ describe('applyDefaults', () => {
       maxPages: 20,
       output: 'custom.json',
       diagnosticsOutput: '.nav-map/diagnostics.json',
+      failOnDiagnostics: true,
       interactions: false,
       maxInteractionsPerPage: 5,
       includeInteraction: ['settings'],
@@ -177,6 +181,7 @@ describe('applyDefaults', () => {
     expect(result.maxPages).toBe(20);
     expect(result.output).toBe('custom.json');
     expect(result.diagnosticsOutput).toBe('.nav-map/diagnostics.json');
+    expect(result.failOnDiagnostics).toBe(true);
     expect(result.interactions).toBe(false);
     expect(result.maxInteractionsPerPage).toBe(5);
     expect(result.includeInteraction).toEqual(['settings']);

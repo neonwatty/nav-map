@@ -20,6 +20,7 @@ describe('config-report', () => {
       url: 'https://example.com',
       output: 'public/nav-map.json',
       diagnosticsOutput: '.nav-map/diagnostics.json',
+      failOnDiagnostics: true,
       auth: {
         email: 'user@example.com',
         password: 'secret',
@@ -35,6 +36,9 @@ describe('config-report', () => {
     );
     expect(formatConfigSummary(config, 'nav-map.config.json')).toContain(
       'Diagnostics output: .nav-map/diagnostics.json'
+    );
+    expect(formatConfigSummary(config, 'nav-map.config.json')).toContain(
+      'Fail on diagnostics: enabled'
     );
   });
 });
