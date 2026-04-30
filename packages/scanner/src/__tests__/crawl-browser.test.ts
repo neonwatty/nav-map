@@ -1,5 +1,8 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { crawlUrl } from '../modes/crawl.js';
 
@@ -56,6 +59,13 @@ describe.skipIf(!runBrowserTests)('crawlUrl browser integration', () => {
     });
 
     expect(graph.nodes.map(node => node.route).sort()).toEqual(['/', '/about', '/settings']);
+    expect(graph.meta.diagnostics?.crawl).toMatchObject({
+      attemptedPages: 3,
+      successfulPages: 3,
+      failedPages: [],
+      screenshotFailures: [],
+      maxPagesReached: false,
+    });
     expect(graph.edges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -73,5 +83,31 @@ describe.skipIf(!runBrowserTests)('crawlUrl browser integration', () => {
       ])
     );
     expect(graph.nodes.some(node => node.route === '/danger')).toBe(false);
+  });
+
+  it('records screenshot failures without dropping crawled routes', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-crawl-'));
+    const blockedScreenshotDir = path.join(tempDir, 'not-a-directory');
+    fs.writeFileSync(blockedScreenshotDir, 'file blocks screenshot directory creation');
+
+    try {
+      const graph = await crawlUrl({
+        startUrl: baseUrl,
+        maxPages: 1,
+        interactions: false,
+        screenshotDir: blockedScreenshotDir,
+      });
+
+      expect(graph.nodes.map(node => node.route)).toEqual(['/']);
+      expect(graph.nodes[0].screenshot).toBeUndefined();
+      expect(graph.meta.diagnostics?.crawl.screenshotFailures).toEqual([
+        expect.objectContaining({
+          url: `${baseUrl}/`,
+          path: `${blockedScreenshotDir}/index.png`,
+        }),
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });
