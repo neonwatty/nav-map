@@ -61,7 +61,7 @@ export async function discoverInteractiveNavigations(
 async function markInteractiveCandidates(
   page: import('playwright').Page
 ): Promise<InteractiveCandidate[]> {
-  return page.evaluate(`() => {
+  return page.evaluate(`(() => {
     const selector = [
       'button',
       '[role="button"]',
@@ -91,5 +91,5 @@ async function markInteractiveCandidates(
           element.textContent?.trim() ??
           '',
       }));
-  }`) as Promise<InteractiveCandidate[]>;
+  })()`) as Promise<InteractiveCandidate[]>;
 }
