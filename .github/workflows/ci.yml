@@ -62,7 +62,7 @@ jobs:
       - name: Run browser crawl tests
         env:
           NAV_MAP_BROWSER_TESTS: '1'
-        run: pnpm --filter @neonwatty/nav-map-scanner test -- crawl-browser
+        run: pnpm --filter @neonwatty/nav-map-scanner exec vitest run src/__tests__/crawl-browser.test.ts
 
   release:
     needs: [quality-checks, build, scanner-browser-crawl]
