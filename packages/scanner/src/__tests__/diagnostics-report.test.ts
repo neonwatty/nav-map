@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCrawlDiagnostics } from '../diagnostics-report.js';
+import { formatCrawlDiagnostics, hasCrawlDiagnosticIssues } from '../diagnostics-report.js';
 
 describe('formatCrawlDiagnostics', () => {
   it('returns null when diagnostics are absent', () => {
@@ -32,5 +32,43 @@ describe('formatCrawlDiagnostics', () => {
         - Page failed: https://example.com/missing (timeout)
         - Screenshot failed: https://example.com/ -> shots/index.png (permission denied)"
     `);
+  });
+
+  it('detects crawl diagnostics issues', () => {
+    expect(
+      hasCrawlDiagnosticIssues({
+        crawl: {
+          attemptedPages: 1,
+          successfulPages: 1,
+          failedPages: [],
+          screenshotFailures: [],
+          maxPagesReached: false,
+        },
+      })
+    ).toBe(false);
+
+    expect(
+      hasCrawlDiagnosticIssues({
+        crawl: {
+          attemptedPages: 2,
+          successfulPages: 1,
+          failedPages: [{ url: 'https://example.com/fail', reason: 'timeout' }],
+          screenshotFailures: [],
+          maxPagesReached: false,
+        },
+      })
+    ).toBe(true);
+
+    expect(
+      hasCrawlDiagnosticIssues({
+        crawl: {
+          attemptedPages: 1,
+          successfulPages: 1,
+          failedPages: [],
+          screenshotFailures: [],
+          maxPagesReached: true,
+        },
+      })
+    ).toBe(true);
   });
 });
