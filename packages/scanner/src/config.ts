@@ -64,6 +64,10 @@ export function validateConfig(config: any): string[] {
     errors.push(`Invalid URL: ${config.url}`);
   }
 
+  validateOptionalString(config.name, 'name', errors);
+  validateOptionalString(config.output, 'output', errors);
+  validateOptionalString(config.screenshotDir, 'screenshotDir', errors);
+
   if (config.maxPages !== undefined) {
     if (!Number.isInteger(config.maxPages) || config.maxPages < 1) {
       errors.push('maxPages must be a positive integer');
@@ -91,9 +95,40 @@ export function validateConfig(config: any): string[] {
     } else if (config.auth.password && !config.auth.email) {
       errors.push('auth.email is required when auth.password is provided');
     }
+
+    validateOptionalHttpUrl(config.auth.loginUrl, 'auth.loginUrl', errors);
+    validateOptionalString(config.auth.email, 'auth.email', errors);
+    validateOptionalString(config.auth.password, 'auth.password', errors);
+    validateAuthSelectors(config.auth.selectors, errors);
   }
 
   return errors;
+}
+
+function validateOptionalString(value: unknown, fieldName: string, errors: string[]): void {
+  if (value === undefined) return;
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    errors.push(`${fieldName} must be a non-empty string`);
+  }
+}
+
+function validateOptionalHttpUrl(value: unknown, fieldName: string, errors: string[]): void {
+  if (value === undefined) return;
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    errors.push(`${fieldName} must be a non-empty string`);
+    return;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      errors.push(`${fieldName} must use http or https protocol`);
+    }
+  } catch {
+    errors.push(`${fieldName} must be a valid URL`);
+  }
 }
 
 function validateStringArray(value: unknown, fieldName: string, errors: string[]): void {
@@ -101,6 +136,26 @@ function validateStringArray(value: unknown, fieldName: string, errors: string[]
 
   if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
     errors.push(`${fieldName} must be an array of strings`);
+  }
+}
+
+function validateAuthSelectors(value: unknown, errors: string[]): void {
+  if (value === undefined) return;
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    errors.push('auth.selectors must be an object');
+    return;
+  }
+
+  const selectors = value as Record<string, unknown>;
+  validateRequiredString(selectors.email, 'auth.selectors.email', errors);
+  validateRequiredString(selectors.password, 'auth.selectors.password', errors);
+  validateRequiredString(selectors.submit, 'auth.selectors.submit', errors);
+}
+
+function validateRequiredString(value: unknown, fieldName: string, errors: string[]): void {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    errors.push(`${fieldName} must be a non-empty string`);
   }
 }
 
