@@ -191,6 +191,7 @@ npx @neonwatty/nav-map-scanner <command> [options]
   "url": "https://myapp.com",
   "output": "nav-map.json",
   "diagnosticsOutput": ".nav-map/diagnostics.json",
+  "failOnDiagnostics": true,
   "interactions": true,
   "maxInteractionsPerPage": 20,
   "includeInteraction": ["settings", "profile"],
@@ -204,7 +205,7 @@ Validate config without launching Playwright:
 npx @neonwatty/nav-map-scanner check-config -c nav-map.config.json
 ```
 
-Use `--fail-on-diagnostics` with `crawl` or `generate` in CI when partial crawls should fail the job. Pair it with `--diagnostics-output .nav-map/diagnostics.json` when CI should also archive crawl failure details.
+Use `--fail-on-diagnostics` with `crawl` in CI when partial crawls should fail the job. For `generate`, set `"failOnDiagnostics": true` in config or pass `--fail-on-diagnostics`; pair it with `diagnosticsOutput` or `--diagnostics-output .nav-map/diagnostics.json` when CI should also archive crawl failure details.
 
 ### `auth` — Capture auth state
 

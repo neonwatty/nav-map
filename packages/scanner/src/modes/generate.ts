@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ResolvedConfig } from '../config.js';
-import { writeCrawlDiagnosticsReport } from '../diagnostics-report.js';
+import { hasCrawlDiagnosticIssues, writeCrawlDiagnosticsReport } from '../diagnostics-report.js';
 import { crawlUrl } from './crawl.js';
 import type { CrawlDiagnostics, CrawlOptions } from './crawl.js';
 import { autoLogin, closeBrowser } from './auto-auth.js';
@@ -35,6 +35,16 @@ export function createCrawlOptions(
     excludeInteraction: config.excludeInteraction,
     context,
   };
+}
+
+export function shouldFailGenerateDiagnostics(
+  config: ResolvedConfig,
+  diagnostics?: CrawlDiagnostics,
+  cliFailOnDiagnostics = false
+): boolean {
+  return (
+    (cliFailOnDiagnostics || config.failOnDiagnostics) && hasCrawlDiagnosticIssues(diagnostics)
+  );
 }
 
 export async function runGenerate(

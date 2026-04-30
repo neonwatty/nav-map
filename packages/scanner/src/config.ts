@@ -20,6 +20,7 @@ export interface NavMapConfig {
   maxPages?: number;
   output?: string;
   diagnosticsOutput?: string;
+  failOnDiagnostics?: boolean;
   screenshotDir?: string;
   interactions?: boolean;
   maxInteractionsPerPage?: number;
@@ -34,6 +35,7 @@ export interface ResolvedConfig {
   maxPages: number;
   output: string;
   diagnosticsOutput?: string;
+  failOnDiagnostics: boolean;
   screenshotDir: string;
   interactions: boolean;
   maxInteractionsPerPage: number;
@@ -79,6 +81,10 @@ export function validateConfig(config: any): string[] {
 
   if (config.interactions !== undefined && typeof config.interactions !== 'boolean') {
     errors.push('interactions must be a boolean');
+  }
+
+  if (config.failOnDiagnostics !== undefined && typeof config.failOnDiagnostics !== 'boolean') {
+    errors.push('failOnDiagnostics must be a boolean');
   }
 
   if (config.maxInteractionsPerPage !== undefined) {
@@ -171,6 +177,7 @@ export function applyDefaults(config: NavMapConfig): ResolvedConfig {
     maxPages: config.maxPages ?? 50,
     output: config.output ?? 'nav-map.json',
     diagnosticsOutput: config.diagnosticsOutput,
+    failOnDiagnostics: config.failOnDiagnostics ?? false,
     screenshotDir: config.screenshotDir ?? 'nav-screenshots',
     interactions: config.interactions ?? true,
     maxInteractionsPerPage: config.maxInteractionsPerPage ?? 20,

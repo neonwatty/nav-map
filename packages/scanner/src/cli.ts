@@ -10,7 +10,7 @@ import {
   hasCrawlDiagnosticIssues,
   writeCrawlDiagnosticsReport,
 } from './diagnostics-report.js';
-import { runGenerate } from './modes/generate.js';
+import { runGenerate, shouldFailGenerateDiagnostics } from './modes/generate.js';
 import { startServer } from './modes/serve.js';
 import { runIngest } from './modes/ingest.js';
 import path from 'node:path';
@@ -241,9 +241,11 @@ program
       const diagnostics = formatCrawlDiagnostics(generated.diagnostics);
       if (diagnostics) console.log(`\n${diagnostics}`);
       if (generated.diagnosticsPath) console.log(`  Diagnostics: ${generated.diagnosticsPath}`);
-      if (opts.failOnDiagnostics && hasCrawlDiagnosticIssues(generated.diagnostics)) {
+      if (
+        shouldFailGenerateDiagnostics(result.config!, generated.diagnostics, opts.failOnDiagnostics)
+      ) {
         console.error(
-          '\nCrawl diagnostics contain issues; failing because --fail-on-diagnostics is set.'
+          '\nCrawl diagnostics contain issues; failing because diagnostics failure is enabled.'
         );
         process.exit(1);
       }
