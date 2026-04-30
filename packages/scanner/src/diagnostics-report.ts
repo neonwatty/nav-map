@@ -22,3 +22,12 @@ export function formatCrawlDiagnostics(diagnostics?: CrawlDiagnostics): string |
 
   return lines.join('\n');
 }
+
+export function hasCrawlDiagnosticIssues(diagnostics?: CrawlDiagnostics): boolean {
+  const crawl = diagnostics?.crawl;
+  if (!crawl) return false;
+
+  return (
+    crawl.failedPages.length > 0 || crawl.screenshotFailures.length > 0 || crawl.maxPagesReached
+  );
+}
