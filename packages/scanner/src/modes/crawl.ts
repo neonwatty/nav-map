@@ -24,6 +24,7 @@ interface NavMapGraph {
     target: string;
     label?: string;
     type: 'link' | 'redirect' | 'router-push' | 'shared-nav';
+    discovery?: 'static-link' | 'observed-interaction';
   }[];
   groups: {
     id: string;
@@ -39,6 +40,19 @@ export interface CrawlOptions {
   screenshotDir?: string;
   maxPages?: number;
   context?: import('playwright').BrowserContext;
+  interactions?: boolean;
+  maxInteractionsPerPage?: number;
+}
+
+interface DiscoveredNavigation {
+  href: string;
+  text: string;
+  discovery: 'static-link' | 'observed-interaction';
+}
+
+interface InteractiveCandidate {
+  id: string;
+  text: string;
 }
 
 export function normalizeUrl(raw: string): string {
@@ -73,8 +87,28 @@ export function groupFromPath(pathname: string): string {
   return segments[0];
 }
 
+export function createEdgeId(sourceId: string, targetId: string, discovery: string): string {
+  return `${sourceId}->${targetId}:${discovery}`;
+}
+
+export function shouldCrawlUrl(rawUrl: string, origin: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.origin === origin && ['http:', 'https:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
-  const { startUrl, name, screenshotDir, maxPages = 50 } = options;
+  const {
+    startUrl,
+    name,
+    screenshotDir,
+    maxPages = 50,
+    interactions = true,
+    maxInteractionsPerPage = 20,
+  } = options;
 
   const origin = new URL(startUrl).origin;
 
@@ -145,17 +179,25 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         });
       }
 
-      // Discover links (runs in browser context)
-      const links: { href: string; text: string }[] = await page.evaluate(
+      const links: DiscoveredNavigation[] = await page.evaluate(
         `
         Array.from(document.querySelectorAll('a[href]')).map(a => ({
           href: a.href,
           text: (a.textContent || '').trim(),
+          discovery: 'static-link',
         }))
       ` as unknown as string
       );
 
-      for (const link of links) {
+      const navigations = [...links];
+
+      if (interactions) {
+        navigations.push(
+          ...(await discoverInteractiveNavigations(page, currentUrl, maxInteractionsPerPage))
+        );
+      }
+
+      for (const link of navigations) {
         let linkUrl: URL;
         try {
           linkUrl = new URL(link.href, currentUrl);
@@ -164,12 +206,12 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         }
 
         // Same-origin only
-        if (linkUrl.origin !== origin) continue;
+        if (!shouldCrawlUrl(linkUrl.toString(), origin)) continue;
 
         const normalized = normalizeUrl(linkUrl.toString());
         const targetPathname = new URL(normalized).pathname;
         const targetId = pathToId(targetPathname);
-        const edgeId = `${nodeId}->${targetId}`;
+        const edgeId = createEdgeId(nodeId, targetId, link.discovery);
 
         if (!edgesMap.has(edgeId) && nodeId !== targetId) {
           edgesMap.set(edgeId, {
@@ -177,7 +219,8 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
             source: nodeId,
             target: targetId,
             label: link.text || undefined,
-            type: 'link',
+            type: link.discovery === 'observed-interaction' ? 'router-push' : 'link',
+            discovery: link.discovery,
           });
         }
 
@@ -209,4 +252,78 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   };
 
   return graph;
+}
+
+async function discoverInteractiveNavigations(
+  page: import('playwright').Page,
+  currentUrl: string,
+  maxInteractions: number
+): Promise<DiscoveredNavigation[]> {
+  const results: DiscoveredNavigation[] = [];
+
+  for (let index = 0; index < maxInteractions; index++) {
+    const candidates = await markInteractiveCandidates(page);
+    const candidate = candidates[index];
+    if (!candidate) break;
+
+    try {
+      await page.locator(`[data-nav-map-candidate="${candidate.id}"]`).click({ timeout: 1_000 });
+      await page.waitForLoadState('networkidle', { timeout: 2_000 }).catch(() => undefined);
+      await page.waitForTimeout(150);
+
+      const nextUrl = normalizeUrl(page.url());
+      if (nextUrl !== normalizeUrl(currentUrl)) {
+        results.push({
+          href: nextUrl,
+          text: candidate.text,
+          discovery: 'observed-interaction',
+        });
+        await page.goto(currentUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+      }
+    } catch {
+      if (normalizeUrl(page.url()) !== normalizeUrl(currentUrl)) {
+        await page
+          .goto(currentUrl, { waitUntil: 'networkidle', timeout: 30_000 })
+          .catch(() => undefined);
+      }
+    }
+  }
+
+  return results;
+}
+
+async function markInteractiveCandidates(
+  page: import('playwright').Page
+): Promise<InteractiveCandidate[]> {
+  return page.evaluate(`() => {
+    const selector = [
+      'button',
+      '[role="button"]',
+      '[role="link"]',
+      '[data-href]',
+      '[data-url]',
+      '[onclick]',
+    ].join(',');
+
+    return Array.from(document.querySelectorAll<HTMLElement>(selector))
+      .filter((element, index) => {
+        if (element.closest('a[href]')) return false;
+        if (element.hasAttribute('disabled')) return false;
+        if (element.getAttribute('aria-disabled') === 'true') return false;
+        const rect = element.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        const style = window.getComputedStyle(element);
+        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        element.dataset.navMapCandidate = String(index);
+        return true;
+      })
+      .map(element => ({
+        id: element.dataset.navMapCandidate ?? '',
+        text:
+          element.getAttribute('aria-label') ??
+          element.getAttribute('title') ??
+          element.textContent?.trim() ??
+          '',
+      }));
+  }`) as Promise<InteractiveCandidate[]>;
 }

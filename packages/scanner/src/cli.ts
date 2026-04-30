@@ -68,6 +68,8 @@ program
   .option('--screenshot-dir <dir>', 'Directory for screenshots', 'nav-screenshots')
   .option('-n, --name <name>', 'Project name for the graph')
   .option('--max-pages <n>', 'Maximum number of pages to crawl', '50')
+  .option('--no-interactions', 'Skip click-based navigation discovery')
+  .option('--max-interactions <n>', 'Maximum click candidates to try per page', '20')
   .action(async (url: string, opts) => {
     console.log(`Crawling ${url}...`);
 
@@ -77,6 +79,8 @@ program
         name: opts.name,
         screenshotDir: opts.screenshotDir,
         maxPages: parseInt(opts.maxPages, 10),
+        interactions: opts.interactions !== false,
+        maxInteractionsPerPage: parseInt(opts.maxInteractions, 10),
       });
 
       const outputPath = path.resolve(opts.output);

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { groupFromPath, normalizeUrl, pathToId } from '../modes/crawl.js';
+import {
+  createEdgeId,
+  groupFromPath,
+  normalizeUrl,
+  pathToId,
+  shouldCrawlUrl,
+} from '../modes/crawl.js';
 
 describe('crawl helpers', () => {
   it('normalizes hashes and trailing slashes', () => {
@@ -14,5 +20,18 @@ describe('crawl helpers', () => {
   it('uses the first route segment as a group', () => {
     expect(groupFromPath('/studio/settings')).toBe('studio');
     expect(groupFromPath('/')).toBe('root');
+  });
+
+  it('separates static and observed edge IDs', () => {
+    expect(createEdgeId('home', 'settings', 'static-link')).toBe('home->settings:static-link');
+    expect(createEdgeId('home', 'settings', 'observed-interaction')).toBe(
+      'home->settings:observed-interaction'
+    );
+  });
+
+  it('only crawls same-origin HTTP URLs', () => {
+    expect(shouldCrawlUrl('https://example.com/docs', 'https://example.com')).toBe(true);
+    expect(shouldCrawlUrl('https://other.com/docs', 'https://example.com')).toBe(false);
+    expect(shouldCrawlUrl('mailto:test@example.com', 'https://example.com')).toBe(false);
   });
 });
