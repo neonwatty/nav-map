@@ -33,6 +33,7 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
   const outgoing = new Map<string, number>();
   const adjacency = new Map<string, string[]>();
   const issues: RouteHealthIssue[] = [];
+  const hasCoverageData = graph.nodes.some(node => node.coverage !== undefined);
 
   for (const node of graph.nodes) {
     incoming.set(node.id, 0);
@@ -85,7 +86,7 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
       });
     }
 
-    if (node.coverage?.status === 'uncovered' || !node.coverage) {
+    if (hasCoverageData && (node.coverage?.status === 'uncovered' || !node.coverage)) {
       issues.push({
         type: 'untested',
         severity: 'low',

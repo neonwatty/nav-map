@@ -21,7 +21,7 @@ const baseGraph: NavMapGraph = {
 };
 
 describe('analyzeRouteHealth', () => {
-  it('flags unreachable routes, dead ends, duplicates, and missing coverage', () => {
+  it('flags unreachable routes, dead ends, and duplicates', () => {
     const summary = analyzeRouteHealth(baseGraph);
 
     expect(summary.issues).toEqual(
@@ -32,11 +32,39 @@ describe('analyzeRouteHealth', () => {
           type: 'duplicate-route',
           nodeIds: ['duplicate-a', 'duplicate-b'],
         }),
-        expect.objectContaining({ type: 'untested', nodeIds: ['home'] }),
       ])
     );
+    expect(summary.issues.some(issue => issue.type === 'untested')).toBe(false);
     expect(summary.totals.high).toBeGreaterThan(0);
     expect(summary.score).toBeLessThan(100);
+  });
+
+  it('only flags untested routes when the graph includes coverage data', () => {
+    const graph: NavMapGraph = {
+      ...baseGraph,
+      nodes: [
+        {
+          id: 'home',
+          route: '/',
+          label: 'Home',
+          group: 'root',
+          coverage: {
+            status: 'covered',
+            testCount: 1,
+            passCount: 1,
+            failCount: 0,
+            tests: [],
+            lastRun: '2026-01-01T00:00:00Z',
+          },
+        },
+        { id: 'docs', route: '/docs', label: 'Docs', group: 'docs' },
+      ],
+      edges: [{ id: 'home-docs', source: 'home', target: 'docs', type: 'link' }],
+    };
+
+    expect(analyzeRouteHealth(graph).issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'untested', nodeIds: ['docs'] })])
+    );
   });
 
   it('detects redirect loops', () => {
