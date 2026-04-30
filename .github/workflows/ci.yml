@@ -63,6 +63,46 @@ jobs:
         env:
           NAV_MAP_BROWSER_TESTS: '1'
         run: pnpm --filter @neonwatty/nav-map-scanner exec vitest run src/__tests__/crawl-browser.test.ts
+      - name: Build scanner CLI
+        run: |
+          pnpm --filter @neonwatty/nav-map build
+          pnpm --filter @neonwatty/nav-map-scanner build
+      - name: Run CLI diagnostics smoke crawl
+        run: |
+          mkdir -p .nav-map/site .nav-map/artifacts
+          cat > .nav-map/site/index.html <<'HTML'
+          <!doctype html>
+          <html>
+            <body>
+              <a href="/about.html">About</a>
+            </body>
+          </html>
+          HTML
+          cat > .nav-map/site/about.html <<'HTML'
+          <!doctype html>
+          <html>
+            <body>
+              <a href="/">Home</a>
+            </body>
+          </html>
+          HTML
+          node -e "const http = require('node:http'); const fs = require('node:fs'); const path = require('node:path'); const root = path.resolve('.nav-map/site'); http.createServer((req, res) => { const pathname = new URL(req.url, 'http://localhost').pathname; const file = pathname === '/' ? 'index.html' : pathname.slice(1); const filePath = path.join(root, file); if (!filePath.startsWith(root) || !fs.existsSync(filePath)) { res.writeHead(404).end('not found'); return; } res.end(fs.readFileSync(filePath)); }).listen(4173);" &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          sleep 1
+          node packages/scanner/bin/nav-map.js crawl http://127.0.0.1:4173 \
+            --output .nav-map/artifacts/nav-map.json \
+            --diagnostics-output .nav-map/artifacts/diagnostics.json \
+            --screenshot-dir .nav-map/artifacts/screenshots \
+            --max-pages 5 \
+            --fail-on-diagnostics
+      - name: Upload crawl diagnostics artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scanner-crawl-diagnostics
+          path: .nav-map/artifacts/
+          if-no-files-found: warn
 
   release:
     needs: [quality-checks, build, scanner-browser-crawl]

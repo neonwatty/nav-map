@@ -9,7 +9,7 @@ import {
   type RouteCoverageEntry,
 } from '../ingest/mergeGraph.js';
 import { routeToId } from '../ingest/routeToId.js';
-import { validateGraph } from '@neonwatty/nav-map';
+import { validateGraph } from '@neonwatty/nav-map/validation';
 import type {
   NavMapGraph,
   NavMapFlowGallery,
