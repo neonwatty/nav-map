@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import fs from 'node:fs';
 
 interface NavMapGraph {
   version: '1.0';
@@ -40,7 +41,7 @@ export interface CrawlOptions {
   context?: import('playwright').BrowserContext;
 }
 
-function normalizeUrl(raw: string): string {
+export function normalizeUrl(raw: string): string {
   try {
     const url = new URL(raw);
     // Remove hash
@@ -57,7 +58,7 @@ function normalizeUrl(raw: string): string {
   }
 }
 
-function pathToId(pathname: string): string {
+export function pathToId(pathname: string): string {
   if (pathname === '/' || pathname === '') return 'index';
   return pathname
     .replace(/^\//, '')
@@ -66,7 +67,7 @@ function pathToId(pathname: string): string {
     .replace(/-+/g, '-');
 }
 
-function groupFromPath(pathname: string): string {
+export function groupFromPath(pathname: string): string {
   const segments = pathname.replace(/^\//, '').split('/');
   if (!segments[0] || segments[0] === '') return 'root';
   return segments[0];
@@ -76,6 +77,10 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   const { startUrl, name, screenshotDir, maxPages = 50 } = options;
 
   const origin = new URL(startUrl).origin;
+
+  if (screenshotDir && !fs.existsSync(screenshotDir)) {
+    fs.mkdirSync(screenshotDir, { recursive: true });
+  }
 
   const visited = new Set<string>();
   const queue: string[] = [normalizeUrl(startUrl)];
