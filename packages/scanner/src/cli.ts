@@ -229,7 +229,10 @@ program
         process.exit(1);
       }
 
-      const generated = await runGenerate(result.config!, { headless: !opts.headed });
+      const generated = await runGenerate(result.config!, {
+        headless: !opts.headed,
+        diagnosticsOutput: opts.diagnosticsOutput,
+      });
 
       console.log(`\nWrote ${generated.outputPath}`);
       console.log(`  Nodes: ${generated.nodeCount}`);
@@ -237,13 +240,7 @@ program
       console.log(`  Groups: ${generated.groupCount}`);
       const diagnostics = formatCrawlDiagnostics(generated.diagnostics);
       if (diagnostics) console.log(`\n${diagnostics}`);
-      if (opts.diagnosticsOutput) {
-        const diagnosticsPath = writeCrawlDiagnosticsReport(
-          generated.diagnostics,
-          opts.diagnosticsOutput
-        );
-        console.log(`  Diagnostics: ${diagnosticsPath}`);
-      }
+      if (generated.diagnosticsPath) console.log(`  Diagnostics: ${generated.diagnosticsPath}`);
       if (opts.failOnDiagnostics && hasCrawlDiagnosticIssues(generated.diagnostics)) {
         console.error(
           '\nCrawl diagnostics contain issues; failing because --fail-on-diagnostics is set.'

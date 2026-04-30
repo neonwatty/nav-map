@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ResolvedConfig } from '../config.js';
+import { writeCrawlDiagnosticsReport } from '../diagnostics-report.js';
 import { crawlUrl } from './crawl.js';
 import type { CrawlDiagnostics, CrawlOptions } from './crawl.js';
 import { autoLogin, closeBrowser } from './auto-auth.js';
@@ -11,10 +12,12 @@ export interface GenerateResult {
   edgeCount: number;
   groupCount: number;
   diagnostics?: CrawlDiagnostics;
+  diagnosticsPath?: string;
 }
 
 export interface GenerateOptions {
   headless?: boolean;
+  diagnosticsOutput?: string;
 }
 
 export function createCrawlOptions(
@@ -66,6 +69,10 @@ export async function runGenerate(
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(outputPath, JSON.stringify(graph, null, 2));
+    const diagnosticsOutput = options.diagnosticsOutput ?? config.diagnosticsOutput;
+    const diagnosticsPath = diagnosticsOutput
+      ? writeCrawlDiagnosticsReport(graph.meta.diagnostics, diagnosticsOutput)
+      : undefined;
 
     return {
       outputPath,
@@ -73,6 +80,7 @@ export async function runGenerate(
       edgeCount: graph.edges.length,
       groupCount: graph.groups.length,
       diagnostics: graph.meta.diagnostics,
+      diagnosticsPath,
     };
   } finally {
     if (context) {
