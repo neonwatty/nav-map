@@ -30,12 +30,14 @@ import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import type { RouteHealthIssue } from '../utils/routeHealth';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { computeBundledEdges } from '../layout/edgeBundling';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -49,6 +51,7 @@ import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
+import { RouteHealthPanel } from './panels/RouteHealthPanel';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -108,13 +111,19 @@ function NavMapInner({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
-  const [showSharedNav, setShowSharedNav] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
-  const [showRedirects, setShowRedirects] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
+  const [showSharedNav, setShowSharedNav] = usePersistentState('nav-map:show-shared-nav', false);
+  const [focusMode, setFocusMode] = usePersistentState('nav-map:focus-mode', false);
+  const [showRedirects, setShowRedirects] = usePersistentState('nav-map:show-redirects', false);
+  const [viewMode, setViewMode] = usePersistentState<ViewMode>(
+    'nav-map:view-mode',
+    defaultViewMode
+  );
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [edgeMode, setEdgeMode] = useState<EdgeMode>(defaultEdgeMode);
+  const [edgeMode, setEdgeMode] = usePersistentState<EdgeMode>(
+    'nav-map:edge-mode',
+    defaultEdgeMode
+  );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
@@ -130,6 +139,11 @@ function NavMapInner({
   } | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCoverage, setShowCoverage] = useState(false);
+  const [showRouteHealth, setShowRouteHealth] = usePersistentState(
+    'nav-map:show-route-health',
+    false
+  );
+  const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
@@ -608,6 +622,15 @@ function NavMapInner({
     return ids.size > 0 ? ids : null;
   }, [showSearch, searchQuery, graph]);
 
+  const auditFocusNodeIds = useMemo(
+    () => (auditFocus ? new Set(auditFocus.nodeIds) : null),
+    [auditFocus]
+  );
+
+  const handleAuditIssueFocus = useCallback((issue: RouteHealthIssue) => {
+    setAuditFocus({ label: issue.title, nodeIds: issue.nodeIds });
+  }, []);
+
   const hasCoverageData = useMemo(
     () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
     [graph]
@@ -626,6 +649,7 @@ function NavMapInner({
     nodeGroupMap,
     showRedirects,
     searchMatchIds,
+    auditFocusNodeIds,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -689,6 +713,7 @@ function NavMapInner({
               edgeMode={edgeMode}
               isAnimatingFlow={isAnimatingFlow}
               showAnalytics={showAnalytics}
+              showRouteHealth={showRouteHealth}
               analyticsAdapter={analyticsAdapter}
               onViewModeChange={mode => {
                 setViewMode(mode);
@@ -701,6 +726,7 @@ function NavMapInner({
               onFlowSelect={idx => {
                 setSelectedFlowIndex(idx);
                 setFocusedGroupId(null);
+                setAuditFocus(null);
               }}
               onResetView={() => {
                 setFocusedGroupId(null);
@@ -712,6 +738,7 @@ function NavMapInner({
               onEdgeModeChange={setEdgeMode}
               onAnimate={() => setIsAnimatingFlow(true)}
               onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+              onToggleRouteHealth={() => setShowRouteHealth(prev => !prev)}
               onSearch={() => guardedSetShowSearch(true)}
               onHelp={() => guardedSetShowHelp(true)}
               showCoverage={showCoverage}
@@ -726,8 +753,10 @@ function NavMapInner({
             selectedFlowIndex={selectedFlowIndex}
             treeRootId={treeRootId}
             focusedGroupId={focusedGroupId}
+            auditFocusLabel={auditFocus?.label ?? null}
             graph={graph}
             onClearFocus={() => setFocusedGroupId(null)}
+            onClearAuditFocus={() => setAuditFocus(null)}
           />
 
           {/* Walkthrough breadcrumb */}
@@ -803,6 +832,16 @@ function NavMapInner({
           )}
           {graph && <LegendPanel groups={graph.groups} />}
           <CoverageSummary />
+
+          {graph && showRouteHealth && (
+            <RouteHealthPanel
+              graph={graph}
+              isDark={ctx.isDark}
+              onClose={() => setShowRouteHealth(false)}
+              onNavigate={navigateToNode}
+              onIssueFocus={handleAuditIssueFocus}
+            />
+          )}
 
           {viewMode === 'hierarchy' && graph && (
             <HierarchyControls

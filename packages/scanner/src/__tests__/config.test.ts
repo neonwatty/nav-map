@@ -70,6 +70,21 @@ describe('validateConfig', () => {
     const errors = validateConfig(config);
     expect(errors).toContain('maxPages must be a positive integer');
   });
+
+  it('returns error when interaction config has invalid types', () => {
+    const config = {
+      url: 'https://example.com',
+      interactions: 'yes',
+      maxInteractionsPerPage: 0,
+      includeInteraction: 'open',
+      excludeInteraction: ['delete', 123],
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('interactions must be a boolean');
+    expect(errors).toContain('maxInteractionsPerPage must be a positive integer');
+    expect(errors).toContain('includeInteraction must be an array of strings');
+    expect(errors).toContain('excludeInteraction must be an array of strings');
+  });
 });
 
 describe('applyDefaults', () => {
@@ -80,6 +95,10 @@ describe('applyDefaults', () => {
     expect(result.maxPages).toBe(50);
     expect(result.output).toBe('nav-map.json');
     expect(result.screenshotDir).toBe('nav-screenshots');
+    expect(result.interactions).toBe(true);
+    expect(result.maxInteractionsPerPage).toBe(20);
+    expect(result.includeInteraction).toEqual([]);
+    expect(result.excludeInteraction).toEqual([]);
   });
 
   it('preserves user-supplied values', () => {
@@ -88,11 +107,19 @@ describe('applyDefaults', () => {
       name: 'My App',
       maxPages: 20,
       output: 'custom.json',
+      interactions: false,
+      maxInteractionsPerPage: 5,
+      includeInteraction: ['settings'],
+      excludeInteraction: ['delete'],
     };
     const result = applyDefaults(config);
     expect(result.name).toBe('My App');
     expect(result.maxPages).toBe(20);
     expect(result.output).toBe('custom.json');
+    expect(result.interactions).toBe(false);
+    expect(result.maxInteractionsPerPage).toBe(5);
+    expect(result.includeInteraction).toEqual(['settings']);
+    expect(result.excludeInteraction).toEqual(['delete']);
   });
 
   it('defaults auth.loginUrl to url when auth is provided', () => {

@@ -93,6 +93,7 @@ export function toReactFlowEdges(edges: NavMapEdge[]): Edge[] {
     data: {
       label: e.label,
       edgeType: e.type,
+      discovery: e.discovery,
     },
   }));
 }

@@ -17,6 +17,7 @@ export interface NavMapEdge {
   target: string;
   label?: string;
   type: 'link' | 'redirect' | 'router-push' | 'shared-nav' | 'test-transition';
+  discovery?: 'static-link' | 'observed-interaction';
   sourceCode?: { file: string; line: number; component?: string };
 }
 

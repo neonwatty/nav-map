@@ -18,6 +18,7 @@ export { GroupNode } from './components/nodes/GroupNode';
 export { PresentationBar } from './components/panels/PresentationBar';
 export { AnalyticsOverlay } from './components/panels/AnalyticsOverlay';
 export { CoverageSummary } from './components/panels/CoverageSummary';
+export { RouteHealthPanel } from './components/panels/RouteHealthPanel';
 export { CoverageBadge, getCoverageBorderColor } from './components/nodes/CoverageBadge';
 
 // Error handling
@@ -32,6 +33,12 @@ export type { AnalyticsAdapter, NavMapAnalytics as AnalyticsData } from './analy
 // Validation
 export { validateGraph } from './utils/validateGraph';
 export type { GraphValidationResult, GraphValidationError } from './utils/validateGraph';
+export { analyzeRouteHealth, formatRouteHealthReport } from './utils/routeHealth';
+export type {
+  RouteHealthIssue,
+  RouteHealthIssueType,
+  RouteHealthSummary,
+} from './utils/routeHealth';
 
 // Hooks
 export { useNavMapContext, NavMapContext } from './hooks/useNavMap';
