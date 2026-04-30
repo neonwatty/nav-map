@@ -75,6 +75,19 @@ describe('toReactFlowEdges', () => {
     const result = toReactFlowEdges(edges);
     result.forEach(e => expect(e.type).toBe('navEdge'));
   });
+
+  it('preserves edge discovery metadata', () => {
+    const result = toReactFlowEdges([
+      {
+        id: 'e4',
+        source: 'home',
+        target: 'blog',
+        type: 'router-push',
+        discovery: 'observed-interaction',
+      },
+    ]);
+    expect(result[0].data?.discovery).toBe('observed-interaction');
+  });
 });
 
 describe('getConnectedNodes', () => {

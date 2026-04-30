@@ -171,6 +171,8 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `--screenshot-dir <dir>` | Screenshot output directory | — |
 | `-n, --name <name>` | Project name | — |
 | `--max-pages <n>` | Maximum pages to crawl | `50` |
+| `--no-interactions` | Skip click-based navigation discovery | off |
+| `--max-interactions <n>` | Maximum click candidates to try per page | `20` |
 
 ### `auth` — Capture auth state
 
