@@ -5,7 +5,11 @@ import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
 import { formatConfigErrors, formatConfigSummary, loadAndValidateConfig } from './config-report.js';
-import { formatCrawlDiagnostics, hasCrawlDiagnosticIssues } from './diagnostics-report.js';
+import {
+  formatCrawlDiagnostics,
+  hasCrawlDiagnosticIssues,
+  writeCrawlDiagnosticsReport,
+} from './diagnostics-report.js';
 import { runGenerate } from './modes/generate.js';
 import { startServer } from './modes/serve.js';
 import { runIngest } from './modes/ingest.js';
@@ -73,6 +77,7 @@ program
   .option('--max-interactions <n>', 'Maximum click candidates to try per page', '20')
   .option('--include-interaction <pattern...>', 'Only click interactions matching these labels')
   .option('--exclude-interaction <pattern...>', 'Skip interactions matching these labels')
+  .option('--diagnostics-output <path>', 'Write crawl diagnostics JSON sidecar')
   .option(
     '--fail-on-diagnostics',
     'Exit non-zero if crawl diagnostics include failures or page-limit truncation'
@@ -100,6 +105,13 @@ program
       console.log(`  Groups: ${graph.groups.length}`);
       const diagnostics = formatCrawlDiagnostics(graph.meta.diagnostics);
       if (diagnostics) console.log(`\n${diagnostics}`);
+      if (opts.diagnosticsOutput) {
+        const diagnosticsPath = writeCrawlDiagnosticsReport(
+          graph.meta.diagnostics,
+          opts.diagnosticsOutput
+        );
+        console.log(`  Diagnostics: ${diagnosticsPath}`);
+      }
       if (opts.failOnDiagnostics && hasCrawlDiagnosticIssues(graph.meta.diagnostics)) {
         console.error(
           '\nCrawl diagnostics contain issues; failing because --fail-on-diagnostics is set.'
@@ -204,6 +216,7 @@ program
   .description('Load nav-map.config.json, auto-login if configured, crawl, and output nav-map.json')
   .option('-c, --config <path>', 'Path to config file', 'nav-map.config.json')
   .option('--headed', 'Run browser in headed mode (useful for debugging login)')
+  .option('--diagnostics-output <path>', 'Write crawl diagnostics JSON sidecar')
   .option(
     '--fail-on-diagnostics',
     'Exit non-zero if crawl diagnostics include failures or page-limit truncation'
@@ -224,6 +237,13 @@ program
       console.log(`  Groups: ${generated.groupCount}`);
       const diagnostics = formatCrawlDiagnostics(generated.diagnostics);
       if (diagnostics) console.log(`\n${diagnostics}`);
+      if (opts.diagnosticsOutput) {
+        const diagnosticsPath = writeCrawlDiagnosticsReport(
+          generated.diagnostics,
+          opts.diagnosticsOutput
+        );
+        console.log(`  Diagnostics: ${diagnosticsPath}`);
+      }
       if (opts.failOnDiagnostics && hasCrawlDiagnosticIssues(generated.diagnostics)) {
         console.error(
           '\nCrawl diagnostics contain issues; failing because --fail-on-diagnostics is set.'

@@ -26,7 +26,11 @@ export { loadConfig, validateConfig, applyDefaults } from './config.js';
 export type { NavMapConfig, ResolvedConfig, NavMapAuthConfig } from './config.js';
 export { loadAndValidateConfig, formatConfigErrors, formatConfigSummary } from './config-report.js';
 export type { ConfigValidationResult } from './config-report.js';
-export { formatCrawlDiagnostics, hasCrawlDiagnosticIssues } from './diagnostics-report.js';
+export {
+  formatCrawlDiagnostics,
+  hasCrawlDiagnosticIssues,
+  writeCrawlDiagnosticsReport,
+} from './diagnostics-report.js';
 export { autoLogin, closeBrowser, buildLoginSteps } from './modes/auto-auth.js';
 export type { AutoLoginOptions } from './modes/auto-auth.js';
 export { runGenerate } from './modes/generate.js';

@@ -1,5 +1,12 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { formatCrawlDiagnostics, hasCrawlDiagnosticIssues } from '../diagnostics-report.js';
+import {
+  formatCrawlDiagnostics,
+  hasCrawlDiagnosticIssues,
+  writeCrawlDiagnosticsReport,
+} from '../diagnostics-report.js';
 
 describe('formatCrawlDiagnostics', () => {
   it('returns null when diagnostics are absent', () => {
@@ -70,5 +77,34 @@ describe('formatCrawlDiagnostics', () => {
         },
       })
     ).toBe(true);
+  });
+});
+
+describe('writeCrawlDiagnosticsReport', () => {
+  it('writes diagnostics JSON and creates parent directories', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-diagnostics-'));
+    const outputPath = path.join(tempDir, 'nested', 'diagnostics.json');
+
+    const diagnostics = {
+      crawl: {
+        attemptedPages: 2,
+        successfulPages: 1,
+        failedPages: [{ url: 'https://example.com/fail', reason: 'timeout' }],
+        screenshotFailures: [],
+        maxPagesReached: false,
+      },
+    };
+
+    expect(writeCrawlDiagnosticsReport(diagnostics, outputPath)).toBe(path.resolve(outputPath));
+    expect(JSON.parse(fs.readFileSync(outputPath, 'utf8'))).toEqual(diagnostics);
+  });
+
+  it('writes null when diagnostics are absent', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-diagnostics-'));
+    const outputPath = path.join(tempDir, 'diagnostics.json');
+
+    writeCrawlDiagnosticsReport(undefined, outputPath);
+
+    expect(JSON.parse(fs.readFileSync(outputPath, 'utf8'))).toBeNull();
   });
 });
