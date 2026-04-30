@@ -4,6 +4,10 @@ import { crawlUrl } from './modes/crawl.js';
 import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
+import { loadConfig, validateConfig, applyDefaults } from './config.js';
+import { runGenerate } from './modes/generate.js';
+import { startServer } from './modes/serve.js';
+import { runIngest } from './modes/ingest.js';
 import path from 'node:path';
 import fs from 'node:fs';
 
@@ -64,6 +68,10 @@ program
   .option('--screenshot-dir <dir>', 'Directory for screenshots', 'nav-screenshots')
   .option('-n, --name <name>', 'Project name for the graph')
   .option('--max-pages <n>', 'Maximum number of pages to crawl', '50')
+  .option('--no-interactions', 'Skip click-based navigation discovery')
+  .option('--max-interactions <n>', 'Maximum click candidates to try per page', '20')
+  .option('--include-interaction <pattern...>', 'Only click interactions matching these labels')
+  .option('--exclude-interaction <pattern...>', 'Skip interactions matching these labels')
   .action(async (url: string, opts) => {
     console.log(`Crawling ${url}...`);
 
@@ -73,6 +81,10 @@ program
         name: opts.name,
         screenshotDir: opts.screenshotDir,
         maxPages: parseInt(opts.maxPages, 10),
+        interactions: opts.interactions !== false,
+        maxInteractionsPerPage: parseInt(opts.maxInteractions, 10),
+        includeInteraction: opts.includeInteraction,
+        excludeInteraction: opts.excludeInteraction,
       });
 
       const outputPath = path.resolve(opts.output);
@@ -170,6 +182,85 @@ program
       console.log(`  Flows: ${graph.flows?.length ?? 0}`);
     } catch (err) {
       console.error('Record-flows failed:', err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('generate')
+  .description('Load nav-map.config.json, auto-login if configured, crawl, and output nav-map.json')
+  .option('-c, --config <path>', 'Path to config file', 'nav-map.config.json')
+  .option('--headed', 'Run browser in headed mode (useful for debugging login)')
+  .action(async opts => {
+    try {
+      const raw = loadConfig(opts.config);
+      const errors = validateConfig(raw);
+      if (errors.length > 0) {
+        console.error('Config validation errors:');
+        for (const err of errors) {
+          console.error(`  - ${err}`);
+        }
+        process.exit(1);
+      }
+
+      const config = applyDefaults(raw);
+      const result = await runGenerate(config, { headless: !opts.headed });
+
+      console.log(`\nWrote ${result.outputPath}`);
+      console.log(`  Nodes: ${result.nodeCount}`);
+      console.log(`  Edges: ${result.edgeCount}`);
+      console.log(`  Groups: ${result.groupCount}`);
+    } catch (err) {
+      console.error('Generate failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('serve')
+  .description('Start a local viewer for a nav-map.json file')
+  .argument('[file]', 'Path to nav-map.json', 'nav-map.json')
+  .option('-p, --port <port>', 'Port number', '3333')
+  .option('--screenshot-dir <dir>', 'Directory containing screenshots')
+  .action((file: string, opts) => {
+    try {
+      startServer({
+        jsonPath: file,
+        screenshotDir: opts.screenshotDir,
+        port: parseInt(opts.port, 10),
+      });
+    } catch (err) {
+      console.error('Serve failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('ingest')
+  .description('Ingest Playwright test results and merge with a nav-map graph')
+  .argument('<dir>', 'Path to Playwright output directory (contains report JSON + trace ZIPs)')
+  .option('-o, --output <dir>', 'Output directory', '.nav-map')
+  .option('--base <path>', 'Base nav-map.json to merge with')
+  .option('--base-url <url>', 'Base URL to strip from trace URLs (e.g., http://localhost:3000)')
+  .option('--no-screenshots', 'Skip screenshot extraction from traces')
+  .action(async (dir: string, opts) => {
+    console.log('Ingesting Playwright test results...\n');
+
+    try {
+      const result = await runIngest({
+        reportDir: dir,
+        output: opts.output,
+        baseGraphPath: opts.base,
+        baseUrl: opts.baseUrl,
+        screenshots: opts.screenshots !== false,
+      });
+
+      console.log(`\nWrote ${result.outputPath}`);
+      console.log(`  Tests processed: ${result.testCount}`);
+      console.log(`  Routes covered: ${result.routesCovered}`);
+      console.log(`  Routes uncovered: ${result.routesUncovered}`);
+    } catch (err) {
+      console.error('Ingest failed:', err instanceof Error ? err.message : err);
       process.exit(1);
     }
   });

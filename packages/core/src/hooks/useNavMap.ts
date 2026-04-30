@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { NavMapGraph, GroupColors, EdgeMode } from '../types';
+import type { NavMapGraph, GroupColors, EdgeMode, NavMapTheme } from '../types';
 import { getGroupColors as getColors } from '../utils/colors';
 
 export interface NavMapContextValue {
@@ -11,6 +11,7 @@ export interface NavMapContextValue {
   getGroupColors: (groupId: string) => GroupColors;
   focusedGroupId: string | null;
   edgeMode: EdgeMode;
+  showCoverage: boolean;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -22,6 +23,7 @@ const defaultContext: NavMapContextValue = {
   getGroupColors: () => ({ bg: '#1e1e2a', border: '#888', text: '#aaa' }),
   focusedGroupId: null,
   edgeMode: 'smooth',
+  showCoverage: false,
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -32,8 +34,9 @@ export function useNavMapContext(): NavMapContextValue {
 
 export function useNavMapState(
   graph: NavMapGraph | null,
-  screenshotBasePath: string
-): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode'> {
+  screenshotBasePath: string,
+  theme?: NavMapTheme
+): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage'> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -48,8 +51,8 @@ export function useNavMapState(
   }, []);
 
   const getGroupColors = useCallback(
-    (groupId: string): GroupColors => getColors(groupId, isDark),
-    [isDark]
+    (groupId: string): GroupColors => getColors(groupId, isDark, theme?.groupColors),
+    [isDark, theme?.groupColors]
   );
 
   return {

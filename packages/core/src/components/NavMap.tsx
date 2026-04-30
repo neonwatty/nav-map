@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react-hooks/refs */
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -17,9 +17,11 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph, ViewMode, EdgeMode } from '../types';
+import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
+import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
+import { CoverageSummary } from './panels/CoverageSummary';
 import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
@@ -28,12 +30,14 @@ import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import type { RouteHealthIssue } from '../utils/routeHealth';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { computeBundledEdges } from '../layout/edgeBundling';
 import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -42,7 +46,12 @@ import { ConnectionPanel } from './panels/ConnectionPanel';
 import { LegendPanel } from './panels/LegendPanel';
 import { WalkthroughBar } from './panels/WalkthroughBar';
 import { StatusBanners } from './panels/StatusBanners';
+import { HierarchyControls } from './panels/HierarchyControls';
+import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
+import { NavMapErrorBoundary } from './NavMapErrorBoundary';
+import { ContainerWarning } from './ContainerWarning';
+import { RouteHealthPanel } from './panels/RouteHealthPanel';
 
 const nodeTypes = {
   pageNode: PageNode,
@@ -55,12 +64,32 @@ const edgeTypes = {
 };
 
 export interface NavMapProps {
+  /** Graph data object (pass this OR graphUrl) */
   graph?: NavMapGraph;
+  /** URL to fetch graph JSON from */
   graphUrl?: string;
+  /** Base path prepended to screenshot URLs */
   screenshotBasePath?: string;
+  /** Analytics adapter for page view / transition data */
   analytics?: AnalyticsAdapter;
+  /** Additional CSS class on the container */
   className?: string;
+  /** Additional inline styles on the container */
   style?: React.CSSProperties;
+  /** Initial view mode (default: 'hierarchy') */
+  defaultViewMode?: ViewMode;
+  /** Initial edge rendering mode (default: 'smooth') */
+  defaultEdgeMode?: EdgeMode;
+  /** Theme overrides for colors */
+  theme?: NavMapTheme;
+  /** Hide the top toolbar */
+  hideToolbar?: boolean;
+  /** Hide the search overlay (also disables Cmd+K shortcut) */
+  hideSearch?: boolean;
+  /** Hide the help overlay (also disables ? shortcut) */
+  hideHelp?: boolean;
+  /** Callback fired when graph validation fails */
+  onValidationError?: (errors: GraphValidationError[]) => void;
 }
 
 function NavMapInner({
@@ -70,25 +99,53 @@ function NavMapInner({
   analytics: analyticsAdapter,
   className,
   style,
+  defaultViewMode = 'hierarchy',
+  defaultEdgeMode = 'smooth',
+  theme,
+  hideToolbar = false,
+  hideSearch = false,
+  hideHelp = false,
+  onValidationError,
 }: NavMapProps) {
   const [graph, setGraph] = useState<NavMapGraph | null>(graphProp ?? null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
-  const [showSharedNav, setShowSharedNav] = useState(false);
-  const [focusMode, setFocusMode] = useState(true);
-  const [showRedirects, setShowRedirects] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [showSharedNav, setShowSharedNav] = usePersistentState('nav-map:show-shared-nav', false);
+  const [focusMode, setFocusMode] = usePersistentState('nav-map:focus-mode', false);
+  const [showRedirects, setShowRedirects] = usePersistentState('nav-map:show-redirects', false);
+  const [viewMode, setViewMode] = usePersistentState<ViewMode>(
+    'nav-map:view-mode',
+    defaultViewMode
+  );
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
-  const [edgeMode, setEdgeMode] = useState<EdgeMode>('smooth');
+  const [edgeMode, setEdgeMode] = usePersistentState<EdgeMode>(
+    'nav-map:edge-mode',
+    defaultEdgeMode
+  );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+    route: string;
+    filePath?: string;
+  } | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showCoverage, setShowCoverage] = useState(false);
+  const [showRouteHealth, setShowRouteHealth] = usePersistentState(
+    'nav-map:show-route-health',
+    false
+  );
+  const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -103,6 +160,25 @@ function NavMapInner({
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
+
+  const onValidationErrorRef = useRef(onValidationError);
+  onValidationErrorRef.current = onValidationError;
+
+  const guardedSetShowSearch = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      if (hideSearch) return;
+      setShowSearch(v);
+    },
+    [hideSearch]
+  );
+
+  const guardedSetShowHelp = useCallback(
+    (v: boolean | ((p: boolean) => boolean)) => {
+      if (hideHelp) return;
+      setShowHelp(v);
+    },
+    [hideHelp]
+  );
 
   // Undo history for node drags and group collapse
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
@@ -131,12 +207,26 @@ function NavMapInner({
   }, []);
   const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
   handleGroupDoubleClickRef.current = handleGroupDoubleClick;
+  const handleHierarchyToggle = useCallback(
+    (groupId: string) => {
+      setHierarchyExpandedGroups(prev => {
+        pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
+        const next = new Set(prev);
+        if (next.has(groupId)) next.delete(groupId);
+        else next.add(groupId);
+        return next;
+      });
+    },
+    [pushSnapshot]
+  );
+  const handleHierarchyToggleRef = useRef(handleHierarchyToggle);
+  handleHierarchyToggleRef.current = handleHierarchyToggle;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const ctx = useNavMapState(graph, screenshotBasePath);
+  const ctx = useNavMapState(graph, screenshotBasePath, theme);
   const walkthrough = useWalkthrough();
-  const { showDetail } = useSemanticZoom();
+  const { zoomTier } = useSemanticZoom();
   const { isNarrow } = useResponsive();
   const viewportX = useStore(s => s.transform[0]);
   const viewportY = useStore(s => s.transform[1]);
@@ -171,14 +261,36 @@ function NavMapInner({
     if (graphUrl && !graphProp) {
       fetch(graphUrl)
         .then(r => r.json())
-        .then((data: NavMapGraph) => setGraph(data));
+        .then((data: NavMapGraph) => {
+          const result = validateGraph(data);
+          if (!result.valid) {
+            onValidationErrorRef.current?.(result.errors);
+            console.warn('[NavMap] Graph validation failed:', result.errors);
+          }
+          setGraph(data);
+        });
     }
   }, [graphUrl, graphProp]);
 
   // Update graph when prop changes
   useEffect(() => {
-    if (graphProp) setGraph(graphProp);
+    if (graphProp) {
+      const result = validateGraph(graphProp);
+      if (!result.valid) {
+        onValidationErrorRef.current?.(result.errors);
+        console.warn('[NavMap] Graph validation failed:', result.errors);
+      }
+      setGraph(graphProp);
+    }
   }, [graphProp]);
+
+  // Expand all hierarchy groups when graph first loads in hierarchy mode
+  useEffect(() => {
+    if (graph && viewMode === 'hierarchy' && hierarchyExpandedGroups.size === 0) {
+      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graph]);
 
   // Fetch analytics data
   useEffect(() => {
@@ -194,6 +306,12 @@ function NavMapInner({
   // Convert graph to React Flow elements and compute layout
   useEffect(() => {
     if (!graph) return;
+
+    // For non-map default views, just mark layoutDone so useViewModeLayout runs
+    if (viewModeRef.current !== 'map') {
+      setLayoutDone(true);
+      return;
+    }
 
     const { nodes: rfNodes, edges: rfEdges } = buildGraphFromJson(graph);
 
@@ -263,7 +381,25 @@ function NavMapInner({
     sharedNavEdgesRef,
     handleGroupToggleRef,
     handleGroupDoubleClickRef,
+    hierarchyExpandedGroups,
+    handleHierarchyToggleRef,
   });
+
+  // In hierarchy view, auto-collapse groups at overview zoom, auto-expand at detail
+  const prevZoomTierRef = useRef(zoomTier);
+  useEffect(() => {
+    if (viewMode !== 'hierarchy' || !graph || zoomTier === prevZoomTierRef.current) return;
+    const prev = prevZoomTierRef.current;
+    prevZoomTierRef.current = zoomTier;
+
+    if (zoomTier === 'overview' && prev !== 'overview') {
+      // Zoomed out → collapse all
+      setHierarchyExpandedGroups(new Set());
+    } else if (zoomTier === 'detail' && prev === 'overview') {
+      // Zoomed back in from overview → expand all
+      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+    }
+  }, [zoomTier, viewMode, graph]);
 
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
@@ -285,8 +421,10 @@ function NavMapInner({
     return map;
   }, [graph]);
 
-  // Semantic zoom: swap node types based on zoom level (skip group nodes)
-  // Also inject hasGallery flag into node data
+  // Semantic zoom: 3 tiers based on zoom level
+  // overview (<0.12): hide child nodes, show only group containers
+  // compact (0.12-0.25): compact labels, no screenshots
+  // detail (>0.25): full page nodes with screenshots
   const zoomedNodes = useMemo(() => {
     const addGalleryFlag = (node: Node) => {
       if (node.type === 'groupNode') return node;
@@ -295,13 +433,27 @@ function NavMapInner({
       return { ...node, data: { ...node.data, hasGallery: true } };
     };
 
-    if (showDetail) return nodes.map(addGalleryFlag);
+    if (zoomTier === 'overview') {
+      // Only show group nodes; hide individual pages
+      return nodes.map(node => {
+        if (node.type === 'groupNode') return node;
+        return {
+          ...node,
+          type: 'compactNode',
+          style: { ...node.style, opacity: 0, pointerEvents: 'none' as const },
+        };
+      });
+    }
+
+    if (zoomTier === 'detail') return nodes.map(addGalleryFlag);
+
+    // compact tier: all page nodes become compact
     return nodes.map(node => {
       if (node.type === 'groupNode') return node;
       const withGallery = addGalleryFlag(node);
       return { ...withGallery, type: 'compactNode' };
     });
-  }, [nodes, showDetail, galleryNodeIds]);
+  }, [nodes, zoomTier, galleryNodeIds]);
 
   // Use refs to avoid stale closures in callbacks
   const ctxRef = useRef(ctx);
@@ -341,6 +493,22 @@ function NavMapInner({
     [setCenter]
   );
 
+  // Search navigation: longer flight with closer zoom
+  const navigateToNodeFromSearch = useCallback(
+    (nodeId: string) => {
+      ctxRef.current.setSelectedNodeId(nodeId);
+      walkthroughRef.current.push(nodeId);
+      const node = nodesRef.current.find(n => n.id === nodeId);
+      if (node) {
+        setCenter(node.position.x + 90, node.position.y + 70, {
+          zoom: 1.0,
+          duration: 600,
+        });
+      }
+    },
+    [setCenter]
+  );
+
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
     ctx,
@@ -351,8 +519,8 @@ function NavMapInner({
     showHelp,
     showSharedNav,
     focusMode,
-    setShowSearch,
-    setShowHelp,
+    setShowSearch: guardedSetShowSearch,
+    setShowHelp: guardedSetShowHelp,
     setShowSharedNav,
     setFocusMode,
     setNodes,
@@ -368,6 +536,7 @@ function NavMapInner({
     undo,
     canUndo,
     setCollapsedGroups,
+    setHierarchyExpandedGroups,
   });
 
   // Node hover for preview
@@ -405,6 +574,19 @@ function NavMapInner({
     }
   }, [pushSnapshot]);
 
+  // Right-click context menu
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    const data = node.data as Record<string, unknown>;
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+      route: (data.route as string) ?? '',
+      filePath: data.filePath as string | undefined,
+    });
+  }, []);
+
   // Track mouse position for hover preview
   useEffect(() => {
     if (!hoverPreview) return;
@@ -423,6 +605,37 @@ function NavMapInner({
     return graph.flows[selectedFlowIndex] ?? null;
   }, [selectedFlowIndex, graph]);
 
+  // Compute search match IDs for canvas highlighting
+  const searchMatchIds = useMemo(() => {
+    if (!showSearch || !searchQuery.trim() || !graph) return null;
+    const q = searchQuery.toLowerCase().trim();
+    const ids = new Set<string>();
+    for (const n of graph.nodes) {
+      if (
+        n.label.toLowerCase().includes(q) ||
+        n.route.toLowerCase().includes(q) ||
+        n.group.toLowerCase().includes(q)
+      ) {
+        ids.add(n.id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [showSearch, searchQuery, graph]);
+
+  const auditFocusNodeIds = useMemo(
+    () => (auditFocus ? new Set(auditFocus.nodeIds) : null),
+    [auditFocus]
+  );
+
+  const handleAuditIssueFocus = useCallback((issue: RouteHealthIssue) => {
+    setAuditFocus({ label: issue.title, nodeIds: issue.nodeIds });
+  }, []);
+
+  const hasCoverageData = useMemo(
+    () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
+    [graph]
+  );
+
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
     edges,
@@ -435,23 +648,42 @@ function NavMapInner({
     focusedGroupId,
     nodeGroupMap,
     showRedirects,
+    searchMatchIds,
+    auditFocusNodeIds,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
   const onNodeDoubleClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      // In hierarchy mode, toggle group expansion
+      if (viewMode === 'hierarchy') {
+        // Collapsed summary node (compact node with hier-group- prefix)
+        if (node.id.startsWith('hier-group-')) {
+          const groupId = node.id.replace('hier-group-', '');
+          setHierarchyExpandedGroups(prev => {
+            pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
+            const next = new Set(prev);
+            next.add(groupId);
+            return next;
+          });
+          return;
+        }
+      }
       const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
       if (hasGallery) {
         setGalleryNodeId(node.id);
       }
     },
-    [graph]
+    [graph, viewMode, pushSnapshot]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
 
+  const effectiveShowHelp = hideHelp ? false : showHelp;
+  const effectiveShowSearch = hideSearch ? false : showSearch;
+
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage }}>
       <div
         ref={containerRef}
         className={className}
@@ -461,46 +693,59 @@ function NavMapInner({
           display: 'flex',
           position: 'relative',
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-          background: ctx.isDark ? '#0a0a0f' : '#f4f5f8',
-          color: ctx.isDark ? '#c8c8d0' : '#333',
+          background: ctx.isDark
+            ? (theme?.dark?.background ?? '#0a0a0f')
+            : (theme?.light?.background ?? '#f4f5f8'),
+          color: ctx.isDark ? (theme?.dark?.text ?? '#c8c8d0') : (theme?.light?.text ?? '#333'),
           ...style,
         }}
       >
         <div style={{ flex: 1, position: 'relative' }}>
           {/* Toolbar */}
-          <NavMapToolbar
-            graph={graph}
-            viewMode={viewMode}
-            selectedFlowIndex={selectedFlowIndex}
-            showSharedNav={showSharedNav}
-            showRedirects={showRedirects}
-            focusMode={focusMode}
-            edgeMode={edgeMode}
-            isAnimatingFlow={isAnimatingFlow}
-            showAnalytics={showAnalytics}
-            analyticsAdapter={analyticsAdapter}
-            onViewModeChange={mode => {
-              setViewMode(mode);
-              if (mode !== 'flow') setSelectedFlowIndex(null);
-              if (mode !== 'tree') setTreeRootId(null);
-            }}
-            onFlowSelect={idx => {
-              setSelectedFlowIndex(idx);
-              setFocusedGroupId(null);
-            }}
-            onResetView={() => {
-              setFocusedGroupId(null);
-              fitView({ padding: 0.15, duration: 300 });
-            }}
-            onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
-            onToggleRedirects={() => setShowRedirects(prev => !prev)}
-            onToggleFocusMode={() => setFocusMode(prev => !prev)}
-            onEdgeModeChange={setEdgeMode}
-            onAnimate={() => setIsAnimatingFlow(true)}
-            onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
-            onSearch={() => setShowSearch(true)}
-            onHelp={() => setShowHelp(true)}
-          />
+          {!hideToolbar && (
+            <NavMapToolbar
+              graph={graph}
+              viewMode={viewMode}
+              selectedFlowIndex={selectedFlowIndex}
+              showSharedNav={showSharedNav}
+              showRedirects={showRedirects}
+              focusMode={focusMode}
+              edgeMode={edgeMode}
+              isAnimatingFlow={isAnimatingFlow}
+              showAnalytics={showAnalytics}
+              showRouteHealth={showRouteHealth}
+              analyticsAdapter={analyticsAdapter}
+              onViewModeChange={mode => {
+                setViewMode(mode);
+                if (mode !== 'flow') setSelectedFlowIndex(null);
+                if (mode !== 'tree') setTreeRootId(null);
+                if (mode === 'hierarchy' && graph) {
+                  setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+                }
+              }}
+              onFlowSelect={idx => {
+                setSelectedFlowIndex(idx);
+                setFocusedGroupId(null);
+                setAuditFocus(null);
+              }}
+              onResetView={() => {
+                setFocusedGroupId(null);
+                fitView({ padding: 0.15, duration: 300 });
+              }}
+              onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+              onToggleRedirects={() => setShowRedirects(prev => !prev)}
+              onToggleFocusMode={() => setFocusMode(prev => !prev)}
+              onEdgeModeChange={setEdgeMode}
+              onAnimate={() => setIsAnimatingFlow(true)}
+              onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+              onToggleRouteHealth={() => setShowRouteHealth(prev => !prev)}
+              onSearch={() => guardedSetShowSearch(true)}
+              onHelp={() => guardedSetShowHelp(true)}
+              showCoverage={showCoverage}
+              hasCoverageData={hasCoverageData}
+              onToggleCoverage={() => setShowCoverage(prev => !prev)}
+            />
+          )}
 
           <StatusBanners
             isDark={ctx.isDark}
@@ -508,8 +753,10 @@ function NavMapInner({
             selectedFlowIndex={selectedFlowIndex}
             treeRootId={treeRootId}
             focusedGroupId={focusedGroupId}
+            auditFocusLabel={auditFocus?.label ?? null}
             graph={graph}
             onClearFocus={() => setFocusedGroupId(null)}
+            onClearAuditFocus={() => setAuditFocus(null)}
           />
 
           {/* Walkthrough breadcrumb */}
@@ -539,6 +786,7 @@ function NavMapInner({
               onSelectionChange={onSelectionChange}
               onNodeDragStart={onNodeDragStart}
               onNodeDragStop={onNodeDragStop}
+              onNodeContextMenu={onNodeContextMenu}
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
               onNodeDoubleClick={onNodeDoubleClick}
@@ -583,6 +831,38 @@ function NavMapInner({
             </ReactFlow>
           )}
           {graph && <LegendPanel groups={graph.groups} />}
+          <CoverageSummary />
+
+          {graph && showRouteHealth && (
+            <RouteHealthPanel
+              graph={graph}
+              isDark={ctx.isDark}
+              onClose={() => setShowRouteHealth(false)}
+              onNavigate={navigateToNode}
+              onIssueFocus={handleAuditIssueFocus}
+            />
+          )}
+
+          {viewMode === 'hierarchy' && graph && (
+            <HierarchyControls
+              allGroupIds={graph.groups.map(g => g.id)}
+              expandedGroups={hierarchyExpandedGroups}
+              onExpandAll={() => {
+                pushSnapshot({
+                  type: 'hierarchy-toggle',
+                  expandedGroups: new Set(hierarchyExpandedGroups),
+                });
+                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+              }}
+              onCollapseAll={() => {
+                pushSnapshot({
+                  type: 'hierarchy-toggle',
+                  expandedGroups: new Set(hierarchyExpandedGroups),
+                });
+                setHierarchyExpandedGroups(new Set());
+              }}
+            />
+          )}
 
           <FlowAnimationOverlay
             isDark={ctx.isDark}
@@ -607,11 +887,23 @@ function NavMapInner({
           />
         )}
 
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            nodeId={contextMenu.nodeId}
+            route={contextMenu.route}
+            filePath={contextMenu.filePath}
+            baseUrl={graph?.meta.baseUrl}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+
         <NavMapOverlays
           graph={graph}
           isDark={ctx.isDark}
-          showHelp={showHelp}
-          showSearch={showSearch}
+          showHelp={effectiveShowHelp}
+          showSearch={effectiveShowSearch}
           showAnalytics={showAnalytics}
           hoverPreview={hoverPreview}
           analyticsData={analyticsData}
@@ -619,13 +911,14 @@ function NavMapInner({
           walkthrough={walkthrough}
           galleryNodeId={galleryNodeId}
           screenshotBasePath={screenshotBasePath}
-          onCloseHelp={() => setShowHelp(false)}
-          onCloseSearch={() => setShowSearch(false)}
+          onCloseHelp={() => guardedSetShowHelp(false)}
+          onCloseSearch={() => guardedSetShowSearch(false)}
           onCloseAnalytics={() => setShowAnalytics(false)}
           onSearchSelect={nodeId => {
-            setShowSearch(false);
-            navigateToNode(nodeId);
+            setSearchQuery('');
+            navigateToNodeFromSearch(nodeId);
           }}
+          onSearchQueryChange={setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
           onCloseGallery={() => setGalleryNodeId(null)}
         />
@@ -636,8 +929,12 @@ function NavMapInner({
 
 export function NavMap(props: NavMapProps) {
   return (
-    <ReactFlowProvider>
-      <NavMapInner {...props} />
-    </ReactFlowProvider>
+    <NavMapErrorBoundary>
+      <ContainerWarning>
+        <ReactFlowProvider>
+          <NavMapInner {...props} />
+        </ReactFlowProvider>
+      </ContainerWarning>
+    </NavMapErrorBoundary>
   );
 }

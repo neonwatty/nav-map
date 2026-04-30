@@ -7,6 +7,7 @@ interface ViewModeSelectorProps {
 }
 
 const modes: { value: ViewMode; label: string }[] = [
+  { value: 'hierarchy', label: 'Hierarchy' },
   { value: 'map', label: 'Map' },
   { value: 'flow', label: 'Flow' },
   { value: 'tree', label: 'Tree' },

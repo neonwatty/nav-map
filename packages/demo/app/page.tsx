@@ -38,7 +38,15 @@ export default function HomePage() {
 
   return (
     <main style={{ width: '100vw', height: '100vh' }}>
-      <NavMap graph={graph} screenshotBasePath="" />
+      <NavMap
+        graph={graph}
+        screenshotBasePath=""
+        defaultViewMode="hierarchy"
+        defaultEdgeMode="smooth"
+        onValidationError={errors => {
+          console.warn('NavMap validation:', errors);
+        }}
+      />
     </main>
   );
 }

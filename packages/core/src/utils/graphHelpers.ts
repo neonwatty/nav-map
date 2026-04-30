@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/react';
-import type { NavMapGraph, NavMapNode, NavMapEdge, NavMapGroup } from '../types';
+import type { NavMapGraph, NavMapNode, NavMapEdge, NavMapGroup, CoverageData } from '../types';
 import type { GroupNodeData } from '../components/nodes/GroupNode';
 
 export interface RFNodeData {
@@ -9,6 +9,7 @@ export interface RFNodeData {
   screenshot?: string;
   filePath?: string;
   metadata?: Record<string, unknown>;
+  coverage?: CoverageData;
   [key: string]: unknown;
 }
 
@@ -57,6 +58,7 @@ export function buildCompoundNodes(nodes: NavMapNode[], groups: NavMapGroup[]): 
         screenshot: n.screenshot,
         filePath: n.filePath,
         metadata: n.metadata,
+        coverage: n.coverage,
       } satisfies RFNodeData,
     });
   }
@@ -77,6 +79,7 @@ export function toReactFlowNodes(nodes: NavMapNode[]): Node<RFNodeData>[] {
       screenshot: n.screenshot,
       filePath: n.filePath,
       metadata: n.metadata,
+      coverage: n.coverage,
     },
   }));
 }
@@ -90,6 +93,7 @@ export function toReactFlowEdges(edges: NavMapEdge[]): Edge[] {
     data: {
       label: e.label,
       edgeType: e.type,
+      discovery: e.discovery,
     },
   }));
 }

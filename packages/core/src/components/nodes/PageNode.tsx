@@ -2,16 +2,20 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
 
 function PageNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
-  const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
+  const { isDark, getGroupColors, screenshotBasePath, showCoverage } = useNavMapContext();
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
     ? `${screenshotBasePath}/${nodeData.screenshot}`
     : undefined;
+
+  const coverageStatus = showCoverage ? nodeData.coverage?.status : undefined;
+  const coverageBorderColor = getCoverageBorderColor(coverageStatus);
 
   return (
     <div
@@ -19,7 +23,7 @@ function PageNodeComponent({ data, selected }: NodeProps) {
         width: 180,
         borderRadius: 8,
         position: 'relative' as const,
-        border: `2px solid ${selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8'}`,
+        border: `2px solid ${coverageBorderColor ?? (selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8')}`,
         background: isDark ? '#14141e' : '#fff',
         overflow: 'visible',
         cursor: 'pointer',
@@ -110,6 +114,7 @@ function PageNodeComponent({ data, selected }: NodeProps) {
               &#x1F512;
             </span>
           )}
+          {coverageStatus && <CoverageBadge status={coverageStatus} />}
         </div>
         <div
           style={{

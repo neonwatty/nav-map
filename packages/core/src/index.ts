@@ -17,11 +17,28 @@ export { ExportButton } from './components/panels/ExportButton';
 export { GroupNode } from './components/nodes/GroupNode';
 export { PresentationBar } from './components/panels/PresentationBar';
 export { AnalyticsOverlay } from './components/panels/AnalyticsOverlay';
+export { CoverageSummary } from './components/panels/CoverageSummary';
+export { RouteHealthPanel } from './components/panels/RouteHealthPanel';
+export { CoverageBadge, getCoverageBorderColor } from './components/nodes/CoverageBadge';
+
+// Error handling
+export { NavMapErrorBoundary } from './components/NavMapErrorBoundary';
+export { ContainerWarning } from './components/ContainerWarning';
 
 // Analytics
 export { PostHogAnalytics } from './analytics/posthog';
 export { StaticAnalytics, RestAnalytics } from './analytics/generic';
 export type { AnalyticsAdapter, NavMapAnalytics as AnalyticsData } from './analytics/types';
+
+// Validation
+export { validateGraph } from './utils/validateGraph';
+export type { GraphValidationResult, GraphValidationError } from './utils/validateGraph';
+export { analyzeRouteHealth, formatRouteHealthReport } from './utils/routeHealth';
+export type {
+  RouteHealthIssue,
+  RouteHealthIssueType,
+  RouteHealthSummary,
+} from './utils/routeHealth';
 
 // Hooks
 export { useNavMapContext, NavMapContext } from './hooks/useNavMap';
@@ -30,6 +47,7 @@ export { useWalkthrough } from './hooks/useWalkthrough';
 export type { WalkthroughState } from './hooks/useWalkthrough';
 export { useSemanticZoom } from './hooks/useSemanticZoom';
 export { useSearch } from './hooks/useSearch';
+export type { SearchResult } from './hooks/useSearch';
 
 // Layout
 export { computeElkLayout } from './layout/elkLayout';
@@ -62,4 +80,8 @@ export type {
   NavMapFlowGallery,
   ViewMode,
   EdgeMode,
+  NavMapTheme,
+  CoverageData,
+  CoverageTestRef,
+  TestStatus,
 } from './types';
