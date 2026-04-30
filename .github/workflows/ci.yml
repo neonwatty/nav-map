@@ -47,8 +47,25 @@ jobs:
       - name: Build demo
         run: pnpm --filter demo build
 
+  scanner-browser-crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @neonwatty/nav-map-scanner exec playwright install --with-deps chromium
+      - name: Run browser crawl tests
+        env:
+          NAV_MAP_BROWSER_TESTS: '1'
+        run: pnpm --filter @neonwatty/nav-map-scanner test -- crawl-browser
+
   release:
-    needs: [quality-checks, build]
+    needs: [quality-checks, build, scanner-browser-crawl]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
