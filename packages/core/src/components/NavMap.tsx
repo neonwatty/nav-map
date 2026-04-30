@@ -30,6 +30,7 @@ import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import type { RouteHealthIssue } from '../utils/routeHealth';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { computeBundledEdges } from '../layout/edgeBundling';
@@ -142,6 +143,7 @@ function NavMapInner({
     'nav-map:show-route-health',
     false
   );
+  const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
@@ -620,6 +622,15 @@ function NavMapInner({
     return ids.size > 0 ? ids : null;
   }, [showSearch, searchQuery, graph]);
 
+  const auditFocusNodeIds = useMemo(
+    () => (auditFocus ? new Set(auditFocus.nodeIds) : null),
+    [auditFocus]
+  );
+
+  const handleAuditIssueFocus = useCallback((issue: RouteHealthIssue) => {
+    setAuditFocus({ label: issue.title, nodeIds: issue.nodeIds });
+  }, []);
+
   const hasCoverageData = useMemo(
     () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
     [graph]
@@ -638,6 +649,7 @@ function NavMapInner({
     nodeGroupMap,
     showRedirects,
     searchMatchIds,
+    auditFocusNodeIds,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -714,6 +726,7 @@ function NavMapInner({
               onFlowSelect={idx => {
                 setSelectedFlowIndex(idx);
                 setFocusedGroupId(null);
+                setAuditFocus(null);
               }}
               onResetView={() => {
                 setFocusedGroupId(null);
@@ -740,8 +753,10 @@ function NavMapInner({
             selectedFlowIndex={selectedFlowIndex}
             treeRootId={treeRootId}
             focusedGroupId={focusedGroupId}
+            auditFocusLabel={auditFocus?.label ?? null}
             graph={graph}
             onClearFocus={() => setFocusedGroupId(null)}
+            onClearAuditFocus={() => setAuditFocus(null)}
           />
 
           {/* Walkthrough breadcrumb */}
@@ -824,6 +839,7 @@ function NavMapInner({
               isDark={ctx.isDark}
               onClose={() => setShowRouteHealth(false)}
               onNavigate={navigateToNode}
+              onIssueFocus={handleAuditIssueFocus}
             />
           )}
 

@@ -36,6 +36,7 @@ const baseDeps = {
   nodeGroupMap: new Map<string, string>(),
   showRedirects: true,
   searchMatchIds: null,
+  auditFocusNodeIds: null,
 };
 
 describe('useGraphStyling', () => {
@@ -211,6 +212,58 @@ describe('useGraphStyling', () => {
       result.current.styledNodes.forEach(node => {
         expect(node.style?.opacity).toBeUndefined();
       });
+    });
+  });
+
+  describe('audit focus highlighting', () => {
+    const nodes: Node[] = [
+      makeNode('home', 'marketing'),
+      makeNode('settings', 'app'),
+      makeNode('billing', 'app'),
+    ];
+    const edges: Edge[] = [
+      makeEdge('e1', 'settings', 'billing', 'redirect'),
+      makeEdge('e2', 'home', 'settings', 'link'),
+    ];
+
+    it('highlights focused audit nodes and dims unrelated nodes', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          auditFocusNodeIds: new Set(['settings', 'billing']),
+        })
+      );
+
+      const settings = result.current.styledNodes.find(n => n.id === 'settings');
+      const billing = result.current.styledNodes.find(n => n.id === 'billing');
+      const home = result.current.styledNodes.find(n => n.id === 'home');
+
+      expect(settings?.style?.opacity).toBe(1);
+      expect(billing?.style?.opacity).toBe(1);
+      expect(home?.style?.opacity).toBe(0.18);
+      expect(settings?.style?.filter).toContain('drop-shadow');
+    });
+
+    it('highlights edges fully contained in the focused audit nodes', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          auditFocusNodeIds: new Set(['settings', 'billing']),
+        })
+      );
+
+      const redirectEdge = result.current.styledEdges.find(edge => edge.id === 'e1');
+      const inboundEdge = result.current.styledEdges.find(edge => edge.id === 'e2');
+
+      expect(redirectEdge?.style?.opacity).toBe(1);
+      expect(redirectEdge?.style?.stroke).toBe('#ef4444');
+      expect(inboundEdge?.style?.opacity).toBe(0.08);
     });
   });
 });
