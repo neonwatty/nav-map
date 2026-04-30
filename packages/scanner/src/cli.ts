@@ -6,8 +6,10 @@ import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
 import { formatConfigErrors, formatConfigSummary, loadAndValidateConfig } from './config-report.js';
 import {
+  formatActionableCrawlDiagnostics,
   formatCrawlDiagnostics,
   hasCrawlDiagnosticIssues,
+  loadCrawlDiagnosticsFile,
   writeCrawlDiagnosticsReport,
 } from './diagnostics-report.js';
 import { runGenerate, shouldFailGenerateDiagnostics } from './modes/generate.js';
@@ -270,6 +272,21 @@ program
       console.log(formatConfigSummary(result.config!, opts.config));
     } catch (err) {
       console.error('Config check failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('diagnostics')
+  .description('Inspect crawl diagnostics from nav-map.json or a diagnostics sidecar')
+  .argument('<file>', 'Path to nav-map.json or diagnostics JSON')
+  .option('--json', 'Print machine-readable JSON output')
+  .action((file: string, opts) => {
+    try {
+      const inspection = loadCrawlDiagnosticsFile(file);
+      console.log(formatActionableCrawlDiagnostics(inspection, { json: opts.json }));
+    } catch (err) {
+      console.error('Diagnostics failed:', err instanceof Error ? err.message : err);
       process.exit(1);
     }
   });
