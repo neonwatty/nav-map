@@ -153,6 +153,7 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `record-flows <dir>` | Record user flows from Playwright test specs |
 | `generate` | Load `nav-map.config.json`, optionally log in, crawl, and write output |
 | `check-config` | Validate `nav-map.config.json` without launching a browser |
+| `diagnostics <file>` | Inspect crawl diagnostics from `nav-map.json` or diagnostics JSON |
 
 ### `scan` options
 
@@ -206,6 +207,13 @@ npx @neonwatty/nav-map-scanner check-config -c nav-map.config.json
 ```
 
 Use `--fail-on-diagnostics` with `crawl` in CI when partial crawls should fail the job. For `generate`, set `"failOnDiagnostics": true` in config or pass `--fail-on-diagnostics`; pair it with `diagnosticsOutput` or `--diagnostics-output .nav-map/diagnostics.json` when CI should also archive crawl failure details.
+
+Inspect archived diagnostics in CI logs or locally:
+
+```bash
+npx @neonwatty/nav-map-scanner diagnostics .nav-map/diagnostics.json
+npx @neonwatty/nav-map-scanner diagnostics public/nav-map.json --json
+```
 
 ### `auth` — Capture auth state
 
