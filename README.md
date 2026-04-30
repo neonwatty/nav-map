@@ -152,6 +152,7 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `record <dir>` | Record navigation with Playwright |
 | `record-flows <dir>` | Record user flows from Playwright test specs |
 | `generate` | Load `nav-map.config.json`, optionally log in, crawl, and write output |
+| `check-config` | Validate `nav-map.config.json` without launching a browser |
 
 ### `scan` options
 
@@ -190,6 +191,12 @@ npx @neonwatty/nav-map-scanner <command> [options]
   "includeInteraction": ["settings", "profile"],
   "excludeInteraction": ["delete", "logout"]
 }
+```
+
+Validate config without launching Playwright:
+
+```bash
+npx @neonwatty/nav-map-scanner check-config -c nav-map.config.json
 ```
 
 ### `auth` — Capture auth state
