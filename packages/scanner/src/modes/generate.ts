@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { ResolvedConfig } from '../config.js';
 import { crawlUrl } from './crawl.js';
-import type { CrawlOptions } from './crawl.js';
+import type { CrawlDiagnostics, CrawlOptions } from './crawl.js';
 import { autoLogin, closeBrowser } from './auto-auth.js';
 
 export interface GenerateResult {
@@ -10,6 +10,7 @@ export interface GenerateResult {
   nodeCount: number;
   edgeCount: number;
   groupCount: number;
+  diagnostics?: CrawlDiagnostics;
 }
 
 export interface GenerateOptions {
@@ -71,6 +72,7 @@ export async function runGenerate(
       nodeCount: graph.nodes.length,
       edgeCount: graph.edges.length,
       groupCount: graph.groups.length,
+      diagnostics: graph.meta.diagnostics,
     };
   } finally {
     if (context) {

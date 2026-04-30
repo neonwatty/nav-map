@@ -37,4 +37,9 @@ describe('generate', () => {
       excludeInteraction: ['delete'],
     });
   });
+
+  it('exports createCrawlOptions function', async () => {
+    const mod = await import('../modes/generate.js');
+    expect(typeof mod.createCrawlOptions).toBe('function');
+  });
 });

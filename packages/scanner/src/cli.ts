@@ -5,6 +5,7 @@ import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
 import { formatConfigErrors, formatConfigSummary, loadAndValidateConfig } from './config-report.js';
+import { formatCrawlDiagnostics } from './diagnostics-report.js';
 import { runGenerate } from './modes/generate.js';
 import { startServer } from './modes/serve.js';
 import { runIngest } from './modes/ingest.js';
@@ -93,6 +94,8 @@ program
       console.log(`  Nodes: ${graph.nodes.length}`);
       console.log(`  Edges: ${graph.edges.length}`);
       console.log(`  Groups: ${graph.groups.length}`);
+      const diagnostics = formatCrawlDiagnostics(graph.meta.diagnostics);
+      if (diagnostics) console.log(`\n${diagnostics}`);
     } catch (err) {
       console.error('Crawl failed:', err);
       process.exit(1);
@@ -205,6 +208,8 @@ program
       console.log(`  Nodes: ${generated.nodeCount}`);
       console.log(`  Edges: ${generated.edgeCount}`);
       console.log(`  Groups: ${generated.groupCount}`);
+      const diagnostics = formatCrawlDiagnostics(generated.diagnostics);
+      if (diagnostics) console.log(`\n${diagnostics}`);
     } catch (err) {
       console.error('Generate failed:', err instanceof Error ? err.message : err);
       process.exit(1);
