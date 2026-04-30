@@ -1,0 +1,22 @@
+[
+  {
+    "href": "/docs/",
+    "text": "Docs",
+    "discovery": "static-link"
+  },
+  {
+    "href": "/app/settings",
+    "text": "Settings",
+    "discovery": "observed-interaction"
+  },
+  {
+    "href": "mailto:test@example.com",
+    "text": "Email",
+    "discovery": "observed-interaction"
+  },
+  {
+    "href": "https://external.example.com",
+    "text": "External",
+    "discovery": "static-link"
+  }
+]

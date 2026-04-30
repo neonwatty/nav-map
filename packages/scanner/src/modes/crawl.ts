@@ -44,16 +44,13 @@ export interface CrawlOptions {
   maxInteractionsPerPage?: number;
 }
 
-interface DiscoveredNavigation {
+export interface DiscoveredNavigation {
   href: string;
   text: string;
   discovery: 'static-link' | 'observed-interaction';
 }
 
-interface InteractiveCandidate {
-  id: string;
-  text: string;
-}
+type InteractiveCandidate = { id: string; text: string };
 
 export function normalizeUrl(raw: string): string {
   try {
@@ -98,6 +95,45 @@ export function shouldCrawlUrl(rawUrl: string, origin: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function resolveDiscoveredNavigations(
+  sourceId: string,
+  currentUrl: string,
+  origin: string,
+  navigations: DiscoveredNavigation[]
+): { normalizedUrl: string; edge: NavMapGraph['edges'][number] }[] {
+  const results: { normalizedUrl: string; edge: NavMapGraph['edges'][number] }[] = [];
+
+  for (const navigation of navigations) {
+    let linkUrl: URL;
+    try {
+      linkUrl = new URL(navigation.href, currentUrl);
+    } catch {
+      continue;
+    }
+
+    if (!shouldCrawlUrl(linkUrl.toString(), origin)) continue;
+
+    const normalizedUrl = normalizeUrl(linkUrl.toString());
+    const targetPathname = new URL(normalizedUrl).pathname;
+    const targetId = pathToId(targetPathname);
+    if (sourceId === targetId) continue;
+
+    results.push({
+      normalizedUrl,
+      edge: {
+        id: createEdgeId(sourceId, targetId, navigation.discovery),
+        source: sourceId,
+        target: targetId,
+        label: navigation.text || undefined,
+        type: navigation.discovery === 'observed-interaction' ? 'router-push' : 'link',
+        discovery: navigation.discovery,
+      },
+    });
+  }
+
+  return results;
 }
 
 export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
@@ -147,7 +183,6 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
       const nodeId = pathToId(pathname);
       const groupId = groupFromPath(pathname);
 
-      // Take screenshot if screenshotDir provided
       let screenshotPath: string | undefined;
       if (screenshotDir) {
         const filename = nodeId === 'index' ? 'index.png' : `${nodeId}.png`;
@@ -159,7 +194,6 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         }
       }
 
-      // Add node
       if (!nodesMap.has(nodeId)) {
         nodesMap.set(nodeId, {
           id: nodeId,
@@ -170,7 +204,6 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         });
       }
 
-      // Add group
       if (!groupsSet.has(groupId)) {
         groupsSet.set(groupId, {
           id: groupId,
@@ -197,36 +230,18 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         );
       }
 
-      for (const link of navigations) {
-        let linkUrl: URL;
-        try {
-          linkUrl = new URL(link.href, currentUrl);
-        } catch {
-          continue;
+      for (const { normalizedUrl, edge } of resolveDiscoveredNavigations(
+        nodeId,
+        currentUrl,
+        origin,
+        navigations
+      )) {
+        if (!edgesMap.has(edge.id)) {
+          edgesMap.set(edge.id, edge);
         }
 
-        // Same-origin only
-        if (!shouldCrawlUrl(linkUrl.toString(), origin)) continue;
-
-        const normalized = normalizeUrl(linkUrl.toString());
-        const targetPathname = new URL(normalized).pathname;
-        const targetId = pathToId(targetPathname);
-        const edgeId = createEdgeId(nodeId, targetId, link.discovery);
-
-        if (!edgesMap.has(edgeId) && nodeId !== targetId) {
-          edgesMap.set(edgeId, {
-            id: edgeId,
-            source: nodeId,
-            target: targetId,
-            label: link.text || undefined,
-            type: link.discovery === 'observed-interaction' ? 'router-push' : 'link',
-            discovery: link.discovery,
-          });
-        }
-
-        // Enqueue unseen URLs
-        if (!visited.has(normalized) && !queue.includes(normalized)) {
-          queue.push(normalized);
+        if (!visited.has(normalizedUrl) && !queue.includes(normalizedUrl)) {
+          queue.push(normalizedUrl);
         }
       }
 
@@ -271,10 +286,9 @@ async function discoverInteractiveNavigations(
       await page.waitForLoadState('networkidle', { timeout: 2_000 }).catch(() => undefined);
       await page.waitForTimeout(150);
 
-      const nextUrl = normalizeUrl(page.url());
-      if (nextUrl !== normalizeUrl(currentUrl)) {
+      if (normalizeUrl(page.url()) !== normalizeUrl(currentUrl)) {
         results.push({
-          href: nextUrl,
+          href: normalizeUrl(page.url()),
           text: candidate.text,
           discovery: 'observed-interaction',
         });
@@ -305,7 +319,7 @@ async function markInteractiveCandidates(
       '[onclick]',
     ].join(',');
 
-    return Array.from(document.querySelectorAll<HTMLElement>(selector))
+    return Array.from(document.querySelectorAll(selector))
       .filter((element, index) => {
         if (element.closest('a[href]')) return false;
         if (element.hasAttribute('disabled')) return false;

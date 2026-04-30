@@ -4,8 +4,11 @@ import {
   groupFromPath,
   normalizeUrl,
   pathToId,
+  resolveDiscoveredNavigations,
   shouldCrawlUrl,
+  type DiscoveredNavigation,
 } from '../modes/crawl.js';
+import fixtureNavigations from './fixtures/dynamic-crawl-navigations.json' with { type: 'json' };
 
 describe('crawl helpers', () => {
   it('normalizes hashes and trailing slashes', () => {
@@ -33,5 +36,33 @@ describe('crawl helpers', () => {
     expect(shouldCrawlUrl('https://example.com/docs', 'https://example.com')).toBe(true);
     expect(shouldCrawlUrl('https://other.com/docs', 'https://example.com')).toBe(false);
     expect(shouldCrawlUrl('mailto:test@example.com', 'https://example.com')).toBe(false);
+  });
+
+  it('resolves fixture navigations into static and observed edges', () => {
+    const resolved = resolveDiscoveredNavigations(
+      'index',
+      'https://example.com/',
+      'https://example.com',
+      fixtureNavigations as DiscoveredNavigation[]
+    );
+
+    expect(resolved.map(item => item.normalizedUrl)).toEqual([
+      'https://example.com/docs',
+      'https://example.com/app/settings',
+    ]);
+    expect(resolved.map(item => item.edge)).toEqual([
+      expect.objectContaining({
+        id: 'index->docs:static-link',
+        target: 'docs',
+        type: 'link',
+        discovery: 'static-link',
+      }),
+      expect.objectContaining({
+        id: 'index->app-settings:observed-interaction',
+        target: 'app-settings',
+        type: 'router-push',
+        discovery: 'observed-interaction',
+      }),
+    ]);
   });
 });
