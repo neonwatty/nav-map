@@ -71,6 +71,19 @@ describe('validateConfig', () => {
     expect(errors).toContain('maxPages must be a positive integer');
   });
 
+  it('returns error when optional string fields are blank or non-strings', () => {
+    const config = {
+      url: 'https://example.com',
+      name: '',
+      output: 123,
+      screenshotDir: '   ',
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('name must be a non-empty string');
+    expect(errors).toContain('output must be a non-empty string');
+    expect(errors).toContain('screenshotDir must be a non-empty string');
+  });
+
   it('returns error when interaction config has invalid types', () => {
     const config = {
       url: 'https://example.com',
@@ -84,6 +97,49 @@ describe('validateConfig', () => {
     expect(errors).toContain('maxInteractionsPerPage must be a positive integer');
     expect(errors).toContain('includeInteraction must be an array of strings');
     expect(errors).toContain('excludeInteraction must be an array of strings');
+  });
+
+  it('returns error when auth loginUrl is invalid', () => {
+    const config = {
+      url: 'https://example.com',
+      auth: { email: 'a@b.com', password: 'secret', loginUrl: 'ftp://example.com/login' },
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('auth.loginUrl must use http or https protocol');
+  });
+
+  it('returns error when auth credentials are blank or non-strings', () => {
+    const config = {
+      url: 'https://example.com',
+      auth: { email: '', password: 123 },
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('auth.email is required when auth.password is provided');
+    expect(errors).toContain('auth.email must be a non-empty string');
+    expect(errors).toContain('auth.password must be a non-empty string');
+  });
+
+  it('returns error when auth selectors are malformed', () => {
+    const config = {
+      url: 'https://example.com',
+      auth: {
+        email: 'a@b.com',
+        password: 'secret',
+        selectors: { email: '#email', password: '', submit: 123 },
+      },
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('auth.selectors.password must be a non-empty string');
+    expect(errors).toContain('auth.selectors.submit must be a non-empty string');
+  });
+
+  it('returns error when auth selectors are not an object', () => {
+    const config = {
+      url: 'https://example.com',
+      auth: { email: 'a@b.com', password: 'secret', selectors: [] },
+    };
+    const errors = validateConfig(config);
+    expect(errors).toContain('auth.selectors must be an object');
   });
 });
 
