@@ -151,6 +151,7 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `auth <url>` | Capture authentication state for protected pages |
 | `record <dir>` | Record navigation with Playwright |
 | `record-flows <dir>` | Record user flows from Playwright test specs |
+| `generate` | Load `nav-map.config.json`, optionally log in, crawl, and write output |
 
 ### `scan` options
 
@@ -175,6 +176,21 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `--max-interactions <n>` | Maximum click candidates to try per page | `20` |
 | `--include-interaction <pattern...>` | Only click interactions matching these labels | — |
 | `--exclude-interaction <pattern...>` | Skip interactions matching these labels | — |
+
+### `generate` config
+
+`generate` reads `nav-map.config.json` by default. These crawl interaction settings are equivalent to the `crawl` CLI flags:
+
+```json
+{
+  "url": "https://myapp.com",
+  "output": "nav-map.json",
+  "interactions": true,
+  "maxInteractionsPerPage": 20,
+  "includeInteraction": ["settings", "profile"],
+  "excludeInteraction": ["delete", "logout"]
+}
+```
 
 ### `auth` — Capture auth state
 

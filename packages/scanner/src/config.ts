@@ -20,6 +20,10 @@ export interface NavMapConfig {
   maxPages?: number;
   output?: string;
   screenshotDir?: string;
+  interactions?: boolean;
+  maxInteractionsPerPage?: number;
+  includeInteraction?: string[];
+  excludeInteraction?: string[];
   auth?: NavMapAuthConfig;
 }
 
@@ -29,6 +33,10 @@ export interface ResolvedConfig {
   maxPages: number;
   output: string;
   screenshotDir: string;
+  interactions: boolean;
+  maxInteractionsPerPage: number;
+  includeInteraction: string[];
+  excludeInteraction: string[];
   auth?: NavMapAuthConfig & { loginUrl: string; selectors: NavMapAuthSelectors };
 }
 
@@ -62,6 +70,19 @@ export function validateConfig(config: any): string[] {
     }
   }
 
+  if (config.interactions !== undefined && typeof config.interactions !== 'boolean') {
+    errors.push('interactions must be a boolean');
+  }
+
+  if (config.maxInteractionsPerPage !== undefined) {
+    if (!Number.isInteger(config.maxInteractionsPerPage) || config.maxInteractionsPerPage < 1) {
+      errors.push('maxInteractionsPerPage must be a positive integer');
+    }
+  }
+
+  validateStringArray(config.includeInteraction, 'includeInteraction', errors);
+  validateStringArray(config.excludeInteraction, 'excludeInteraction', errors);
+
   if (config.auth) {
     if (!config.auth.email && !config.auth.password) {
       errors.push('auth.email and auth.password are both required when auth is provided');
@@ -75,6 +96,14 @@ export function validateConfig(config: any): string[] {
   return errors;
 }
 
+function validateStringArray(value: unknown, fieldName: string, errors: string[]): void {
+  if (value === undefined) return;
+
+  if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
+    errors.push(`${fieldName} must be an array of strings`);
+  }
+}
+
 export function applyDefaults(config: NavMapConfig): ResolvedConfig {
   const hostname = new URL(config.url).hostname;
 
@@ -84,6 +113,10 @@ export function applyDefaults(config: NavMapConfig): ResolvedConfig {
     maxPages: config.maxPages ?? 50,
     output: config.output ?? 'nav-map.json',
     screenshotDir: config.screenshotDir ?? 'nav-screenshots',
+    interactions: config.interactions ?? true,
+    maxInteractionsPerPage: config.maxInteractionsPerPage ?? 20,
+    includeInteraction: config.includeInteraction ?? [],
+    excludeInteraction: config.excludeInteraction ?? [],
   };
 
   if (config.auth) {
