@@ -178,6 +178,8 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `--include-interaction <pattern...>` | Only click interactions matching these labels | — |
 | `--exclude-interaction <pattern...>` | Skip interactions matching these labels | — |
 
+`crawl` and `generate` include crawl diagnostics in `graph.meta.diagnostics.crawl`, including attempted page count, successful page count, failed page loads, screenshot failures, and whether the page limit was reached.
+
 ### `generate` config
 
 `generate` reads `nav-map.config.json` by default. These crawl interaction settings are equivalent to the `crawl` CLI flags:

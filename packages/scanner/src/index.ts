@@ -1,7 +1,12 @@
 export { scanRepo } from './modes/repo.js';
 export type { ScanOptions } from './modes/repo.js';
 export { crawlUrl } from './modes/crawl.js';
-export type { CrawlOptions } from './modes/crawl.js';
+export type {
+  CrawlDiagnostics,
+  CrawlFailure,
+  CrawlOptions,
+  ScreenshotFailure,
+} from './modes/crawl.js';
 export { parseNextjsLinks } from './parsers/nextjs.js';
 export { parseHtmlLinks } from './parsers/generic.js';
 export { parseSitemap } from './parsers/sitemap.js';

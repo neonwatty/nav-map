@@ -79,6 +79,15 @@ export interface NavMapGraph {
     generatedAt: string;
     generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record' | 'merged';
     framework?: 'nextjs-app' | 'nextjs-pages' | 'generic';
+    diagnostics?: {
+      crawl?: {
+        attemptedPages: number;
+        successfulPages: number;
+        failedPages: Array<{ url: string; reason: string }>;
+        screenshotFailures: Array<{ url: string; path: string; reason: string }>;
+        maxPagesReached: boolean;
+      };
+    };
   };
   nodes: NavMapNode[];
   edges: NavMapEdge[];

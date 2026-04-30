@@ -10,6 +10,7 @@ interface NavMapGraph {
     generatedAt: string;
     generatedBy: 'repo-scan' | 'url-crawl' | 'manual';
     framework?: string;
+    diagnostics?: CrawlDiagnostics;
   };
   nodes: {
     id: string;
@@ -33,6 +34,27 @@ interface NavMapGraph {
     color?: string;
     routePrefix?: string;
   }[];
+}
+
+export interface CrawlDiagnostics {
+  crawl: {
+    attemptedPages: number;
+    successfulPages: number;
+    failedPages: CrawlFailure[];
+    screenshotFailures: ScreenshotFailure[];
+    maxPagesReached: boolean;
+  };
+}
+
+export interface CrawlFailure {
+  url: string;
+  reason: string;
+}
+
+export interface ScreenshotFailure {
+  url: string;
+  path: string;
+  reason: string;
 }
 
 export interface CrawlOptions {
@@ -161,6 +183,8 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   const nodesMap = new Map<string, NavMapGraph['nodes'][number]>();
   const edgesMap = new Map<string, NavMapGraph['edges'][number]>();
   const groupsSet = new Map<string, NavMapGraph['groups'][number]>();
+  const failedPages: CrawlFailure[] = [];
+  const screenshotFailures: ScreenshotFailure[] = [];
 
   const externalContext = options.context;
   const browser = externalContext ? null : await chromium.launch({ headless: true });
@@ -175,7 +199,8 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
       const page = await context.newPage();
       try {
         await page.goto(currentUrl, { waitUntil: 'networkidle', timeout: 30_000 });
-      } catch {
+      } catch (error) {
+        failedPages.push({ url: currentUrl, reason: errorMessage(error) });
         await page.close();
         continue;
       }
@@ -192,7 +217,12 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
         screenshotPath = `${screenshotDir}/${filename}`;
         try {
           await page.screenshot({ path: screenshotPath, fullPage: false });
-        } catch {
+        } catch (error) {
+          screenshotFailures.push({
+            url: currentUrl,
+            path: screenshotPath,
+            reason: errorMessage(error),
+          });
           screenshotPath = undefined;
         }
       }
@@ -266,6 +296,15 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
       baseUrl: origin,
       generatedAt: new Date().toISOString(),
       generatedBy: 'url-crawl',
+      diagnostics: {
+        crawl: {
+          attemptedPages: visited.size,
+          successfulPages: nodesMap.size,
+          failedPages,
+          screenshotFailures,
+          maxPagesReached: queue.length > 0 && visited.size >= maxPages,
+        },
+      },
     },
     nodes: Array.from(nodesMap.values()),
     edges: Array.from(edgesMap.values()),
@@ -273,4 +312,8 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
   };
 
   return graph;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
