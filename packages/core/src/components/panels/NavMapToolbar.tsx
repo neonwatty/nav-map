@@ -17,6 +17,7 @@ interface NavMapToolbarProps {
   edgeMode: EdgeMode;
   isAnimatingFlow: boolean;
   showAnalytics: boolean;
+  showRouteHealth: boolean;
   analyticsAdapter?: AnalyticsAdapter;
   onViewModeChange: (mode: ViewMode) => void;
   onFlowSelect: (index: number | null) => void;
@@ -27,6 +28,7 @@ interface NavMapToolbarProps {
   onEdgeModeChange: (mode: EdgeMode) => void;
   onAnimate: () => void;
   onToggleAnalytics: () => void;
+  onToggleRouteHealth: () => void;
   onSearch: () => void;
   onHelp: () => void;
   showCoverage: boolean;
@@ -44,6 +46,7 @@ export function NavMapToolbar({
   edgeMode,
   isAnimatingFlow,
   showAnalytics,
+  showRouteHealth,
   analyticsAdapter,
   onViewModeChange,
   onFlowSelect,
@@ -54,6 +57,7 @@ export function NavMapToolbar({
   onEdgeModeChange,
   onAnimate,
   onToggleAnalytics,
+  onToggleRouteHealth,
   onSearch,
   onHelp,
   showCoverage,
@@ -210,6 +214,14 @@ export function NavMapToolbar({
         </button>
       )}
 
+      <button
+        onClick={onToggleRouteHealth}
+        style={btnStyle(isDark, showRouteHealth)}
+        title="Show route health audit"
+      >
+        Audit
+      </button>
+
       <button onClick={onSearch} style={btnStyle(isDark)} title="Search (/ or ⌘K)">
         Search
       </button>
@@ -249,6 +261,15 @@ export function NavMapToolbar({
                 }}
               />
             )}
+            <PanelRow
+              isDark={isDark}
+              label="Route Health"
+              active={showRouteHealth}
+              onClick={() => {
+                onToggleRouteHealth();
+                setShowMoreMenu(false);
+              }}
+            />
             <PanelRow
               isDark={isDark}
               label="Help"
