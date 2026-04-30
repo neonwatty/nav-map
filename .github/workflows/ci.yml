@@ -96,6 +96,16 @@ jobs:
             --screenshot-dir .nav-map/artifacts/screenshots \
             --max-pages 5 \
             --fail-on-diagnostics
+      - name: Print crawl diagnostics report
+        run: node packages/scanner/bin/nav-map.js diagnostics .nav-map/artifacts/diagnostics.json
+      - name: Print failed crawl diagnostics report
+        if: failure()
+        run: |
+          if [ -f .nav-map/artifacts/diagnostics.json ]; then
+            node packages/scanner/bin/nav-map.js diagnostics .nav-map/artifacts/diagnostics.json
+          else
+            echo "No crawl diagnostics artifact was written before failure."
+          fi
       - name: Upload crawl diagnostics artifacts
         if: always()
         uses: actions/upload-artifact@v4
