@@ -65,6 +65,74 @@ describe('validateGraph', () => {
     expect(result.valid).toBe(false);
   });
 
+  it('rejects invalid meta enum values', () => {
+    const result = validateGraph({
+      ...validGraph,
+      meta: { ...validGraph.meta, generatedBy: 'unknown', framework: 'rails' },
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'meta.generatedBy' }),
+        expect.objectContaining({ field: 'meta.framework' }),
+      ])
+    );
+  });
+
+  it('rejects duplicate node, edge, and group ids', () => {
+    const result = validateGraph({
+      ...validGraph,
+      nodes: [
+        { id: 'n1', route: '/', label: 'Home', group: 'main' },
+        { id: 'n1', route: '/other', label: 'Other', group: 'main' },
+      ],
+      edges: [
+        { id: 'e1', source: 'n1', target: 'n1', type: 'link' },
+        { id: 'e1', source: 'n1', target: 'n1', type: 'link' },
+      ],
+      groups: [
+        { id: 'main', label: 'Main' },
+        { id: 'main', label: 'Duplicate Main' },
+      ],
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ message: 'Duplicate node id "n1"' }),
+        expect.objectContaining({ message: 'Duplicate edge id "e1"' }),
+        expect.objectContaining({ message: 'Duplicate group id "main"' }),
+      ])
+    );
+  });
+
+  it('rejects invalid edge type and discovery values', () => {
+    const result = validateGraph({
+      ...validGraph,
+      edges: [{ id: 'e1', source: 'n1', target: 'n1', type: 'magic', discovery: 'crawler' }],
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'edges.type' }),
+        expect.objectContaining({ field: 'edges.discovery' }),
+      ])
+    );
+  });
+
+  it('rejects nodes with relative routes or missing groups', () => {
+    const result = validateGraph({
+      ...validGraph,
+      nodes: [{ id: 'n1', route: 'relative', label: 'Home', group: 'missing' }],
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'nodes.route' }),
+        expect.objectContaining({ field: 'nodes.group' }),
+      ])
+    );
+  });
+
   it('collects multiple errors', () => {
     const result = validateGraph({ version: '2.0' } as never);
     expect(result.errors.length).toBeGreaterThan(1);
