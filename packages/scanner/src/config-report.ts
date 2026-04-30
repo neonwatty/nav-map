@@ -32,6 +32,7 @@ export function formatConfigSummary(config: ResolvedConfig, configPath: string):
     `Config OK: ${configPath}`,
     `  URL: ${config.url}`,
     `  Output: ${config.output}`,
+    `  Diagnostics output: ${config.diagnosticsOutput ?? 'disabled'}`,
     `  Max pages: ${config.maxPages}`,
     `  Interactions: ${config.interactions ? 'enabled' : 'disabled'}`,
     `  Max interactions/page: ${config.maxInteractionsPerPage}`,

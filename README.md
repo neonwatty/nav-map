@@ -190,6 +190,7 @@ npx @neonwatty/nav-map-scanner <command> [options]
 {
   "url": "https://myapp.com",
   "output": "nav-map.json",
+  "diagnosticsOutput": ".nav-map/diagnostics.json",
   "interactions": true,
   "maxInteractionsPerPage": 20,
   "includeInteraction": ["settings", "profile"],

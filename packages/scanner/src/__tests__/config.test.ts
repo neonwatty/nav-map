@@ -76,11 +76,13 @@ describe('validateConfig', () => {
       url: 'https://example.com',
       name: '',
       output: 123,
+      diagnosticsOutput: '   ',
       screenshotDir: '   ',
     };
     const errors = validateConfig(config);
     expect(errors).toContain('name must be a non-empty string');
     expect(errors).toContain('output must be a non-empty string');
+    expect(errors).toContain('diagnosticsOutput must be a non-empty string');
     expect(errors).toContain('screenshotDir must be a non-empty string');
   });
 
@@ -150,6 +152,7 @@ describe('applyDefaults', () => {
     expect(result.name).toBe('my-app.example.com');
     expect(result.maxPages).toBe(50);
     expect(result.output).toBe('nav-map.json');
+    expect(result.diagnosticsOutput).toBeUndefined();
     expect(result.screenshotDir).toBe('nav-screenshots');
     expect(result.interactions).toBe(true);
     expect(result.maxInteractionsPerPage).toBe(20);
@@ -163,6 +166,7 @@ describe('applyDefaults', () => {
       name: 'My App',
       maxPages: 20,
       output: 'custom.json',
+      diagnosticsOutput: '.nav-map/diagnostics.json',
       interactions: false,
       maxInteractionsPerPage: 5,
       includeInteraction: ['settings'],
@@ -172,6 +176,7 @@ describe('applyDefaults', () => {
     expect(result.name).toBe('My App');
     expect(result.maxPages).toBe(20);
     expect(result.output).toBe('custom.json');
+    expect(result.diagnosticsOutput).toBe('.nav-map/diagnostics.json');
     expect(result.interactions).toBe(false);
     expect(result.maxInteractionsPerPage).toBe(5);
     expect(result.includeInteraction).toEqual(['settings']);
