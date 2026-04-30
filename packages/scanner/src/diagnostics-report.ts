@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import type { CrawlDiagnostics } from './modes/crawl.js';
 
 export function formatCrawlDiagnostics(diagnostics?: CrawlDiagnostics): string | null {
@@ -30,4 +32,15 @@ export function hasCrawlDiagnosticIssues(diagnostics?: CrawlDiagnostics): boolea
   return (
     crawl.failedPages.length > 0 || crawl.screenshotFailures.length > 0 || crawl.maxPagesReached
   );
+}
+
+export function writeCrawlDiagnosticsReport(
+  diagnostics: CrawlDiagnostics | undefined,
+  outputPath: string
+): string {
+  const resolvedPath = path.resolve(outputPath);
+  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+  fs.writeFileSync(resolvedPath, JSON.stringify(diagnostics ?? null, null, 2));
+
+  return resolvedPath;
 }

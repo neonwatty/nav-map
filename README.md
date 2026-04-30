@@ -177,9 +177,10 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `--max-interactions <n>` | Maximum click candidates to try per page | `20` |
 | `--include-interaction <pattern...>` | Only click interactions matching these labels | — |
 | `--exclude-interaction <pattern...>` | Skip interactions matching these labels | — |
+| `--diagnostics-output <path>` | Write crawl diagnostics JSON sidecar | — |
 | `--fail-on-diagnostics` | Exit non-zero if crawl diagnostics contain failures or page-limit truncation | off |
 
-`crawl` and `generate` include crawl diagnostics in `graph.meta.diagnostics.crawl`, including attempted page count, successful page count, failed page loads, screenshot failures, and whether the page limit was reached.
+`crawl` and `generate` include crawl diagnostics in `graph.meta.diagnostics.crawl`, including attempted page count, successful page count, failed page loads, screenshot failures, and whether the page limit was reached. Use `--diagnostics-output <path>` to also write those diagnostics as a machine-readable JSON sidecar for CI artifacts.
 
 ### `generate` config
 
@@ -202,7 +203,7 @@ Validate config without launching Playwright:
 npx @neonwatty/nav-map-scanner check-config -c nav-map.config.json
 ```
 
-Use `--fail-on-diagnostics` with `crawl` or `generate` in CI when partial crawls should fail the job.
+Use `--fail-on-diagnostics` with `crawl` or `generate` in CI when partial crawls should fail the job. Pair it with `--diagnostics-output .nav-map/diagnostics.json` when CI should also archive crawl failure details.
 
 ### `auth` — Capture auth state
 
