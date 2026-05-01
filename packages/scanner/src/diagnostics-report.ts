@@ -33,7 +33,7 @@ export function formatCrawlDiagnostics(diagnostics?: CrawlDiagnostics): string |
 
 export function formatActionableCrawlDiagnostics(
   inspection: DiagnosticsInspection,
-  options: { json?: boolean } = {}
+  options: { json?: boolean; summary?: boolean } = {}
 ): string {
   const { diagnostics, inputPath, source } = inspection;
   const crawl = diagnostics?.crawl;
@@ -45,6 +45,13 @@ export function formatActionableCrawlDiagnostics(
         source,
         inputPath,
         hasIssues: issues,
+        summary: {
+          attemptedPages: crawl?.attemptedPages ?? 0,
+          successfulPages: crawl?.successfulPages ?? 0,
+          failedPageLoads: crawl?.failedPages.length ?? 0,
+          screenshotFailures: crawl?.screenshotFailures.length ?? 0,
+          maxPagesReached: crawl?.maxPagesReached ?? false,
+        },
         diagnostics: diagnostics ?? null,
         suggestions: buildCrawlDiagnosticSuggestions(diagnostics),
       },
@@ -63,6 +70,28 @@ export function formatActionableCrawlDiagnostics(
       '  - Re-run `nav-map crawl` or `nav-map generate` with diagnostics output enabled.',
       '  - For generated maps, inspect `graph.meta.diagnostics.crawl`.',
     ].join('\n');
+  }
+
+  if (options.summary) {
+    const suggestions = buildCrawlDiagnosticSuggestions(diagnostics);
+    const lines = [
+      'Crawl diagnostics summary',
+      `  Source: ${inputPath} (${source})`,
+      `  Status: ${issues ? 'issues found' : 'ok'}`,
+      `  Pages: ${crawl.successfulPages}/${crawl.attemptedPages} successful`,
+      `  Failed page loads: ${crawl.failedPages.length}`,
+      `  Screenshot failures: ${crawl.screenshotFailures.length}`,
+      `  Max pages reached: ${crawl.maxPagesReached ? 'yes' : 'no'}`,
+    ];
+
+    if (suggestions.length > 0) {
+      lines.push('', 'Suggested next steps:');
+      for (const suggestion of suggestions) {
+        lines.push(`  - ${suggestion}`);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   const lines = [
