@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ErrorInfo } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -90,6 +91,8 @@ export interface NavMapProps {
   hideHelp?: boolean;
   /** Callback fired when graph validation fails */
   onValidationError?: (errors: GraphValidationError[]) => void;
+  /** Callback fired when NavMap rendering fails and the fallback UI is shown */
+  onRenderError?: (error: Error, info: ErrorInfo) => void;
 }
 
 function NavMapInner({
@@ -265,7 +268,6 @@ function NavMapInner({
           const result = validateGraph(data);
           if (!result.valid) {
             onValidationErrorRef.current?.(result.errors);
-            console.warn('[NavMap] Graph validation failed:', result.errors);
           }
           setGraph(data);
         });
@@ -278,7 +280,6 @@ function NavMapInner({
       const result = validateGraph(graphProp);
       if (!result.valid) {
         onValidationErrorRef.current?.(result.errors);
-        console.warn('[NavMap] Graph validation failed:', result.errors);
       }
       setGraph(graphProp);
     }
@@ -929,7 +930,7 @@ function NavMapInner({
 
 export function NavMap(props: NavMapProps) {
   return (
-    <NavMapErrorBoundary>
+    <NavMapErrorBoundary onError={props.onRenderError}>
       <ContainerWarning>
         <ReactFlowProvider>
           <NavMapInner {...props} />
