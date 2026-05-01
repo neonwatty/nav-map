@@ -39,6 +39,7 @@ import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
+import { useNavMapContextMenu } from '../hooks/useNavMapContextMenu';
 import { useNavMapGallery } from '../hooks/useNavMapGallery';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
@@ -135,13 +136,7 @@ function NavMapInner({
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    nodeId: string;
-    route: string;
-    filePath?: string;
-  } | null>(null);
+  const { contextMenu, onNodeContextMenu, closeContextMenu } = useNavMapContextMenu();
   const [showRouteHealth, setShowRouteHealth] = usePersistentState(
     'nav-map:show-route-health',
     false
@@ -446,19 +441,6 @@ function NavMapInner({
     }
   }, [pushSnapshot]);
 
-  // Right-click context menu
-  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-    const data = node.data as Record<string, unknown>;
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      nodeId: node.id,
-      route: (data.route as string) ?? '',
-      filePath: data.filePath as string | undefined,
-    });
-  }, []);
-
   // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
     if (selectedFlowIndex === null || !graph?.flows) return null;
@@ -709,7 +691,7 @@ function NavMapInner({
             route={contextMenu.route}
             filePath={contextMenu.filePath}
             baseUrl={graph?.meta.baseUrl}
-            onClose={() => setContextMenu(null)}
+            onClose={closeContextMenu}
           />
         )}
 
