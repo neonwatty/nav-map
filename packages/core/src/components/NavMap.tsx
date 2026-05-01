@@ -30,7 +30,7 @@ import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
-import { buildGraphFromJson, type RFNodeData } from '../utils/graphHelpers';
+import { buildGraphFromJson } from '../utils/graphHelpers';
 import type { RouteHealthIssue } from '../utils/routeHealth';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
@@ -40,6 +40,7 @@ import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
+import { useNavMapGallery } from '../hooks/useNavMapGallery';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { PageNode } from './nodes/PageNode';
@@ -131,7 +132,6 @@ function NavMapInner({
     defaultEdgeMode
   );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
-  const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -150,11 +150,15 @@ function NavMapInner({
   const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
   const { showAnalytics, setShowAnalytics, analyticsData, analyticsPeriod, setAnalyticsPeriod } =
     useNavMapAnalytics(analyticsAdapter);
-  const [hoverPreview, setHoverPreview] = useState<{
-    screenshot?: string;
-    label: string;
-    position: { x: number; y: number } | null;
-  } | null>(null);
+  const {
+    galleryNodeId,
+    galleryNodeIds,
+    hoverPreview,
+    onNodeMouseEnter,
+    onNodeMouseLeave,
+    openGalleryForNode,
+    closeGallery,
+  } = useNavMapGallery(graph);
 
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
@@ -288,17 +292,6 @@ function NavMapInner({
     handleHierarchyToggleRef,
   });
 
-  // Identify nodes that have gallery data from any flow
-  const galleryNodeIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const flow of graph?.flows ?? []) {
-      for (const nodeId of Object.keys(flow.gallery ?? {})) {
-        if ((flow.gallery?.[nodeId]?.length ?? 0) > 0) ids.add(nodeId);
-      }
-    }
-    return ids;
-  }, [graph]);
-
   // Map node IDs to their group for edge dimming in group focus mode
   const nodeGroupMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -426,22 +419,6 @@ function NavMapInner({
     setHierarchyExpandedGroups,
   });
 
-  // Node hover for preview
-  const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
-    const data = node.data as RFNodeData;
-    if (data.screenshot) {
-      setHoverPreview({
-        screenshot: data.screenshot,
-        label: data.label,
-        position: null,
-      });
-    }
-  }, []);
-
-  const onNodeMouseLeave = useCallback(() => {
-    setHoverPreview(null);
-  }, []);
-
   // Capture node positions before drag for undo
   const onNodeDragStart = useCallback(() => {
     beforeDragRef.current = {
@@ -473,18 +450,6 @@ function NavMapInner({
       filePath: data.filePath as string | undefined,
     });
   }, []);
-
-  // Track mouse position for hover preview
-  useEffect(() => {
-    if (!hoverPreview) return;
-    const handler = (e: MouseEvent) => {
-      setHoverPreview(prev =>
-        prev ? { ...prev, position: { x: e.clientX, y: e.clientY } } : null
-      );
-    };
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
-  }, [hoverPreview]);
 
   // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
@@ -556,12 +521,9 @@ function NavMapInner({
           return;
         }
       }
-      const hasGallery = graph?.flows?.some(f => f.gallery?.[node.id]?.length);
-      if (hasGallery) {
-        setGalleryNodeId(node.id);
-      }
+      openGalleryForNode(node.id);
     },
-    [graph, viewMode, pushSnapshot, setHierarchyExpandedGroups]
+    [viewMode, pushSnapshot, setHierarchyExpandedGroups, openGalleryForNode]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
@@ -795,7 +757,7 @@ function NavMapInner({
           }}
           onSearchQueryChange={setSearchQuery}
           onPeriodChange={setAnalyticsPeriod}
-          onCloseGallery={() => setGalleryNodeId(null)}
+          onCloseGallery={closeGallery}
         />
       </div>
     </NavMapContext.Provider>
