@@ -4,12 +4,33 @@ import { createCheckConfigCommand } from '../commands/check-config.js';
 import { createCrawlCommand } from '../commands/crawl.js';
 import { createDiagnosticsCommand } from '../commands/diagnostics.js';
 import { createGenerateCommand } from '../commands/generate.js';
+import { createProgram } from '../program.js';
 
 function optionFlags(command: Command): string[] {
   return command.options.map(option => option.flags);
 }
 
 describe('scanner command registration', () => {
+  it('registers the full CLI program metadata and command order', () => {
+    const program = createProgram();
+
+    expect(program.name()).toBe('nav-map');
+    expect(program.description()).toBe('Generate nav-map.json from a Next.js app or URL');
+    expect(program.version()).toBe('0.1.0');
+    expect(program.commands.map(command => command.name())).toEqual([
+      'scan',
+      'crawl',
+      'auth',
+      'record',
+      'record-flows',
+      'generate',
+      'check-config',
+      'diagnostics',
+      'serve',
+      'ingest',
+    ]);
+  });
+
   it('registers diagnostics command options', () => {
     const command = createDiagnosticsCommand();
 
