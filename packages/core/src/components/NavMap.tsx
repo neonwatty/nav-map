@@ -2,12 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ErrorInfo } from 'react';
 import {
-  ReactFlow,
   ReactFlowProvider,
-  MiniMap,
-  Controls,
-  Background,
-  BackgroundVariant,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -45,10 +40,6 @@ import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
-import { PageNode } from './nodes/PageNode';
-import { CompactNode } from './nodes/CompactNode';
-import { GroupNode } from './nodes/GroupNode';
-import { NavEdge } from './edges/NavEdge';
 import { ConnectionPanel } from './panels/ConnectionPanel';
 import { LegendPanel } from './panels/LegendPanel';
 import { WalkthroughBar } from './panels/WalkthroughBar';
@@ -59,16 +50,7 @@ import { NavMapOverlays } from './panels/NavMapOverlays';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
 import { RouteHealthPanel } from './panels/RouteHealthPanel';
-
-const nodeTypes = {
-  pageNode: PageNode,
-  compactNode: CompactNode,
-  groupNode: GroupNode,
-};
-
-const edgeTypes = {
-  navEdge: NavEdge,
-};
+import { NavMapCanvas } from './NavMapCanvas';
 
 export interface NavMapProps {
   /** Graph data object (pass this OR graphUrl) */
@@ -485,9 +467,12 @@ function NavMapInner({
           )}
 
           {layoutDone && (
-            <ReactFlow
+            <NavMapCanvas
               nodes={styledNodes}
               edges={styledEdges}
+              isDark={ctx.isDark}
+              isNarrow={isNarrow}
+              getGroupColors={ctx.getGroupColors}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onSelectionChange={onSelectionChange}
@@ -497,45 +482,7 @@ function NavMapInner({
               onNodeMouseEnter={onNodeMouseEnter}
               onNodeMouseLeave={onNodeMouseLeave}
               onNodeDoubleClick={onNodeDoubleClick}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              fitView
-              fitViewOptions={{ padding: 0.15 }}
-              defaultEdgeOptions={{ type: 'navEdge', animated: false }}
-              minZoom={0.1}
-              maxZoom={2}
-              proOptions={{ hideAttribution: true }}
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={20}
-                size={1}
-                color={ctx.isDark ? '#1a1a28' : '#ddd'}
-              />
-              <Controls
-                showInteractive={false}
-                style={{
-                  background: ctx.isDark ? '#14141e' : '#fff',
-                  border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#d0d0d8'}`,
-                  borderRadius: 8,
-                }}
-              />
-              {!isNarrow && (
-                <MiniMap
-                  nodeStrokeWidth={3}
-                  nodeColor={node => {
-                    const nodeData = node.data as { group?: string } | undefined;
-                    const colors = ctx.getGroupColors(nodeData?.group ?? '');
-                    return colors.border;
-                  }}
-                  style={{
-                    background: ctx.isDark ? '#14141e' : '#fff',
-                    border: `1px solid ${ctx.isDark ? '#2a2a3a' : '#d0d0d8'}`,
-                    borderRadius: 8,
-                  }}
-                />
-              )}
-            </ReactFlow>
+            />
           )}
           {graph && <LegendPanel groups={graph.groups} />}
           <CoverageSummary />
