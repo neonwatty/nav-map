@@ -28,7 +28,7 @@ import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
 import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
-import type { HistoryEntry } from '../hooks/useUndoHistory';
+import { useNodeDragUndo } from '../hooks/useNodeDragUndo';
 import { buildGraphFromJson } from '../utils/graphHelpers';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
@@ -185,7 +185,6 @@ function NavMapInner({
 
   // Undo history for node drags and group collapse
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
-  const beforeDragRef = useRef<HistoryEntry | null>(null);
 
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -379,24 +378,7 @@ function NavMapInner({
     setHierarchyExpandedGroups,
   });
 
-  // Capture node positions before drag for undo
-  const onNodeDragStart = useCallback(() => {
-    beforeDragRef.current = {
-      type: 'node-drag',
-      nodePositions: nodesRef.current.map(n => ({
-        id: n.id,
-        position: { ...n.position },
-        parentId: n.parentId,
-      })),
-    };
-  }, []);
-
-  const onNodeDragStop = useCallback(() => {
-    if (beforeDragRef.current) {
-      pushSnapshot(beforeDragRef.current);
-      beforeDragRef.current = null;
-    }
-  }, [pushSnapshot]);
+  const { onNodeDragStart, onNodeDragStop } = useNodeDragUndo({ nodesRef, pushSnapshot });
 
   // Graph styling (extracted to hook)
   const activeFlow = useMemo(() => {
