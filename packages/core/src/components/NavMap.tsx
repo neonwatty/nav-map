@@ -15,7 +15,6 @@ import '@xyflow/react/dist/style.css';
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
-import { NavMapToolbar } from './panels/NavMapToolbar';
 import { CoverageSummary } from './panels/CoverageSummary';
 import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
@@ -42,8 +41,6 @@ import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
 import { ConnectionPanel } from './panels/ConnectionPanel';
 import { LegendPanel } from './panels/LegendPanel';
-import { WalkthroughBar } from './panels/WalkthroughBar';
-import { StatusBanners } from './panels/StatusBanners';
 import { HierarchyControls } from './panels/HierarchyControls';
 import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
@@ -51,6 +48,7 @@ import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
 import { RouteHealthPanel } from './panels/RouteHealthPanel';
 import { NavMapCanvas } from './NavMapCanvas';
+import { NavMapChrome } from './NavMapChrome';
 
 export interface NavMapProps {
   /** Graph data object (pass this OR graphUrl) */
@@ -390,81 +388,66 @@ function NavMapInner({
         }}
       >
         <div style={{ flex: 1, position: 'relative' }}>
-          {/* Toolbar */}
-          {!hideToolbar && (
-            <NavMapToolbar
-              graph={graph}
-              viewMode={viewMode}
-              selectedFlowIndex={selectedFlowIndex}
-              showSharedNav={showSharedNav}
-              showRedirects={showRedirects}
-              focusMode={focusMode}
-              edgeMode={edgeMode}
-              isAnimatingFlow={isAnimatingFlow}
-              showAnalytics={showAnalytics}
-              showRouteHealth={showRouteHealth}
-              analyticsAdapter={analyticsAdapter}
-              onViewModeChange={mode => {
-                setViewMode(mode);
-                if (mode !== 'flow') setSelectedFlowIndex(null);
-                if (mode !== 'tree') setTreeRootId(null);
-                if (mode === 'hierarchy' && graph) {
-                  setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
-                }
-              }}
-              onFlowSelect={idx => {
-                setSelectedFlowIndex(idx);
-                setFocusedGroupId(null);
-                setAuditFocus(null);
-              }}
-              onResetView={() => {
-                setFocusedGroupId(null);
-                fitView({ padding: 0.15, duration: 300 });
-              }}
-              onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
-              onToggleRedirects={() => setShowRedirects(prev => !prev)}
-              onToggleFocusMode={() => setFocusMode(prev => !prev)}
-              onEdgeModeChange={setEdgeMode}
-              onAnimate={() => setIsAnimatingFlow(true)}
-              onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
-              onToggleRouteHealth={() => setShowRouteHealth(prev => !prev)}
-              onSearch={() => guardedSetShowSearch(true)}
-              onHelp={() => guardedSetShowHelp(true)}
-              showCoverage={showCoverage}
-              hasCoverageData={hasCoverageData}
-              onToggleCoverage={() => setShowCoverage(prev => !prev)}
-            />
-          )}
-
-          <StatusBanners
+          <NavMapChrome
+            graph={graph}
             isDark={ctx.isDark}
+            hideToolbar={hideToolbar}
             viewMode={viewMode}
             selectedFlowIndex={selectedFlowIndex}
             treeRootId={treeRootId}
             focusedGroupId={focusedGroupId}
             auditFocusLabel={auditFocus?.label ?? null}
-            graph={graph}
+            showSharedNav={showSharedNav}
+            showRedirects={showRedirects}
+            focusMode={focusMode}
+            edgeMode={edgeMode}
+            isAnimatingFlow={isAnimatingFlow}
+            showAnalytics={showAnalytics}
+            showRouteHealth={showRouteHealth}
+            analyticsAdapter={analyticsAdapter}
+            showCoverage={showCoverage}
+            hasCoverageData={hasCoverageData}
+            walkthrough={walkthrough}
+            onViewModeChange={mode => {
+              setViewMode(mode);
+              if (mode !== 'flow') setSelectedFlowIndex(null);
+              if (mode !== 'tree') setTreeRootId(null);
+              if (mode === 'hierarchy' && graph) {
+                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
+              }
+            }}
+            onFlowSelect={idx => {
+              setSelectedFlowIndex(idx);
+              setFocusedGroupId(null);
+              setAuditFocus(null);
+            }}
+            onResetView={() => {
+              setFocusedGroupId(null);
+              fitView({ padding: 0.15, duration: 300 });
+            }}
+            onToggleSharedNav={() => setShowSharedNav(prev => !prev)}
+            onToggleRedirects={() => setShowRedirects(prev => !prev)}
+            onToggleFocusMode={() => setFocusMode(prev => !prev)}
+            onEdgeModeChange={setEdgeMode}
+            onAnimate={() => setIsAnimatingFlow(true)}
+            onToggleAnalytics={() => setShowAnalytics(prev => !prev)}
+            onToggleRouteHealth={() => setShowRouteHealth(prev => !prev)}
+            onSearch={() => guardedSetShowSearch(true)}
+            onHelp={() => guardedSetShowHelp(true)}
+            onToggleCoverage={() => setShowCoverage(prev => !prev)}
             onClearFocus={() => setFocusedGroupId(null)}
             onClearAuditFocus={() => setAuditFocus(null)}
+            onWalkthroughGoTo={index => {
+              walkthrough.goTo(index);
+              const nodeId = walkthrough.path[index];
+              if (nodeId) navigateToNode(nodeId);
+            }}
+            onWalkthroughPresent={() => walkthrough.setMode('presentation')}
+            onWalkthroughClear={() => {
+              walkthrough.clear();
+              ctx.setSelectedNodeId(null);
+            }}
           />
-
-          {/* Walkthrough breadcrumb */}
-          {graph && (
-            <WalkthroughBar
-              path={walkthrough.path}
-              nodes={graph.nodes}
-              onGoTo={index => {
-                walkthrough.goTo(index);
-                const nodeId = walkthrough.path[index];
-                if (nodeId) navigateToNode(nodeId);
-              }}
-              onPresent={() => walkthrough.setMode('presentation')}
-              onClear={() => {
-                walkthrough.clear();
-                ctx.setSelectedNodeId(null);
-              }}
-            />
-          )}
 
           {layoutDone && (
             <NavMapCanvas
