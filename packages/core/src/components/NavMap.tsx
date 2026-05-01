@@ -41,6 +41,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
+import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -131,7 +132,6 @@ function NavMapInner({
   );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [galleryNodeId, setGalleryNodeId] = useState<string | null>(null);
-  const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,8 +148,6 @@ function NavMapInner({
     false
   );
   const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
   const { showAnalytics, setShowAnalytics, analyticsData, analyticsPeriod, setAnalyticsPeriod } =
     useNavMapAnalytics(analyticsAdapter);
   const [hoverPreview, setHoverPreview] = useState<{
@@ -182,43 +180,6 @@ function NavMapInner({
   const { pushSnapshot, undo, canUndo } = useUndoHistory();
   const beforeDragRef = useRef<HistoryEntry | null>(null);
 
-  const handleGroupToggle = useCallback(
-    (groupId: string, collapsed: boolean) => {
-      // Capture before-state for undo
-      setCollapsedGroups(prev => {
-        pushSnapshot({ type: 'collapse', collapsedGroups: new Set(prev) });
-        const next = new Set(prev);
-        if (collapsed) next.add(groupId);
-        else next.delete(groupId);
-        return next;
-      });
-      if (collapsed) {
-        setFocusedGroupId(prev => (prev === groupId ? null : prev));
-      }
-    },
-    [pushSnapshot]
-  );
-  const handleGroupToggleRef = useRef(handleGroupToggle);
-  handleGroupToggleRef.current = handleGroupToggle;
-  const handleGroupDoubleClick = useCallback((groupId: string) => {
-    setFocusedGroupId(prev => (prev === groupId ? null : groupId));
-  }, []);
-  const handleGroupDoubleClickRef = useRef(handleGroupDoubleClick);
-  handleGroupDoubleClickRef.current = handleGroupDoubleClick;
-  const handleHierarchyToggle = useCallback(
-    (groupId: string) => {
-      setHierarchyExpandedGroups(prev => {
-        pushSnapshot({ type: 'hierarchy-toggle', expandedGroups: new Set(prev) });
-        const next = new Set(prev);
-        if (next.has(groupId)) next.delete(groupId);
-        else next.add(groupId);
-        return next;
-      });
-    },
-    [pushSnapshot]
-  );
-  const handleHierarchyToggleRef = useRef(handleHierarchyToggle);
-  handleHierarchyToggleRef.current = handleHierarchyToggle;
   const sharedNavEdgesRef = useRef<Edge[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -231,36 +192,19 @@ function NavMapInner({
   const viewportZoom = useStore(s => s.transform[2]);
   const viewport = { x: viewportX, y: viewportY, zoom: viewportZoom };
   const { fitView, setCenter } = useReactFlow();
-
-  // Zoom to focused group when entering group focus mode
-  const prevFocusedGroupRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (focusedGroupId === prevFocusedGroupRef.current) return;
-    prevFocusedGroupRef.current = focusedGroupId;
-    if (!focusedGroupId) {
-      fitView({ padding: 0.15, duration: 300 });
-      return;
-    }
-    const focusedNodes = nodes
-      .filter(n => {
-        if (n.type === 'groupNode') {
-          return (n.data as Record<string, unknown>).groupId === focusedGroupId;
-        }
-        return (n.data as Record<string, unknown>).group === focusedGroupId;
-      })
-      .map(n => ({ id: n.id }));
-    if (focusedNodes.length > 0) {
-      fitView({ nodes: focusedNodes, padding: 0.3, duration: 300 });
-    }
-  }, [focusedGroupId, nodes, fitView]);
-
-  // Expand all hierarchy groups when graph first loads in hierarchy mode
-  useEffect(() => {
-    if (graph && viewMode === 'hierarchy' && hierarchyExpandedGroups.size === 0) {
-      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph]);
+  const {
+    focusedGroupId,
+    setFocusedGroupId,
+    collapsedGroups,
+    setCollapsedGroups,
+    hierarchyExpandedGroups,
+    setHierarchyExpandedGroups,
+    handleGroupToggleRef,
+    handleGroupDoubleClickRef,
+    handleHierarchyToggleRef,
+    expandAllHierarchyGroups,
+    collapseAllHierarchyGroups,
+  } = useNavMapHierarchy({ graph, viewMode, zoomTier, nodes, fitView, pushSnapshot });
 
   // Convert graph to React Flow elements and compute layout
   useEffect(() => {
@@ -289,7 +233,7 @@ function NavMapInner({
       sharedNavEdgesRef.current = buildSharedNavEdges(graph);
       setLayoutDone(true);
     });
-  }, [graph, setNodes, setEdges]);
+  }, [graph, setNodes, setEdges, handleGroupToggleRef, handleGroupDoubleClickRef]);
 
   // Toggle shared nav edges
   useEffect(() => {
@@ -343,22 +287,6 @@ function NavMapInner({
     hierarchyExpandedGroups,
     handleHierarchyToggleRef,
   });
-
-  // In hierarchy view, auto-collapse groups at overview zoom, auto-expand at detail
-  const prevZoomTierRef = useRef(zoomTier);
-  useEffect(() => {
-    if (viewMode !== 'hierarchy' || !graph || zoomTier === prevZoomTierRef.current) return;
-    const prev = prevZoomTierRef.current;
-    prevZoomTierRef.current = zoomTier;
-
-    if (zoomTier === 'overview' && prev !== 'overview') {
-      // Zoomed out → collapse all
-      setHierarchyExpandedGroups(new Set());
-    } else if (zoomTier === 'detail' && prev === 'overview') {
-      // Zoomed back in from overview → expand all
-      setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
-    }
-  }, [zoomTier, viewMode, graph]);
 
   // Identify nodes that have gallery data from any flow
   const galleryNodeIds = useMemo(() => {
@@ -633,7 +561,7 @@ function NavMapInner({
         setGalleryNodeId(node.id);
       }
     },
-    [graph, viewMode, pushSnapshot]
+    [graph, viewMode, pushSnapshot, setHierarchyExpandedGroups]
   );
 
   const selectedNode = graph?.nodes.find(n => n.id === ctx.selectedNodeId);
@@ -806,20 +734,8 @@ function NavMapInner({
             <HierarchyControls
               allGroupIds={graph.groups.map(g => g.id)}
               expandedGroups={hierarchyExpandedGroups}
-              onExpandAll={() => {
-                pushSnapshot({
-                  type: 'hierarchy-toggle',
-                  expandedGroups: new Set(hierarchyExpandedGroups),
-                });
-                setHierarchyExpandedGroups(new Set(graph.groups.map(g => g.id)));
-              }}
-              onCollapseAll={() => {
-                pushSnapshot({
-                  type: 'hierarchy-toggle',
-                  expandedGroups: new Set(hierarchyExpandedGroups),
-                });
-                setHierarchyExpandedGroups(new Set());
-              }}
+              onExpandAll={expandAllHierarchyGroups}
+              onCollapseAll={collapseAllHierarchyGroups}
             />
           )}
 
