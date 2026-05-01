@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { glob } from 'glob';
 import { normalizeRoute, isLoginPage, loadRoutePatterns, type RoutePattern } from './dedup.js';
+import { runRecordFlowsTests } from './record-flows-playwright.js';
 import { parseTrace, correlateScreenshots, extractScreenshotBySha1 } from './trace-parser.js';
 
 interface FlowStep {
@@ -103,61 +103,15 @@ export async function recordFlows(options: RecordFlowsOptions): Promise<NavMapGr
   }
   console.log(`Working directory: ${cwd}`);
 
-  // Generate temp Playwright config
-  const reporterPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'reporter.js');
-
-  // Config must be inside the project cwd so @playwright/test resolves
-  const tempConfig = path.join(cwd, '_temp-navmap-playwright.config.ts');
-  const storageLine = storageState
-    ? `storageState: '${path.resolve(storageState).replace(/\\/g, '/')}',`
-    : '';
-
-  const configContent = `
-import { defineConfig } from '@playwright/test';
-export default defineConfig({
-  testDir: '${flowsDirAbs.replace(/\\/g, '/')}',
-  fullyParallel: false,
-  retries: 0,
-  workers: 1,
-  reporter: [['${reporterPath.replace(/\\/g, '/')}', { outputDir: '${screenshotDirAbs.replace(/\\/g, '/')}' }]],
-  timeout: 120_000,
-  use: {
-    baseURL: '${baseUrl}',
-    ${storageLine}
-    trace: 'on',
-    screenshot: 'on',
-  },
-});
-`;
-  fs.writeFileSync(tempConfig, configContent);
-
-  // Run tests
   console.log('\nRunning Playwright tests...');
-  try {
-    execFileSync('npx', ['playwright', 'test', '--config', tempConfig], {
-      stdio: 'inherit',
-      cwd,
-      timeout: 10 * 60 * 1000,
-      killSignal: 'SIGTERM',
-    });
-  } catch {
-    if (failOnTestErrors) {
-      try {
-        fs.unlinkSync(tempConfig);
-      } catch {
-        // ignore
-      }
-      throw new Error('Tests failed and --fail-on-test-errors is set');
-    }
-    console.warn('\nSome tests failed — continuing with available traces.\n');
-  }
-
-  // Clean up temp config
-  try {
-    fs.unlinkSync(tempConfig);
-  } catch {
-    // ignore
-  }
+  await runRecordFlowsTests({
+    flowsDirAbs,
+    screenshotDirAbs,
+    baseUrl,
+    storageState,
+    cwd,
+    failOnTestErrors,
+  });
 
   // Read reporter manifest
   const manifestPath = path.join(screenshotDirAbs, '.nav-manifest.json');
