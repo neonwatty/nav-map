@@ -23,7 +23,7 @@ import type { GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import { CoverageSummary } from './panels/CoverageSummary';
-import type { AnalyticsAdapter, NavMapAnalytics } from '../analytics/types';
+import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { NavMapContext, useNavMapState } from '../hooks/useNavMap';
@@ -39,6 +39,7 @@ import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
@@ -141,7 +142,6 @@ function NavMapInner({
     route: string;
     filePath?: string;
   } | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCoverage, setShowCoverage] = useState(false);
   const [showRouteHealth, setShowRouteHealth] = usePersistentState(
     'nav-map:show-route-health',
@@ -150,11 +150,8 @@ function NavMapInner({
   const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [hierarchyExpandedGroups, setHierarchyExpandedGroups] = useState<Set<string>>(new Set());
-  const [analyticsData, setAnalyticsData] = useState<NavMapAnalytics | null>(null);
-  const [analyticsPeriod, setAnalyticsPeriod] = useState(() => ({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    end: new Date().toISOString().slice(0, 10),
-  }));
+  const { showAnalytics, setShowAnalytics, analyticsData, analyticsPeriod, setAnalyticsPeriod } =
+    useNavMapAnalytics(analyticsAdapter);
   const [hoverPreview, setHoverPreview] = useState<{
     screenshot?: string;
     label: string;
@@ -264,17 +261,6 @@ function NavMapInner({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph]);
-
-  // Fetch analytics data
-  useEffect(() => {
-    if (!analyticsAdapter || !showAnalytics) return;
-    Promise.all([
-      analyticsAdapter.fetchPageViews(analyticsPeriod),
-      analyticsAdapter.fetchTransitions(analyticsPeriod),
-    ]).then(([pageViews, transitions]) => {
-      setAnalyticsData({ period: analyticsPeriod, pageViews, transitions });
-    });
-  }, [analyticsAdapter, showAnalytics, analyticsPeriod]);
 
   // Convert graph to React Flow elements and compute layout
   useEffect(() => {
