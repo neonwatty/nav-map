@@ -4,17 +4,17 @@ import { crawlUrl } from './modes/crawl.js';
 import { runAuth } from './modes/auth.js';
 import { recordTests } from './modes/record.js';
 import { recordFlows } from './modes/record-flows.js';
-import { formatConfigErrors, formatConfigSummary, loadAndValidateConfig } from './config-report.js';
+import { formatConfigErrors, loadAndValidateConfig } from './config-report.js';
 import {
-  formatActionableCrawlDiagnostics,
   formatCrawlDiagnostics,
   hasCrawlDiagnosticIssues,
-  loadCrawlDiagnosticsFile,
   writeCrawlDiagnosticsReport,
 } from './diagnostics-report.js';
 import { runGenerate, shouldFailGenerateDiagnostics } from './modes/generate.js';
 import { startServer } from './modes/serve.js';
 import { runIngest } from './modes/ingest.js';
+import { createCheckConfigCommand } from './commands/check-config.js';
+import { createDiagnosticsCommand } from './commands/diagnostics.js';
 import path from 'node:path';
 import fs from 'node:fs';
 
@@ -257,45 +257,8 @@ program
     }
   });
 
-program
-  .command('check-config')
-  .description('Validate nav-map.config.json without launching a browser')
-  .option('-c, --config <path>', 'Path to config file', 'nav-map.config.json')
-  .action(opts => {
-    try {
-      const result = loadAndValidateConfig(opts.config);
-      if (!result.ok) {
-        console.error(formatConfigErrors(result.errors));
-        process.exit(1);
-      }
-
-      console.log(formatConfigSummary(result.config!, opts.config));
-    } catch (err) {
-      console.error('Config check failed:', err instanceof Error ? err.message : err);
-      process.exit(1);
-    }
-  });
-
-program
-  .command('diagnostics')
-  .description('Inspect crawl diagnostics from nav-map.json or a diagnostics sidecar')
-  .argument('<file>', 'Path to nav-map.json or diagnostics JSON')
-  .option('--json', 'Print machine-readable JSON output')
-  .option('--summary', 'Print a compact report without per-URL failure lists')
-  .action((file: string, opts) => {
-    try {
-      const inspection = loadCrawlDiagnosticsFile(file);
-      console.log(
-        formatActionableCrawlDiagnostics(inspection, {
-          json: opts.json,
-          summary: opts.summary,
-        })
-      );
-    } catch (err) {
-      console.error('Diagnostics failed:', err instanceof Error ? err.message : err);
-      process.exit(1);
-    }
-  });
+program.addCommand(createCheckConfigCommand());
+program.addCommand(createDiagnosticsCommand());
 
 program
   .command('serve')
