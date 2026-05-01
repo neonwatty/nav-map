@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ErrorInfo } from 'react';
 import {
   ReactFlow,
@@ -39,6 +39,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
 import { useNavMapContextMenu } from '../hooks/useNavMapContextMenu';
+import { useNavMapDerivedGraph } from '../hooks/useNavMapDerivedGraph';
 import { useNavMapGallery } from '../hooks/useNavMapGallery';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
@@ -294,48 +295,13 @@ function NavMapInner({
     handleHierarchyToggleRef,
   });
 
-  // Map node IDs to their group for edge dimming in group focus mode
-  const nodeGroupMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const node of graph?.nodes ?? []) {
-      map.set(node.id, node.group);
-    }
-    return map;
-  }, [graph]);
-
-  // Semantic zoom: 3 tiers based on zoom level
-  // overview (<0.12): hide child nodes, show only group containers
-  // compact (0.12-0.25): compact labels, no screenshots
-  // detail (>0.25): full page nodes with screenshots
-  const zoomedNodes = useMemo(() => {
-    const addGalleryFlag = (node: Node) => {
-      if (node.type === 'groupNode') return node;
-      const hasGallery = galleryNodeIds.has(node.id);
-      if (!hasGallery) return node;
-      return { ...node, data: { ...node.data, hasGallery: true } };
-    };
-
-    if (zoomTier === 'overview') {
-      // Only show group nodes; hide individual pages
-      return nodes.map(node => {
-        if (node.type === 'groupNode') return node;
-        return {
-          ...node,
-          type: 'compactNode',
-          style: { ...node.style, opacity: 0, pointerEvents: 'none' as const },
-        };
-      });
-    }
-
-    if (zoomTier === 'detail') return nodes.map(addGalleryFlag);
-
-    // compact tier: all page nodes become compact
-    return nodes.map(node => {
-      if (node.type === 'groupNode') return node;
-      const withGallery = addGalleryFlag(node);
-      return { ...withGallery, type: 'compactNode' };
-    });
-  }, [nodes, zoomTier, galleryNodeIds]);
+  const { activeFlow, nodeGroupMap, zoomedNodes } = useNavMapDerivedGraph({
+    graph,
+    nodes,
+    zoomTier,
+    galleryNodeIds,
+    selectedFlowIndex,
+  });
 
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
@@ -379,12 +345,6 @@ function NavMapInner({
   });
 
   const { onNodeDragStart, onNodeDragStop } = useNodeDragUndo({ nodesRef, pushSnapshot });
-
-  // Graph styling (extracted to hook)
-  const activeFlow = useMemo(() => {
-    if (selectedFlowIndex === null || !graph?.flows) return null;
-    return graph.flows[selectedFlowIndex] ?? null;
-  }, [selectedFlowIndex, graph]);
 
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
