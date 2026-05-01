@@ -19,7 +19,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
-import { validateGraph, type GraphValidationError } from '../utils/validateGraph';
+import type { GraphValidationError } from '../utils/validateGraph';
 import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import { CoverageSummary } from './panels/CoverageSummary';
@@ -39,6 +39,7 @@ import { useWalkthrough } from '../hooks/useWalkthrough';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import { useResponsive } from '../hooks/useResponsive';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -110,7 +111,7 @@ function NavMapInner({
   hideHelp = false,
   onValidationError,
 }: NavMapProps) {
-  const [graph, setGraph] = useState<NavMapGraph | null>(graphProp ?? null);
+  const graph = useNavMapGraphSource({ graph: graphProp, graphUrl, onValidationError });
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
@@ -163,9 +164,6 @@ function NavMapInner({
   const baseEdgesRef = useRef<Edge[]>([]);
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
-
-  const onValidationErrorRef = useRef(onValidationError);
-  onValidationErrorRef.current = onValidationError;
 
   const guardedSetShowSearch = useCallback(
     (v: boolean | ((p: boolean) => boolean)) => {
@@ -258,32 +256,6 @@ function NavMapInner({
       fitView({ nodes: focusedNodes, padding: 0.3, duration: 300 });
     }
   }, [focusedGroupId, nodes, fitView]);
-
-  // Load graph from URL if provided
-  useEffect(() => {
-    if (graphUrl && !graphProp) {
-      fetch(graphUrl)
-        .then(r => r.json())
-        .then((data: NavMapGraph) => {
-          const result = validateGraph(data);
-          if (!result.valid) {
-            onValidationErrorRef.current?.(result.errors);
-          }
-          setGraph(data);
-        });
-    }
-  }, [graphUrl, graphProp]);
-
-  // Update graph when prop changes
-  useEffect(() => {
-    if (graphProp) {
-      const result = validateGraph(graphProp);
-      if (!result.valid) {
-        onValidationErrorRef.current?.(result.errors);
-      }
-      setGraph(graphProp);
-    }
-  }, [graphProp]);
 
   // Expand all hierarchy groups when graph first loads in hierarchy mode
   useEffect(() => {
