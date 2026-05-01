@@ -39,4 +39,19 @@ describe('NavMapErrorBoundary', () => {
     );
     expect(screen.getByText(/test crash/i)).toBeTruthy();
   });
+
+  it('calls onError when child rendering fails', () => {
+    const onError = vi.fn();
+
+    render(
+      <NavMapErrorBoundary onError={onError}>
+        <ThrowingChild shouldThrow={true} />
+      </NavMapErrorBoundary>
+    );
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'test crash' }),
+      expect.objectContaining({ componentStack: expect.any(String) })
+    );
+  });
 });

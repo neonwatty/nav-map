@@ -2,6 +2,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 
 interface Props {
   children: ReactNode;
+  onError?: (error: Error, info: ErrorInfo) => void;
 }
 
 interface State {
@@ -15,8 +16,8 @@ export class NavMapErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[NavMap] Rendering error:', error, info.componentStack);
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    this.props.onError?.(error, info);
   }
 
   render() {
