@@ -10,6 +10,10 @@ function optionFlags(command: Command): string[] {
   return command.options.map(option => option.flags);
 }
 
+function commandHelpLine(help: string, commandName: string): string {
+  return help.split('\n').find(line => line.trimStart().startsWith(`${commandName} `)) ?? '';
+}
+
 describe('scanner command registration', () => {
   it('registers the full CLI program metadata and command order', () => {
     const program = createProgram();
@@ -29,6 +33,40 @@ describe('scanner command registration', () => {
       'serve',
       'ingest',
     ]);
+  });
+
+  it('shows top-level help with commands in registration order', () => {
+    const program = createProgram();
+    const help = program.helpInformation();
+    const commandNames = [
+      'scan',
+      'crawl',
+      'auth',
+      'record',
+      'record-flows',
+      'generate',
+      'check-config',
+      'diagnostics',
+      'serve',
+      'ingest',
+    ];
+
+    expect(help).toContain('Usage: nav-map [options] [command]');
+    expect(help).toContain('Generate nav-map.json from a Next.js app or URL');
+    expect(help).toContain('Options:');
+    expect(help).toContain('-V, --version');
+    expect(help).toContain('-h, --help');
+    expect(help).toContain('Commands:');
+
+    for (const commandName of commandNames) {
+      expect(commandHelpLine(help, commandName)).not.toBe('');
+    }
+
+    const commandIndexes = commandNames.map(commandName =>
+      help.indexOf(commandHelpLine(help, commandName))
+    );
+
+    expect(commandIndexes).toEqual([...commandIndexes].sort((left, right) => left - right));
   });
 
   it('registers diagnostics command options', () => {
