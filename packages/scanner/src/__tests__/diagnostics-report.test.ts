@@ -254,6 +254,13 @@ describe('formatActionableCrawlDiagnostics', () => {
       source: 'diagnostics',
       inputPath: '/tmp/diagnostics.json',
       hasIssues: false,
+      summary: {
+        attemptedPages: 1,
+        successfulPages: 1,
+        failedPageLoads: 0,
+        screenshotFailures: 0,
+        maxPagesReached: false,
+      },
       diagnostics: {
         crawl: {
           attemptedPages: 1,
@@ -265,6 +272,39 @@ describe('formatActionableCrawlDiagnostics', () => {
       },
       suggestions: ['No action needed; crawl diagnostics are clean.'],
     });
+  });
+
+  it('prints compact summary output without per-URL failure lists', () => {
+    expect(
+      formatActionableCrawlDiagnostics(
+        {
+          inputPath: '/tmp/diagnostics.json',
+          source: 'diagnostics',
+          diagnostics: {
+            crawl: {
+              attemptedPages: 4,
+              successfulPages: 2,
+              failedPages: [{ url: 'https://example.com/missing', reason: 'timeout' }],
+              screenshotFailures: [],
+              maxPagesReached: false,
+            },
+          },
+        },
+        { summary: true }
+      )
+    ).toMatchInlineSnapshot(`
+      "Crawl diagnostics summary
+        Source: /tmp/diagnostics.json (diagnostics)
+        Status: issues found
+        Pages: 2/4 successful
+        Failed page loads: 1
+        Screenshot failures: 0
+        Max pages reached: no
+
+      Suggested next steps:
+        - Open failed URLs locally and verify status codes, redirects, and auth state.
+        - Increase crawl timeouts or provide auth config if failures are protected pages."
+    `);
   });
 
   it('prints a no-diagnostics report', () => {

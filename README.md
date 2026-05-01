@@ -212,6 +212,7 @@ Inspect archived diagnostics in CI logs or locally:
 
 ```bash
 npx @neonwatty/nav-map-scanner diagnostics .nav-map/diagnostics.json
+npx @neonwatty/nav-map-scanner diagnostics .nav-map/diagnostics.json --summary
 npx @neonwatty/nav-map-scanner diagnostics public/nav-map.json --json
 ```
 
