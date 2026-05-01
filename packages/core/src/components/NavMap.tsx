@@ -14,7 +14,6 @@ import {
   useStore,
   type Node,
   type Edge,
-  type OnSelectionChangeParams,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -44,6 +43,7 @@ import { useNavMapGallery } from '../hooks/useNavMapGallery';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { useNavMapInsights } from '../hooks/useNavMapInsights';
+import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -338,59 +338,16 @@ function NavMapInner({
     });
   }, [nodes, zoomTier, galleryNodeIds]);
 
-  // Use refs to avoid stale closures in callbacks
-  const ctxRef = useRef(ctx);
-  ctxRef.current = ctx;
-  const walkthroughRef = useRef(walkthrough);
-  walkthroughRef.current = walkthrough;
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
-
-  // Handle node selection (from React Flow click)
-  const onSelectionChange = useCallback(({ nodes: selectedNodes }: OnSelectionChangeParams) => {
-    const selected = selectedNodes[0];
-    if (selected) {
-      ctxRef.current.setSelectedNodeId(selected.id);
-      walkthroughRef.current.push(selected.id);
-      if (viewModeRef.current === 'tree') {
-        setTreeRootId(selected.id);
-      }
-    }
-  }, []);
-
-  // Navigate to a node programmatically
-  const navigateToNode = useCallback(
-    (nodeId: string) => {
-      ctxRef.current.setSelectedNodeId(nodeId);
-      walkthroughRef.current.push(nodeId);
-
-      // Center the view on the node
-      const node = nodesRef.current.find(n => n.id === nodeId);
-      if (node) {
-        setCenter(node.position.x + 90, node.position.y + 70, {
-          zoom: 0.8,
-          duration: 300,
-        });
-      }
-    },
-    [setCenter]
-  );
-
-  // Search navigation: longer flight with closer zoom
-  const navigateToNodeFromSearch = useCallback(
-    (nodeId: string) => {
-      ctxRef.current.setSelectedNodeId(nodeId);
-      walkthroughRef.current.push(nodeId);
-      const node = nodesRef.current.find(n => n.id === nodeId);
-      if (node) {
-        setCenter(node.position.x + 90, node.position.y + 70, {
-          zoom: 1.0,
-          duration: 600,
-        });
-      }
-    },
-    [setCenter]
-  );
+  const { onSelectionChange, navigateToNode, navigateToNodeFromSearch } = useNavMapNavigation({
+    ctx,
+    walkthrough,
+    nodes,
+    viewMode,
+    setTreeRootId,
+    setCenter,
+  });
 
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
