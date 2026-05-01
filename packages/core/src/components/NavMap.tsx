@@ -31,7 +31,6 @@ import { useUndoHistory } from '../hooks/useUndoHistory';
 import { useViewModeLayout } from '../hooks/useViewModeLayout';
 import type { HistoryEntry } from '../hooks/useUndoHistory';
 import { buildGraphFromJson } from '../utils/graphHelpers';
-import type { RouteHealthIssue } from '../utils/routeHealth';
 import { buildSharedNavEdges } from '../utils/sharedNavEdges';
 import { computeElkLayout } from '../layout/elkLayout';
 import { computeBundledEdges } from '../layout/edgeBundling';
@@ -43,6 +42,7 @@ import { useNavMapAnalytics } from '../hooks/useNavMapAnalytics';
 import { useNavMapGallery } from '../hooks/useNavMapGallery';
 import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
+import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { PageNode } from './nodes/PageNode';
 import { CompactNode } from './nodes/CompactNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -142,12 +142,20 @@ function NavMapInner({
     route: string;
     filePath?: string;
   } | null>(null);
-  const [showCoverage, setShowCoverage] = useState(false);
   const [showRouteHealth, setShowRouteHealth] = usePersistentState(
     'nav-map:show-route-health',
     false
   );
-  const [auditFocus, setAuditFocus] = useState<{ label: string; nodeIds: string[] } | null>(null);
+  const {
+    showCoverage,
+    setShowCoverage,
+    auditFocus,
+    setAuditFocus,
+    auditFocusNodeIds,
+    handleAuditIssueFocus,
+    hasCoverageData,
+    searchMatchIds,
+  } = useNavMapInsights({ graph, showSearch, searchQuery });
   const { showAnalytics, setShowAnalytics, analyticsData, analyticsPeriod, setAnalyticsPeriod } =
     useNavMapAnalytics(analyticsAdapter);
   const {
@@ -456,37 +464,6 @@ function NavMapInner({
     if (selectedFlowIndex === null || !graph?.flows) return null;
     return graph.flows[selectedFlowIndex] ?? null;
   }, [selectedFlowIndex, graph]);
-
-  // Compute search match IDs for canvas highlighting
-  const searchMatchIds = useMemo(() => {
-    if (!showSearch || !searchQuery.trim() || !graph) return null;
-    const q = searchQuery.toLowerCase().trim();
-    const ids = new Set<string>();
-    for (const n of graph.nodes) {
-      if (
-        n.label.toLowerCase().includes(q) ||
-        n.route.toLowerCase().includes(q) ||
-        n.group.toLowerCase().includes(q)
-      ) {
-        ids.add(n.id);
-      }
-    }
-    return ids.size > 0 ? ids : null;
-  }, [showSearch, searchQuery, graph]);
-
-  const auditFocusNodeIds = useMemo(
-    () => (auditFocus ? new Set(auditFocus.nodeIds) : null),
-    [auditFocus]
-  );
-
-  const handleAuditIssueFocus = useCallback((issue: RouteHealthIssue) => {
-    setAuditFocus({ label: issue.title, nodeIds: issue.nodeIds });
-  }, []);
-
-  const hasCoverageData = useMemo(
-    () => graph?.nodes.some(n => n.coverage !== undefined) ?? false,
-    [graph]
-  );
 
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
