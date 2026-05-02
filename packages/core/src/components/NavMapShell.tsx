@@ -147,6 +147,9 @@ export function NavMapShell(props: NavMapShellProps) {
             walkthrough={props.walkthrough}
             onViewModeChange={mode => {
               props.setViewMode(mode);
+              if (mode === 'flow' && graph?.flows?.length && props.selectedFlowIndex === null) {
+                props.setSelectedFlowIndex(0);
+              }
               if (mode !== 'flow') props.setSelectedFlowIndex(null);
               if (mode !== 'tree') props.setTreeRootId(null);
               if (mode === 'hierarchy' && graph) {

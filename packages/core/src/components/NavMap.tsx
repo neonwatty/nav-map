@@ -32,6 +32,7 @@ import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapLayoutEffects } from '../hooks/useNavMapLayoutEffects';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
+import { useFlowAutoSelection } from '../hooks/useFlowAutoSelection';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
 import { NavMapShell } from './NavMapShell';
@@ -184,6 +185,8 @@ function NavMapInner({
     expandAllHierarchyGroups,
     collapseAllHierarchyGroups,
   } = useNavMapHierarchy({ graph, viewMode, zoomTier, nodes, fitView, pushSnapshot });
+
+  useFlowAutoSelection({ graph, viewMode, selectedFlowIndex, setSelectedFlowIndex });
 
   useNavMapLayoutEffects({
     graph,

@@ -33,8 +33,18 @@ const minimalGraph: NavMapGraph = {
   groups: [{ id: 'main', label: 'Main' }],
 };
 
+const flowGraph: NavMapGraph = {
+  ...minimalGraph,
+  flows: [
+    { name: 'Primary Signup', steps: ['n1'] },
+    { name: 'Secondary Signup', steps: ['n1'] },
+  ],
+};
+
 describe('NavMap props', () => {
   beforeEach(() => {
+    window.localStorage.clear();
+
     // ResizeObserver must be a proper constructor (called with `new`)
     const ResizeObserverMock = vi.fn(function (this: Record<string, unknown>) {
       this.observe = vi.fn();
@@ -113,5 +123,12 @@ describe('NavMap props', () => {
 
     expect(onHelpClose).toHaveBeenCalledOnce();
     expect(screen.queryByText('Start Here')).toBeNull();
+  });
+
+  it('selects the first flow when flow mode is active', async () => {
+    render(<NavMap graph={flowGraph} defaultViewMode="flow" />);
+
+    expect(await screen.findByText('Flow: Primary Signup')).toBeTruthy();
+    expect(screen.getByDisplayValue('Primary Signup')).toBeTruthy();
   });
 });
