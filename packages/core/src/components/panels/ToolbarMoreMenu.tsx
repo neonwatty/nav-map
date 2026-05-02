@@ -37,9 +37,10 @@ export function ToolbarMoreMenu({
       <button
         onClick={onToggleOpen}
         style={toolbarButtonStyle(isDark, isOpen)}
+        aria-label="More options"
         title="More options"
       >
-        &#x22EF;
+        <span aria-hidden="true">&#x22EF;</span>
       </button>
       {isOpen && (
         <div style={toolbarPopoverStyle(isDark, 160)}>

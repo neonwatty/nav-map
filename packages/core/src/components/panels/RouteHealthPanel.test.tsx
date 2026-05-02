@@ -43,6 +43,17 @@ describe('RouteHealthPanel', () => {
     expect(onNavigate).toHaveBeenCalledWith('settings');
   });
 
+  it('exposes an accessible close control', () => {
+    const onClose = vi.fn();
+    render(
+      <RouteHealthPanel graph={graph} isDark={false} onClose={onClose} onNavigate={vi.fn()} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close route health' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('copies the route health report', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
