@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { NavMapNode, NavMapEdge } from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { useSearch } from '../../hooks/useSearch';
+import { PanelEmptyState } from './PanelEmptyState';
 import { SearchPreviewPane } from './SearchPreviewPane';
 import { SearchResultsList } from './SearchResultsList';
 
@@ -146,17 +147,22 @@ export function SearchPanel({
           </div>
         )}
 
+        {!query.trim() && (
+          <PanelEmptyState
+            isDark={isDark}
+            icon="⌕"
+            title="Search your nav map"
+            description="Type a page name, route, or group. Use ↑/↓ to move through results and Enter to jump."
+          />
+        )}
+
         {query.trim() && results.length === 0 && (
-          <div
-            style={{
-              padding: '20px 16px',
-              textAlign: 'center',
-              fontSize: 13,
-              color: isDark ? '#555' : '#999',
-            }}
-          >
-            No results found
-          </div>
+          <PanelEmptyState
+            isDark={isDark}
+            icon="?"
+            title="No matching pages"
+            description={`No routes matched “${query.trim()}”. Try a shorter route segment or group name.`}
+          />
         )}
       </div>
     </div>

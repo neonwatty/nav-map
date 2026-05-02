@@ -15,6 +15,7 @@ import {
   severityColor,
   smallButtonStyle,
 } from './RouteHealthPanel.helpers';
+import { PanelEmptyState } from './PanelEmptyState';
 
 interface RouteHealthPanelProps {
   graph: NavMapGraph;
@@ -153,13 +154,19 @@ export function RouteHealthPanel({
       )}
 
       {summary.issues.length === 0 ? (
-        <div style={{ padding: '12px 14px', fontSize: 13, color: isDark ? '#888' : '#666' }}>
-          No route health issues found.
-        </div>
+        <PanelEmptyState
+          isDark={isDark}
+          icon="✓"
+          title="All routes look healthy"
+          description="No dead ends, orphan routes, duplicate paths, missing labels, or redirect-only routes were detected."
+        />
       ) : groupedIssues.length === 0 ? (
-        <div style={{ padding: '12px 14px', fontSize: 13, color: isDark ? '#888' : '#666' }}>
-          No issues match this filter.
-        </div>
+        <PanelEmptyState
+          isDark={isDark}
+          icon="∅"
+          title="No issues match this filter"
+          description="Try another severity or issue type to continue reviewing route health."
+        />
       ) : (
         <div style={{ padding: '0 8px 10px' }}>
           {groupedIssues.map(issue => (
