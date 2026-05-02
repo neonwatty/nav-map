@@ -65,6 +65,8 @@ export interface NavMapProps {
   defaultShowHelp?: boolean;
   /** Callback fired when graph validation fails */
   onValidationError?: (errors: GraphValidationError[]) => void;
+  /** Callback fired when the help overlay closes */
+  onHelpClose?: () => void;
   /** Callback fired when NavMap rendering fails and the fallback UI is shown */
   onRenderError?: (error: Error, info: ErrorInfo) => void;
 }
@@ -84,6 +86,7 @@ function NavMapInner({
   hideHelp = false,
   defaultShowHelp = false,
   onValidationError,
+  onHelpClose,
 }: NavMapProps) {
   const graph = useNavMapGraphSource({ graph: graphProp, graphUrl, onValidationError });
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -311,10 +314,10 @@ function NavMapInner({
     expandAllHierarchyGroups, collapseAllHierarchyGroups, selectedNode, contextMenu,
     effectiveShowHelp, effectiveShowSearch, hoverPreview, analyticsData, analyticsPeriod,
     galleryNodeId, screenshotBasePath, guardedSetShowHelp, guardedSetShowSearch, setSearchQuery,
-    setAnalyticsPeriod, closeContextMenu, closeGallery, navigateToNode, navigateToNodeFromSearch,
-    handleAuditIssueFocus, fitView, onNodesChange, onEdgesChange, onSelectionChange,
-    onNodeDragStart, onNodeDragStop, onNodeContextMenu, onNodeMouseEnter, onNodeMouseLeave,
-    onNodeDoubleClick,
+    onHelpClose, setAnalyticsPeriod, closeContextMenu, closeGallery, navigateToNode,
+    navigateToNodeFromSearch, handleAuditIssueFocus, fitView, onNodesChange, onEdgesChange,
+    onSelectionChange, onNodeDragStart, onNodeDragStop, onNodeContextMenu, onNodeMouseEnter,
+    onNodeMouseLeave, onNodeDoubleClick,
   };
 
   return <NavMapShell {...shellProps} />;
