@@ -14,8 +14,6 @@ import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';
-import { FlowAnimationOverlay } from './panels/FlowAnimationOverlay';
-import { CoverageSummary } from './panels/CoverageSummary';
 import type { AnalyticsAdapter } from '../analytics/types';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
@@ -40,15 +38,13 @@ import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
 import { ConnectionPanel } from './panels/ConnectionPanel';
-import { LegendPanel } from './panels/LegendPanel';
-import { HierarchyControls } from './panels/HierarchyControls';
 import { ContextMenu } from './panels/ContextMenu';
 import { NavMapOverlays } from './panels/NavMapOverlays';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
-import { RouteHealthPanel } from './panels/RouteHealthPanel';
 import { NavMapCanvas } from './NavMapCanvas';
 import { NavMapChrome } from './NavMapChrome';
+import { NavMapPanels } from './NavMapPanels';
 
 export interface NavMapProps {
   /** Graph data object (pass this OR graphUrl) */
@@ -467,38 +463,24 @@ function NavMapInner({
               onNodeDoubleClick={onNodeDoubleClick}
             />
           )}
-          {graph && <LegendPanel groups={graph.groups} />}
-          <CoverageSummary />
-
-          {graph && showRouteHealth && (
-            <RouteHealthPanel
-              graph={graph}
-              isDark={ctx.isDark}
-              onClose={() => setShowRouteHealth(false)}
-              onNavigate={navigateToNode}
-              onIssueFocus={handleAuditIssueFocus}
-            />
-          )}
-
-          {viewMode === 'hierarchy' && graph && (
-            <HierarchyControls
-              allGroupIds={graph.groups.map(g => g.id)}
-              expandedGroups={hierarchyExpandedGroups}
-              onExpandAll={expandAllHierarchyGroups}
-              onCollapseAll={collapseAllHierarchyGroups}
-            />
-          )}
-
-          <FlowAnimationOverlay
+          <NavMapPanels
+            graph={graph}
             isDark={ctx.isDark}
+            showRouteHealth={showRouteHealth}
+            viewMode={viewMode}
+            hierarchyExpandedGroups={hierarchyExpandedGroups}
             isAnimatingFlow={isAnimatingFlow}
             selectedFlowIndex={selectedFlowIndex}
-            graph={graph}
             layoutDone={layoutDone}
             nodes={nodes}
             viewport={viewport}
+            onCloseRouteHealth={() => setShowRouteHealth(false)}
+            onNavigate={navigateToNode}
+            onIssueFocus={handleAuditIssueFocus}
+            onExpandAllHierarchyGroups={expandAllHierarchyGroups}
+            onCollapseAllHierarchyGroups={collapseAllHierarchyGroups}
             onAnimationEnd={() => setIsAnimatingFlow(false)}
-            onStop={() => setIsAnimatingFlow(false)}
+            onStopAnimation={() => setIsAnimatingFlow(false)}
           />
         </div>
 
