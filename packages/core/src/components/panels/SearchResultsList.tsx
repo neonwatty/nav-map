@@ -18,6 +18,8 @@ export function SearchResultsList({
 }: SearchResultsListProps) {
   return (
     <div
+      role="group"
+      aria-label="Search results"
       style={{
         flex: 1,
         padding: '8px 0',
@@ -57,8 +59,12 @@ function SearchResultRow({
   const groupColors = getGroupColors(node.group, isDark);
 
   return (
-    <div
+    <button
+      type="button"
+      aria-current={isSelected ? 'true' : undefined}
       style={{
+        width: '100%',
+        border: 0,
         padding: '10px 16px',
         cursor: 'pointer',
         background: isSelected ? (isDark ? '#1e1e30' : '#e8ecf8') : 'transparent',
@@ -66,6 +72,7 @@ function SearchResultRow({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 8,
+        textAlign: 'left',
       }}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
@@ -124,7 +131,7 @@ function SearchResultRow({
           {node.group}
         </span>
       </div>
-    </div>
+    </button>
   );
 }
 
