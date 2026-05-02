@@ -61,6 +61,8 @@ export interface NavMapProps {
   hideSearch?: boolean;
   /** Hide the help overlay (also disables ? shortcut) */
   hideHelp?: boolean;
+  /** Show the help overlay when the map first mounts */
+  defaultShowHelp?: boolean;
   /** Callback fired when graph validation fails */
   onValidationError?: (errors: GraphValidationError[]) => void;
   /** Callback fired when NavMap rendering fails and the fallback UI is shown */
@@ -80,6 +82,7 @@ function NavMapInner({
   hideToolbar = false,
   hideSearch = false,
   hideHelp = false,
+  defaultShowHelp = false,
   onValidationError,
 }: NavMapProps) {
   const graph = useNavMapGraphSource({ graph: graphProp, graphUrl, onValidationError });
@@ -100,7 +103,7 @@ function NavMapInner({
     defaultEdgeMode
   );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(defaultShowHelp && !hideHelp);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { contextMenu, onNodeContextMenu, closeContextMenu } = useNavMapContextMenu();
