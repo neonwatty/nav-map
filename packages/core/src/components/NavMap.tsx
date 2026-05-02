@@ -37,14 +37,12 @@ import { useNavMapGraphSource } from '../hooks/useNavMapGraphSource';
 import { useNavMapHierarchy } from '../hooks/useNavMapHierarchy';
 import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
-import { ConnectionPanel } from './panels/ConnectionPanel';
-import { ContextMenu } from './panels/ContextMenu';
-import { NavMapOverlays } from './panels/NavMapOverlays';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
 import { NavMapCanvas } from './NavMapCanvas';
 import { NavMapChrome } from './NavMapChrome';
 import { NavMapPanels } from './NavMapPanels';
+import { NavMapSideOverlays } from './NavMapSideOverlays';
 
 export interface NavMapProps {
   /** Graph data object (pass this OR graphUrl) */
@@ -484,31 +482,12 @@ function NavMapInner({
           />
         </div>
 
-        {selectedNode && graph && (
-          <ConnectionPanel
-            node={selectedNode}
-            edges={graph.edges}
-            nodes={graph.nodes}
-            onNavigate={navigateToNode}
-            isNarrow={isNarrow}
-          />
-        )}
-
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            nodeId={contextMenu.nodeId}
-            route={contextMenu.route}
-            filePath={contextMenu.filePath}
-            baseUrl={graph?.meta.baseUrl}
-            onClose={closeContextMenu}
-          />
-        )}
-
-        <NavMapOverlays
+        <NavMapSideOverlays
           graph={graph}
+          selectedNode={selectedNode}
           isDark={ctx.isDark}
+          isNarrow={isNarrow}
+          contextMenu={contextMenu}
           showHelp={effectiveShowHelp}
           showSearch={effectiveShowSearch}
           showAnalytics={showAnalytics}
@@ -518,6 +497,8 @@ function NavMapInner({
           walkthrough={walkthrough}
           galleryNodeId={galleryNodeId}
           screenshotBasePath={screenshotBasePath}
+          onNavigate={navigateToNode}
+          onCloseContextMenu={closeContextMenu}
           onCloseHelp={() => guardedSetShowHelp(false)}
           onCloseSearch={() => guardedSetShowSearch(false)}
           onCloseAnalytics={() => setShowAnalytics(false)}
