@@ -90,4 +90,18 @@ describe('NavMap props', () => {
     // container must still render
     expect(container.firstChild).toBeTruthy();
   });
+
+  it('can open the help overlay on initial render', () => {
+    render(<NavMap graph={minimalGraph} defaultShowHelp />);
+
+    expect(screen.getByText('Start Here')).toBeTruthy();
+    expect(screen.getByText('Inspect structure')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Explore map' })).toBeTruthy();
+  });
+
+  it('does not show initial help when help is hidden', () => {
+    render(<NavMap graph={minimalGraph} defaultShowHelp hideHelp />);
+
+    expect(screen.queryByText('Start Here')).toBeNull();
+  });
 });
