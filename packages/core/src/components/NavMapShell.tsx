@@ -73,6 +73,7 @@ interface NavMapShellProps {
   guardedSetShowHelp: Dispatch<SetStateAction<boolean>>;
   guardedSetShowSearch: Dispatch<SetStateAction<boolean>>;
   setSearchQuery: Dispatch<SetStateAction<string>>;
+  onHelpClose?: () => void;
   setAnalyticsPeriod: SideOverlayProps['onPeriodChange'];
   closeContextMenu: () => void;
   closeGallery: () => void;
@@ -242,7 +243,10 @@ export function NavMapShell(props: NavMapShellProps) {
           screenshotBasePath={props.screenshotBasePath}
           onNavigate={props.navigateToNode}
           onCloseContextMenu={props.closeContextMenu}
-          onCloseHelp={() => props.guardedSetShowHelp(false)}
+          onCloseHelp={() => {
+            props.guardedSetShowHelp(false);
+            props.onHelpClose?.();
+          }}
           onCloseSearch={() => props.guardedSetShowSearch(false)}
           onCloseAnalytics={() => props.setShowAnalytics(false)}
           onSearchSelect={nodeId => {

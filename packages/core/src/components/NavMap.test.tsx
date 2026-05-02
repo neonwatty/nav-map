@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NavMap } from './NavMap';
 import type { NavMapGraph } from '../types';
 
@@ -102,6 +102,16 @@ describe('NavMap props', () => {
   it('does not show initial help when help is hidden', () => {
     render(<NavMap graph={minimalGraph} defaultShowHelp hideHelp />);
 
+    expect(screen.queryByText('Start Here')).toBeNull();
+  });
+
+  it('notifies consumers when the help overlay closes', () => {
+    const onHelpClose = vi.fn();
+    render(<NavMap graph={minimalGraph} defaultShowHelp onHelpClose={onHelpClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Explore map' }));
+
+    expect(onHelpClose).toHaveBeenCalledOnce();
     expect(screen.queryByText('Start Here')).toBeNull();
   });
 });
