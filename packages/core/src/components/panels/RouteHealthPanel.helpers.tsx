@@ -16,6 +16,33 @@ export const issueLabels: Record<RouteHealthIssueType, string> = {
   untested: 'Untested',
 };
 
+export const issueGuidance: Record<RouteHealthIssueType, { why: string; fix: string }> = {
+  unreachable: {
+    why: 'Users and crawlers may never reach this route through normal navigation.',
+    fix: 'Add an internal link from an entry route, mark the route as intentionally direct-only, or improve crawl coverage.',
+  },
+  'dead-end': {
+    why: 'This route gives users no obvious next step after they arrive.',
+    fix: 'Add relevant onward navigation, a return link, or classify the page as an intentional terminal state.',
+  },
+  orphan: {
+    why: 'The route has no detected inbound links, so discovery depends on direct URLs or external entry points.',
+    fix: 'Link to it from a parent section, include it in shared navigation, or document why it is intentionally hidden.',
+  },
+  'duplicate-route': {
+    why: 'Multiple nodes point at the same path, which can make analytics, screenshots, and tests ambiguous.',
+    fix: 'Merge duplicate nodes or ensure each route record has a distinct purpose and identifier.',
+  },
+  'redirect-loop': {
+    why: 'Redirect loops can trap users and prevent crawlers or tests from completing.',
+    fix: 'Review redirect rules for this path chain and make sure every redirect eventually resolves to a stable page.',
+  },
+  untested: {
+    why: 'No passing test coverage is attached, so route regressions are harder to detect.',
+    fix: 'Add an E2E flow that visits this route or ingest coverage from an existing test run.',
+  },
+};
+
 export function Metric({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div style={{ flex: 1 }}>

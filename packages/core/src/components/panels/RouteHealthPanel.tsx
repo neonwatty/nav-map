@@ -10,6 +10,7 @@ import {
   countIssueTypes,
   FilterChip,
   groupIssues,
+  issueGuidance,
   issueLabels,
   Metric,
   severityColor,
@@ -43,6 +44,8 @@ export function RouteHealthPanel({
         : summary.issues.filter(issue => issue.type === activeType);
     return groupIssues(visibleIssues);
   }, [activeType, summary.issues]);
+  const activeIssueType = activeType === 'all' ? null : activeType;
+  const activeGuidance = activeIssueType ? issueGuidance[activeIssueType] : null;
 
   const copyReport = async () => {
     try {
@@ -121,37 +124,47 @@ export function RouteHealthPanel({
       </div>
 
       {summary.issues.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 6,
-            flexWrap: 'wrap',
-            padding: '0 14px 12px',
-            borderBottom: `1px solid ${isDark ? '#222232' : '#eceef4'}`,
-          }}
-        >
-          <FilterChip
-            isDark={isDark}
-            active={activeType === 'all'}
-            label="All"
-            count={summary.issues.length}
-            onClick={() => setActiveType('all')}
-          />
-          {Object.entries(issueLabels).map(([type, label]) => {
-            const count = issueCounts[type as RouteHealthIssueType] ?? 0;
-            if (count === 0) return null;
-            return (
-              <FilterChip
-                key={type}
-                isDark={isDark}
-                active={activeType === type}
-                label={label}
-                count={count}
-                onClick={() => setActiveType(type as RouteHealthIssueType)}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div
+            style={{
+              display: 'flex',
+              gap: 6,
+              flexWrap: 'wrap',
+              padding: '0 14px 12px',
+              borderBottom: `1px solid ${isDark ? '#222232' : '#eceef4'}`,
+            }}
+          >
+            <FilterChip
+              isDark={isDark}
+              active={activeType === 'all'}
+              label="All"
+              count={summary.issues.length}
+              onClick={() => setActiveType('all')}
+            />
+            {Object.entries(issueLabels).map(([type, label]) => {
+              const count = issueCounts[type as RouteHealthIssueType] ?? 0;
+              if (count === 0) return null;
+              return (
+                <FilterChip
+                  key={type}
+                  isDark={isDark}
+                  active={activeType === type}
+                  label={label}
+                  count={count}
+                  onClick={() => setActiveType(type as RouteHealthIssueType)}
+                />
+              );
+            })}
+          </div>
+          {activeIssueType && activeGuidance && (
+            <IssueGuidanceCard
+              isDark={isDark}
+              title={issueLabels[activeIssueType]}
+              why={activeGuidance.why}
+              fix={activeGuidance.fix}
+            />
+          )}
+        </>
       )}
 
       {summary.issues.length === 0 ? (
@@ -212,10 +225,56 @@ export function RouteHealthPanel({
               <div style={{ fontSize: 12, color: isDark ? '#777' : '#667', paddingLeft: 15 }}>
                 {issue.detail}
               </div>
+              <div
+                style={{
+                  marginTop: 6,
+                  paddingLeft: 15,
+                  fontSize: 11,
+                  color: isDark ? '#8a91a4' : '#5f6b82',
+                  lineHeight: 1.35,
+                }}
+              >
+                Suggested fix: {issueGuidance[issue.type].fix}
+              </div>
             </button>
           ))}
         </div>
       )}
     </aside>
+  );
+}
+
+function IssueGuidanceCard({
+  isDark,
+  title,
+  why,
+  fix,
+}: {
+  isDark: boolean;
+  title: string;
+  why: string;
+  fix: string;
+}) {
+  return (
+    <section
+      style={{
+        margin: '10px 14px 12px',
+        padding: 10,
+        borderRadius: 8,
+        border: `1px solid ${isDark ? '#26324a' : '#d7e1f5'}`,
+        background: isDark ? 'rgba(91,155,245,0.08)' : '#f5f8ff',
+        color: isDark ? '#b8c3d9' : '#3d4960',
+      }}
+    >
+      <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#d8e4ff' : '#243b6b' }}>
+        How to review {title.toLowerCase()}
+      </div>
+      <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.4 }}>
+        <strong>Why this matters:</strong> {why}
+      </div>
+      <div style={{ marginTop: 4, fontSize: 11, lineHeight: 1.4 }}>
+        <strong>Suggested fix:</strong> {fix}
+      </div>
+    </section>
   );
 }

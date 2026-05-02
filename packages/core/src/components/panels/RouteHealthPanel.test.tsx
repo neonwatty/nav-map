@@ -30,6 +30,17 @@ describe('RouteHealthPanel', () => {
 
     expect(screen.queryByText(/Settings is unreachable/)).toBeNull();
     expect(screen.getByText(/Docs is a dead end/)).toBeTruthy();
+    expect(screen.getByText('How to review dead ends')).toBeTruthy();
+    expect(screen.getByText(/This route gives users no obvious next step/)).toBeTruthy();
+  });
+
+  it('shows suggested fixes on issue rows', () => {
+    render(
+      <RouteHealthPanel graph={graph} isDark={false} onClose={vi.fn()} onNavigate={vi.fn()} />
+    );
+
+    expect(screen.getAllByText(/Suggested fix:/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Add an internal link from an entry route/)).toBeTruthy();
   });
 
   it('navigates to the issue route when clicked', () => {
