@@ -301,7 +301,7 @@ function NavMapInner({
     viewMode, setViewMode, selectedFlowIndex, setSelectedFlowIndex, treeRootId, setTreeRootId,
     focusedGroupId, setFocusedGroupId, edgeMode, setEdgeMode, showSharedNav, setShowSharedNav,
     showRedirects, setShowRedirects, focusMode, setFocusMode, isAnimatingFlow, setIsAnimatingFlow,
-    showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
+    searchQuery, showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
     setShowCoverage, hasCoverageData, auditFocusLabel: auditFocus?.label ?? null,
     clearAuditFocus: () => setAuditFocus(null), walkthrough, layoutDone, nodes, styledNodes,
     styledEdges, viewport, hierarchyExpandedGroups, setHierarchyExpandedGroups,
