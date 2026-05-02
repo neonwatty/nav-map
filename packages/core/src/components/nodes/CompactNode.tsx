@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
+import { GalleryBadge } from './GalleryBadge';
 
 function CompactNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
@@ -87,21 +88,7 @@ function CompactNodeComponent({ data, selected }: NodeProps) {
         {nodeData.route}
       </div>
 
-      {hasGallery && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 2,
-            right: 4,
-            fontSize: 10,
-            color: isDark ? '#5b9bf5' : '#3355aa',
-            opacity: 0.7,
-          }}
-          title="Double-click to view gallery"
-        >
-          &#x2922;
-        </div>
-      )}
+      {hasGallery && <GalleryBadge compact />}
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
