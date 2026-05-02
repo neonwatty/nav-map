@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
+import { GalleryBadge } from './GalleryBadge';
 
 function PageNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
@@ -131,28 +132,7 @@ function PageNodeComponent({ data, selected }: NodeProps) {
         </div>
       </div>
 
-      {hasGallery && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 4,
-            right: 4,
-            width: 20,
-            height: 20,
-            borderRadius: 4,
-            background: isDark ? 'rgba(91,155,245,0.2)' : 'rgba(51,85,170,0.1)',
-            color: isDark ? '#5b9bf5' : '#3355aa',
-            fontSize: 12,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-          title="Double-click to view gallery"
-        >
-          &#x2922;
-        </div>
-      )}
+      {hasGallery && <GalleryBadge />}
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
