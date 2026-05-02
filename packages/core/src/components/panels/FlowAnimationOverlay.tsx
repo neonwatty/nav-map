@@ -28,10 +28,12 @@ export function FlowAnimationOverlay({
   if (!isAnimatingFlow) return null;
 
   const accent = isDark ? '#7aacff' : '#3355aa';
+  const flow = selectedFlowIndex !== null ? graph?.flows?.[selectedFlowIndex] : undefined;
+  const canRenderAnimator = Boolean(flow && layoutDone);
 
   return (
     <>
-      {selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && layoutDone && (
+      {canRenderAnimator && flow && (
         <div
           style={{
             position: 'absolute',
@@ -45,7 +47,7 @@ export function FlowAnimationOverlay({
           }}
         >
           <FlowAnimator
-            flowSteps={graph.flows[selectedFlowIndex].steps}
+            flowSteps={flow.steps}
             nodes={nodes}
             isAnimating={isAnimatingFlow}
             onAnimationEnd={onAnimationEnd}
@@ -69,8 +71,12 @@ export function FlowAnimationOverlay({
           alignItems: 'center',
           gap: 12,
         }}
+        role="status"
+        aria-live="polite"
       >
-        <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>Animating flow...</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>
+          {flow ? `Animating: ${flow.name}` : 'Preparing flow animation...'}
+        </span>
         <button
           onClick={onStop}
           style={{
