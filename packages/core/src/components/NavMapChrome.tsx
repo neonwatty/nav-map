@@ -17,6 +17,7 @@ interface NavMapChromeProps {
   showSharedNav: boolean;
   showRedirects: boolean;
   focusMode: boolean;
+  showSearch: boolean;
   edgeMode: EdgeMode;
   isAnimatingFlow: boolean;
   showAnalytics: boolean;
@@ -40,6 +41,7 @@ interface NavMapChromeProps {
   onToggleCoverage: () => void;
   onClearFocus: () => void;
   onClearAuditFocus: () => void;
+  onClearSearch: () => void;
   onWalkthroughGoTo: (index: number) => void;
   onWalkthroughPresent: () => void;
   onWalkthroughClear: () => void;
@@ -57,6 +59,7 @@ export function NavMapChrome({
   showSharedNav,
   showRedirects,
   focusMode,
+  showSearch,
   edgeMode,
   isAnimatingFlow,
   showAnalytics,
@@ -80,6 +83,7 @@ export function NavMapChrome({
   onToggleCoverage,
   onClearFocus,
   onClearAuditFocus,
+  onClearSearch,
   onWalkthroughGoTo,
   onWalkthroughPresent,
   onWalkthroughClear,
@@ -124,9 +128,13 @@ export function NavMapChrome({
         treeRootId={treeRootId}
         focusedGroupId={focusedGroupId}
         auditFocusLabel={auditFocusLabel}
+        focusMode={focusMode}
+        showCoverage={showCoverage}
+        showSearch={showSearch}
         graph={graph}
         onClearFocus={onClearFocus}
         onClearAuditFocus={onClearAuditFocus}
+        onClearSearch={onClearSearch}
       />
 
       {graph && (

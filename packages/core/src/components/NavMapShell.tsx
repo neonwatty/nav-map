@@ -39,6 +39,7 @@ interface NavMapShellProps {
   setShowRedirects: Dispatch<SetStateAction<boolean>>;
   focusMode: boolean;
   setFocusMode: Dispatch<SetStateAction<boolean>>;
+  searchQuery: string;
   isAnimatingFlow: boolean;
   setIsAnimatingFlow: Dispatch<SetStateAction<boolean>>;
   showAnalytics: boolean;
@@ -134,6 +135,7 @@ export function NavMapShell(props: NavMapShellProps) {
             showSharedNav={props.showSharedNav}
             showRedirects={props.showRedirects}
             focusMode={props.focusMode}
+            showSearch={props.searchQuery.trim().length > 0}
             edgeMode={edgeMode}
             isAnimatingFlow={props.isAnimatingFlow}
             showAnalytics={props.showAnalytics}
@@ -171,6 +173,7 @@ export function NavMapShell(props: NavMapShellProps) {
             onToggleCoverage={() => props.setShowCoverage(prev => !prev)}
             onClearFocus={() => props.setFocusedGroupId(null)}
             onClearAuditFocus={props.clearAuditFocus}
+            onClearSearch={() => props.setSearchQuery('')}
             onWalkthroughGoTo={index => {
               props.walkthrough.goTo(index);
               const nodeId = props.walkthrough.path[index];
