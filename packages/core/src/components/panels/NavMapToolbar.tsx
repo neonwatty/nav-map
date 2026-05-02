@@ -4,8 +4,9 @@ import type { AnalyticsAdapter } from '../../analytics/types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { ViewModeSelector } from './ViewModeSelector';
 import { FlowSelector } from './FlowSelector';
-import { ExportButton } from './ExportButton';
-import { PanelRow } from './PanelRow';
+import { EdgeOptionsPopover } from './EdgeOptionsPopover';
+import { ToolbarMoreMenu } from './ToolbarMoreMenu';
+import { toolbarButtonStyle } from './toolbarStyles';
 
 interface NavMapToolbarProps {
   graph: NavMapGraph | null;
@@ -108,96 +109,36 @@ export function NavMapToolbar({
         />
       )}
 
-      <button onClick={onResetView} style={btnStyle(isDark)} title="Reset View (0)">
+      <button onClick={onResetView} style={toolbarButtonStyle(isDark)} title="Reset View (0)">
         Reset View
       </button>
 
-      {/* Edges popover — only in map/hierarchy views */}
       {showEdgeControls && (
-        <div ref={edgePanelRef} style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowEdgePanel(p => !p)}
-            style={btnStyle(isDark, edgeActive || showEdgePanel)}
-            title="Edge display options"
-          >
-            Edges &#x25BE;
-          </button>
-          {showEdgePanel && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: 4,
-                background: isDark ? '#14141e' : '#fff',
-                border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
-                borderRadius: 10,
-                padding: '8px 0',
-                minWidth: 200,
-                boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)',
-              }}
-            >
-              <PanelRow
-                isDark={isDark}
-                label="Shared Nav"
-                shortcut="N"
-                active={showSharedNav}
-                onClick={onToggleSharedNav}
-              />
-              <PanelRow
-                isDark={isDark}
-                label="Redirects"
-                shortcut="R"
-                active={showRedirects}
-                onClick={onToggleRedirects}
-              />
-              <PanelRow
-                isDark={isDark}
-                label="Focus Mode"
-                shortcut="F"
-                active={focusMode}
-                onClick={onToggleFocusMode}
-              />
-              <div
-                style={{
-                  borderTop: `1px solid ${isDark ? '#1e1e2e' : '#eee'}`,
-                  margin: '4px 0',
-                }}
-              />
-              <div style={{ padding: '6px 14px' }}>
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: isDark ? '#555' : '#aaa',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    marginBottom: 6,
-                  }}
-                >
-                  Rendering
-                </div>
-                {(['smooth', 'routed', 'bundled'] as EdgeMode[]).map(mode => (
-                  <PanelRow
-                    key={mode}
-                    isDark={isDark}
-                    label={mode.charAt(0).toUpperCase() + mode.slice(1)}
-                    active={edgeMode === mode}
-                    onClick={() => onEdgeModeChange(mode)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <EdgeOptionsPopover
+          isDark={isDark}
+          refObject={edgePanelRef}
+          isOpen={showEdgePanel}
+          isActive={edgeActive}
+          showSharedNav={showSharedNav}
+          showRedirects={showRedirects}
+          focusMode={focusMode}
+          edgeMode={edgeMode}
+          onToggleOpen={() => setShowEdgePanel(p => !p)}
+          onToggleSharedNav={onToggleSharedNav}
+          onToggleRedirects={onToggleRedirects}
+          onToggleFocusMode={onToggleFocusMode}
+          onEdgeModeChange={onEdgeModeChange}
+        />
       )}
 
-      {/* Flow animate — only in flow mode */}
       {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
         <button
           onClick={onAnimate}
           disabled={isAnimatingFlow}
-          style={{ ...btnStyle(isDark, isAnimatingFlow), opacity: isAnimatingFlow ? 0.6 : 1 }}
+          style={{
+            ...toolbarButtonStyle(isDark, isAnimatingFlow),
+            opacity: isAnimatingFlow ? 0.6 : 1,
+          }}
           title="Animate the selected flow"
         >
           {isAnimatingFlow ? 'Animating...' : 'Animate'}
@@ -207,7 +148,7 @@ export function NavMapToolbar({
       {hasCoverageData && (
         <button
           onClick={onToggleCoverage}
-          style={btnStyle(isDark, showCoverage)}
+          style={toolbarButtonStyle(isDark, showCoverage)}
           title="Toggle test coverage overlay"
         >
           Coverage
@@ -216,87 +157,30 @@ export function NavMapToolbar({
 
       <button
         onClick={onToggleRouteHealth}
-        style={btnStyle(isDark, showRouteHealth)}
+        style={toolbarButtonStyle(isDark, showRouteHealth)}
         title="Show route health audit"
       >
         Audit
       </button>
 
-      <button onClick={onSearch} style={btnStyle(isDark)} title="Search (/ or ⌘K)">
+      <button onClick={onSearch} style={toolbarButtonStyle(isDark)} title="Search (/ or ⌘K)">
         Search
       </button>
 
-      {/* More menu — overflow for secondary actions */}
-      <div ref={moreMenuRef} style={{ position: 'relative' }}>
-        <button
-          onClick={() => setShowMoreMenu(p => !p)}
-          style={btnStyle(isDark, showMoreMenu)}
-          title="More options"
-        >
-          &#x22EF;
-        </button>
-        {showMoreMenu && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: 4,
-              background: isDark ? '#14141e' : '#fff',
-              border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
-              borderRadius: 10,
-              padding: '4px 0',
-              minWidth: 160,
-              boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)',
-            }}
-          >
-            {analyticsAdapter && (
-              <PanelRow
-                isDark={isDark}
-                label="Analytics"
-                active={showAnalytics}
-                onClick={() => {
-                  onToggleAnalytics();
-                  setShowMoreMenu(false);
-                }}
-              />
-            )}
-            <PanelRow
-              isDark={isDark}
-              label="Route Health"
-              active={showRouteHealth}
-              onClick={() => {
-                onToggleRouteHealth();
-                setShowMoreMenu(false);
-              }}
-            />
-            <PanelRow
-              isDark={isDark}
-              label="Help"
-              shortcut="?"
-              onClick={() => {
-                onHelp();
-                setShowMoreMenu(false);
-              }}
-            />
-            <div style={{ padding: '4px 8px' }}>
-              <ExportButton graphName={graph?.meta.name} />
-            </div>
-          </div>
-        )}
-      </div>
+      <ToolbarMoreMenu
+        isDark={isDark}
+        refObject={moreMenuRef}
+        isOpen={showMoreMenu}
+        graphName={graph?.meta.name}
+        hasAnalytics={Boolean(analyticsAdapter)}
+        showAnalytics={showAnalytics}
+        showRouteHealth={showRouteHealth}
+        onToggleOpen={() => setShowMoreMenu(p => !p)}
+        onClose={() => setShowMoreMenu(false)}
+        onToggleAnalytics={onToggleAnalytics}
+        onToggleRouteHealth={onToggleRouteHealth}
+        onHelp={onHelp}
+      />
     </div>
   );
-}
-
-function btnStyle(isDark: boolean, active = false): React.CSSProperties {
-  return {
-    background: active ? (isDark ? '#1e2540' : '#e0e8ff') : isDark ? '#14141e' : '#fff',
-    border: `1px solid ${active ? (isDark ? '#4466aa' : '#6688cc') : isDark ? '#2a2a3a' : '#d8dae0'}`,
-    borderRadius: 6,
-    padding: '5px 12px',
-    fontSize: 12,
-    color: active ? (isDark ? '#7aacff' : '#3355aa') : isDark ? '#888' : '#666',
-    cursor: 'pointer',
-  };
 }
