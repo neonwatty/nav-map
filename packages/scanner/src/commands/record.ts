@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Command } from 'commander';
 import { recordTests } from '../modes/record.js';
+import { formatGraphRunSummary } from './run-summary.js';
 
 export function createRecordCommand(): Command {
   return new Command('record')
@@ -27,11 +28,7 @@ export function createRecordCommand(): Command {
 
         const outputPath = path.resolve(opts.output);
         fs.writeFileSync(outputPath, JSON.stringify(graph, null, 2));
-        console.log(`\nWrote ${outputPath}`);
-        console.log(`  Nodes: ${graph.nodes.length}`);
-        console.log(`  Edges: ${graph.edges.length}`);
-        console.log(`  Groups: ${graph.groups.length}`);
-        console.log(`  Flows: ${graph.flows?.length ?? 0}`);
+        console.log(formatGraphRunSummary(outputPath, graph));
       } catch (err) {
         console.error('Record failed:', err);
         process.exit(1);

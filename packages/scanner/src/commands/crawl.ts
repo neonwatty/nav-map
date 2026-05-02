@@ -7,6 +7,7 @@ import {
   writeCrawlDiagnosticsReport,
 } from '../diagnostics-report.js';
 import { crawlUrl } from '../modes/crawl.js';
+import { formatGraphRunSummary } from './run-summary.js';
 
 export function createCrawlCommand(): Command {
   return new Command('crawl')
@@ -42,10 +43,7 @@ export function createCrawlCommand(): Command {
 
         const outputPath = path.resolve(opts.output);
         fs.writeFileSync(outputPath, JSON.stringify(graph, null, 2));
-        console.log(`\nWrote ${outputPath}`);
-        console.log(`  Nodes: ${graph.nodes.length}`);
-        console.log(`  Edges: ${graph.edges.length}`);
-        console.log(`  Groups: ${graph.groups.length}`);
+        console.log(formatGraphRunSummary(outputPath, graph));
         const diagnostics = formatCrawlDiagnostics(graph.meta.diagnostics);
         if (diagnostics) console.log(`\n${diagnostics}`);
         if (opts.diagnosticsOutput) {
