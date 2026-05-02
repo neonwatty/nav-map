@@ -87,6 +87,7 @@ export function StatusBanners({
           Focused: {graph?.groups?.find(g => g.id === focusedGroupId)?.label ?? focusedGroupId}
           <button
             onClick={onClearFocus}
+            aria-label="Clear focused group"
             style={{
               background: 'none',
               border: 'none',
@@ -97,7 +98,7 @@ export function StatusBanners({
               lineHeight: 1,
             }}
           >
-            &#x2715;
+            <span aria-hidden="true">&#x2715;</span>
           </button>
         </div>
       )}
@@ -117,6 +118,7 @@ export function StatusBanners({
           Audit: {auditFocusLabel}
           <button
             onClick={onClearAuditFocus}
+            aria-label="Clear audit focus"
             style={{
               background: 'none',
               border: 'none',
@@ -127,7 +129,7 @@ export function StatusBanners({
               lineHeight: 1,
             }}
           >
-            &#x2715;
+            <span aria-hidden="true">&#x2715;</span>
           </button>
         </div>
       )}

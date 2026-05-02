@@ -100,6 +100,7 @@ export function WalkthroughBar({ path, nodes, onGoTo, onClear, onPresent }: Walk
       )}
       <button
         onClick={onClear}
+        aria-label="Clear walk-through"
         style={{
           background: 'none',
           border: 'none',
@@ -111,7 +112,7 @@ export function WalkthroughBar({ path, nodes, onGoTo, onClear, onPresent }: Walk
         }}
         title="Clear walk-through"
       >
-        &#x2715;
+        <span aria-hidden="true">&#x2715;</span>
       </button>
     </div>
   );

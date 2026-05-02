@@ -106,9 +106,10 @@ export function RouteHealthPanel({
               fontSize: 18,
               lineHeight: 1,
             }}
+            aria-label="Close route health"
             title="Close route health"
           >
-            &#x2715;
+            <span aria-hidden="true">&#x2715;</span>
           </button>
         </div>
       </header>

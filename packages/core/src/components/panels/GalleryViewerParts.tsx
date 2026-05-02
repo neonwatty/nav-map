@@ -46,6 +46,7 @@ export function GalleryViewerHeader({
       </div>
       <button
         onClick={onClose}
+        aria-label="Close gallery"
         style={{
           background: 'none',
           border: 'none',
@@ -54,7 +55,7 @@ export function GalleryViewerHeader({
           cursor: 'pointer',
         }}
       >
-        &#x2715;
+        <span aria-hidden="true">&#x2715;</span>
       </button>
     </div>
   );
