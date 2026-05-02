@@ -8,6 +8,7 @@ import {
   GalleryViewerMetadata,
   GalleryViewerNavigation,
 } from './GalleryViewerParts';
+import { PanelEmptyState } from './PanelEmptyState';
 
 interface GalleryViewerProps {
   nodeLabel: string;
@@ -21,8 +22,6 @@ export function GalleryViewer({ nodeLabel, steps, flowName, onClose }: GalleryVi
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const stepsWithScreenshots = steps.filter(s => s.screenshot);
-  if (stepsWithScreenshots.length === 0) return null;
-
   const current = stepsWithScreenshots[currentIndex];
   const screenshotSrc = current?.screenshot
     ? `${screenshotBasePath}/${current.screenshot}`
@@ -61,24 +60,35 @@ export function GalleryViewer({ nodeLabel, steps, flowName, onClose }: GalleryVi
           isDark={isDark}
           onClose={onClose}
         />
-        <GalleryViewerMedia current={current} isDark={isDark} screenshotSrc={screenshotSrc} />
-        <GalleryViewerMetadata current={current} isDark={isDark} />
-        <GalleryViewerFilmstrip
-          currentIndex={currentIndex}
-          isDark={isDark}
-          screenshotBasePath={screenshotBasePath}
-          stepsWithScreenshots={stepsWithScreenshots}
-          onSelect={setCurrentIndex}
-        />
-        <GalleryViewerNavigation
-          currentIndex={currentIndex}
-          isDark={isDark}
-          totalCount={stepsWithScreenshots.length}
-          onPrevious={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-          onNext={() =>
-            setCurrentIndex(Math.min(stepsWithScreenshots.length - 1, currentIndex + 1))
-          }
-        />
+        {current ? (
+          <>
+            <GalleryViewerMedia current={current} isDark={isDark} screenshotSrc={screenshotSrc} />
+            <GalleryViewerMetadata current={current} isDark={isDark} />
+            <GalleryViewerFilmstrip
+              currentIndex={currentIndex}
+              isDark={isDark}
+              screenshotBasePath={screenshotBasePath}
+              stepsWithScreenshots={stepsWithScreenshots}
+              onSelect={setCurrentIndex}
+            />
+            <GalleryViewerNavigation
+              currentIndex={currentIndex}
+              isDark={isDark}
+              totalCount={stepsWithScreenshots.length}
+              onPrevious={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+              onNext={() =>
+                setCurrentIndex(Math.min(stepsWithScreenshots.length - 1, currentIndex + 1))
+              }
+            />
+          </>
+        ) : (
+          <PanelEmptyState
+            isDark={isDark}
+            icon="▧"
+            title="No screenshots captured"
+            description="This flow has interaction steps, but none include screenshots yet. Re-record with screenshots enabled to build a visual gallery."
+          />
+        )}
       </div>
     </div>
   );
