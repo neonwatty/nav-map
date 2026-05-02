@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { NavMapNode, NavMapEdge } from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import { ConnectionListSection } from './ConnectionListSection';
 
 interface ConnectionPanelProps {
   node: NavMapNode;
@@ -134,95 +135,20 @@ export function ConnectionPanel({
           borderTop: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
         }}
       >
-        {outgoing.length > 0 && (
-          <>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: isDark ? '#555' : '#888',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                marginBottom: 8,
-              }}
-            >
-              &#x2192; Navigates to
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-              {outgoing.map(({ edge, node: targetNode }) => (
-                <button
-                  key={edge.id}
-                  onClick={() => onNavigate(targetNode.id)}
-                  style={{
-                    background: isDark ? '#1a1a28' : '#f0f2f8',
-                    border: `1px solid ${isDark ? '#2a2a3a' : '#dde0ea'}`,
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: isDark ? '#c8c8d0' : '#445',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: 2,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{targetNode.label}</span>
-                  {edge.label && (
-                    <span style={{ fontSize: 9, color: isDark ? '#666' : '#888' }}>
-                      {edge.label}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        <ConnectionListSection
+          title="→ Navigates to"
+          connections={outgoing}
+          isDark={isDark}
+          onNavigate={onNavigate}
+          spacing="normal"
+        />
 
-        {incoming.length > 0 && (
-          <>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: isDark ? '#555' : '#888',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                marginBottom: 8,
-              }}
-            >
-              &#x2190; Reached from
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {incoming.map(({ edge, node: sourceNode }) => (
-                <button
-                  key={edge.id}
-                  onClick={() => onNavigate(sourceNode.id)}
-                  style={{
-                    background: isDark ? '#1a1a28' : '#f0f2f8',
-                    border: `1px solid ${isDark ? '#2a2a3a' : '#dde0ea'}`,
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: isDark ? '#c8c8d0' : '#445',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: 2,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{sourceNode.label}</span>
-                  {edge.label && (
-                    <span style={{ fontSize: 9, color: isDark ? '#666' : '#888' }}>
-                      {edge.label}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        <ConnectionListSection
+          title="← Reached from"
+          connections={incoming}
+          isDark={isDark}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );
