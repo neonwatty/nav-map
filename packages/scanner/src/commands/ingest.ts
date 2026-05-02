@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { runIngest } from '../modes/ingest.js';
+import { formatIngestRunSummary } from './run-summary.js';
 
 export function createIngestCommand(): Command {
   return new Command('ingest')
@@ -21,10 +22,7 @@ export function createIngestCommand(): Command {
           screenshots: opts.screenshots !== false,
         });
 
-        console.log(`\nWrote ${result.outputPath}`);
-        console.log(`  Tests processed: ${result.testCount}`);
-        console.log(`  Routes covered: ${result.routesCovered}`);
-        console.log(`  Routes uncovered: ${result.routesUncovered}`);
+        console.log(formatIngestRunSummary(result));
       } catch (err) {
         console.error('Ingest failed:', err instanceof Error ? err.message : err);
         process.exit(1);
