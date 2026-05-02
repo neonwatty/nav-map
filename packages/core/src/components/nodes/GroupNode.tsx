@@ -61,11 +61,15 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
         overflow: 'visible',
       }}
     >
-      {/* Header bar */}
-      <div
+      <button
+        type="button"
+        aria-expanded={!isCollapsed}
+        aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${nodeData.label} group`}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         style={{
+          width: '100%',
+          border: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -74,6 +78,7 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
           borderRadius: '8px 8px 0 0',
           cursor: 'pointer',
           userSelect: 'none',
+          textAlign: 'left',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -85,6 +90,7 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
               display: 'inline-block',
               color: '#fff',
             }}
+            aria-hidden="true"
           >
             &#x25BC;
           </span>
@@ -111,7 +117,7 @@ function GroupNodeComponent({ data, width, height }: NodeProps) {
         >
           {nodeData.childCount}
         </span>
-      </div>
+      </button>
 
       {/* Collapsed summary */}
       {isCollapsed && (
