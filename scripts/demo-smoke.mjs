@@ -30,6 +30,11 @@ try {
     .waitFor();
   await page.keyboard.press('Escape');
 
+  await page.getByRole('button', { name: 'Flow' }).click();
+  await page.getByRole('combobox', { name: 'Flow' }).waitFor();
+  await page.getByText(/^Flow: /).waitFor();
+  await page.getByRole('button', { name: 'Animate' }).waitFor();
+
   await page.getByRole('button', { name: 'Audit' }).click();
   await page.getByText('Route Health').waitFor();
   await page
