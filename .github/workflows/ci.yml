@@ -63,6 +63,22 @@ jobs:
         env:
           NAV_MAP_BROWSER_TESTS: '1'
         run: pnpm --filter @neonwatty/nav-map-scanner exec vitest run src/__tests__/crawl-browser.test.ts
+      - name: Build demo for smoke test
+        run: |
+          pnpm --filter @neonwatty/nav-map build
+          pnpm --filter demo build
+      - name: Run demo smoke test
+        run: |
+          pnpm --filter demo start --hostname 127.0.0.1 --port 4174 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4174 >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/demo-smoke.mjs
       - name: Build scanner CLI
         run: |
           pnpm --filter @neonwatty/nav-map build

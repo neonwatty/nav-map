@@ -13,6 +13,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css}\"",
     "knip": "knip",
     "knip:production": "knip --production",
+    "smoke:demo": "pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/demo-smoke.mjs",
     "validate": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip:production && pnpm build",
     "prepare": "husky"
   },
