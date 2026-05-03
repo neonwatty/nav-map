@@ -171,7 +171,10 @@ export function NavMapToolbar({
         isDark={isDark}
         refObject={moreMenuRef}
         isOpen={showMoreMenu}
+        graph={graph}
         graphName={graph?.meta.name}
+        selectedFlowIndex={selectedFlowIndex}
+        viewMode={viewMode}
         hasAnalytics={Boolean(analyticsAdapter)}
         showAnalytics={showAnalytics}
         showRouteHealth={showRouteHealth}
