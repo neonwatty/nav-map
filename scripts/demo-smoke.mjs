@@ -5,7 +5,11 @@ const { chromium } = requireFromCwd('playwright');
 
 const baseUrl = process.env.DEMO_SMOKE_URL ?? 'http://127.0.0.1:4174';
 const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const context = await browser.newContext({
+  permissions: ['clipboard-read', 'clipboard-write'],
+  viewport: { width: 1440, height: 1000 },
+});
+const page = await context.newPage();
 const messages = [];
 
 page.on('console', message => {
@@ -45,6 +49,17 @@ try {
 
   await page.getByRole('button', { name: 'More options' }).click();
   await page.getByText('Help').waitFor();
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('button', { name: 'Copy view summary' }).click();
+  await page.getByRole('button', { name: 'Copied view summary' }).waitFor();
+  const copiedSummary = await page.evaluate(() => navigator.clipboard.readText());
+  if (
+    !copiedSummary.includes('Nav Map: ') ||
+    !copiedSummary.includes('View: flow') ||
+    !copiedSummary.includes('Flow: ')
+  ) {
+    throw new Error(`Unexpected copied view summary: ${copiedSummary}`);
+  }
 
   if (messages.length > 0) {
     throw new Error(messages.join('\n'));
