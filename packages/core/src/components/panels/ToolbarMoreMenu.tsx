@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import type { NavMapGraph, ViewMode } from '../../types';
 import { ExportButton } from './ExportButton';
 import { PanelRow } from './PanelRow';
 import { toolbarButtonStyle, toolbarPopoverStyle } from './toolbarStyles';
@@ -7,7 +8,10 @@ interface ToolbarMoreMenuProps {
   isDark: boolean;
   refObject: RefObject<HTMLDivElement | null>;
   isOpen: boolean;
+  graph?: NavMapGraph | null;
   graphName?: string;
+  selectedFlowIndex?: number | null;
+  viewMode?: ViewMode;
   hasAnalytics: boolean;
   showAnalytics: boolean;
   showRouteHealth: boolean;
@@ -22,7 +26,10 @@ export function ToolbarMoreMenu({
   isDark,
   refObject,
   isOpen,
+  graph,
   graphName,
+  selectedFlowIndex,
+  viewMode,
   hasAnalytics,
   showAnalytics,
   showRouteHealth,
@@ -74,7 +81,12 @@ export function ToolbarMoreMenu({
             }}
           />
           <div style={{ padding: '4px 8px' }}>
-            <ExportButton graphName={graphName} />
+            <ExportButton
+              graph={graph}
+              graphName={graphName}
+              selectedFlowIndex={selectedFlowIndex}
+              viewMode={viewMode}
+            />
           </div>
         </div>
       )}

@@ -1,16 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import type { NavMapGraph, ViewMode } from '../../types';
 
 interface ExportButtonProps {
   graphName?: string;
+  graph?: NavMapGraph | null;
+  viewMode?: ViewMode;
+  selectedFlowIndex?: number | null;
 }
 
-export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
+export function ExportButton({
+  graphName = 'nav-map',
+  graph,
+  viewMode,
+  selectedFlowIndex,
+}: ExportButtonProps) {
   const { isDark } = useNavMapContext();
   const { getNodes } = useReactFlow();
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,6 +127,24 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
     }
   };
 
+  const copyViewSummary = async () => {
+    const summary = buildViewSummary({
+      graph,
+      graphName,
+      selectedFlowIndex,
+      url: typeof window === 'undefined' ? undefined : window.location.href,
+      viewMode,
+    });
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopyState('copied');
+      window.setTimeout(() => setCopyState('idle'), 1800);
+    } catch {
+      setCopyState('failed');
+      window.setTimeout(() => setCopyState('idle'), 1800);
+    }
+  };
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
@@ -157,10 +185,47 @@ export function ExportButton({ graphName = 'nav-map' }: ExportButtonProps) {
           <button onClick={exportPNG} style={dropdownItemStyle(isDark)}>
             Export as PNG (2x)
           </button>
+          <button onClick={copyViewSummary} style={dropdownItemStyle(isDark)}>
+            {copyState === 'copied'
+              ? 'Copied view summary'
+              : copyState === 'failed'
+                ? 'Copy failed'
+                : 'Copy view summary'}
+          </button>
         </div>
       )}
     </div>
   );
+}
+
+export function buildViewSummary({
+  graph,
+  graphName,
+  selectedFlowIndex,
+  url,
+  viewMode,
+}: {
+  graph?: NavMapGraph | null;
+  graphName: string;
+  selectedFlowIndex?: number | null;
+  url?: string;
+  viewMode?: ViewMode;
+}): string {
+  const flow =
+    selectedFlowIndex !== null && selectedFlowIndex !== undefined
+      ? graph?.flows?.[selectedFlowIndex]
+      : undefined;
+  const lines = [
+    `Nav Map: ${graph?.meta.name ?? graphName}`,
+    viewMode ? `View: ${viewMode}` : null,
+    flow ? `Flow: ${flow.name} (${flow.steps.length} steps)` : null,
+    graph ? `Routes: ${graph.nodes.length}` : null,
+    graph ? `Edges: ${graph.edges.length}` : null,
+    graph?.flows ? `Flows: ${graph.flows.length}` : null,
+    url ? `URL: ${url}` : null,
+  ];
+
+  return lines.filter(Boolean).join('\n');
 }
 
 function dropdownItemStyle(isDark: boolean): React.CSSProperties {
