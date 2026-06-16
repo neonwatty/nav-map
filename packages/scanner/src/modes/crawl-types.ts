@@ -59,6 +59,7 @@ export interface CrawlOptions {
   screenshotDir?: string;
   maxPages?: number;
   context?: import('playwright').BrowserContext;
+  storageState?: string;
   interactions?: boolean;
   maxInteractionsPerPage?: number;
   includeInteraction?: string[];

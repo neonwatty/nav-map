@@ -1,0 +1,382 @@
+{
+  "version": "1.0",
+  "meta": {
+    "name": "Deckchecker Speaker Workflow",
+    "baseUrl": "https://deckchecker.app",
+    "generatedAt": "2026-06-14T00:00:00.000Z",
+    "generatedBy": "manual",
+    "framework": "generic",
+    "workflow": {
+      "sourceAppPath": "/Users/neonwatty/Desktop/deckchecker",
+      "productionFixture": {
+        "account": "speaker2@test.deckchecker.app",
+        "eventId": "b2000000-0000-4000-8000-000000000001",
+        "acceptedSessionId": "d2000000-0000-4000-8000-000000000001",
+        "pendingSessionId": "d2000000-0000-4000-8000-000000000002",
+        "eventName": "Nav Map Speaker Workflow Fixture"
+      },
+      "safety": "Read-only pilot except headed login capture. Do not upload decks or save profile edits.",
+      "description": "Speaker-first Deckchecker atlas for agent context, auth-state verification, probes, and diff receipts.",
+      "layout": {
+        "defaultViewMode": "map",
+        "defaultTreeRootId": "speaker-events",
+        "sectionOrder": ["public", "auth", "speaker", "boundary"]
+      },
+      "personas": [
+        {
+          "id": "signed-out",
+          "label": "Signed out visitor"
+        },
+        {
+          "id": "speaker",
+          "label": "Deckchecker speaker"
+        }
+      ],
+      "authStates": [
+        {
+          "id": "signed-out",
+          "label": "Signed out",
+          "kind": "anonymous"
+        },
+        {
+          "id": "speaker",
+          "label": "Speaker",
+          "kind": "storage-state",
+          "storageStatePath": ".nav-map/auth/deckchecker-speaker-prod.storage.json",
+          "capture": {
+            "mode": "headed-login",
+            "startRoute": "/sign-in",
+            "successRoute": "/my/events",
+            "successSelector": "main",
+            "successText": "My Events"
+          },
+          "verify": {
+            "route": "/my/events",
+            "expectStatus": 200,
+            "expectText": "My Events"
+          }
+        }
+      ],
+      "routeVariables": {
+        "eventId": "b2000000-0000-4000-8000-000000000001",
+        "acceptedSessionId": "d2000000-0000-4000-8000-000000000001",
+        "pendingSessionId": "d2000000-0000-4000-8000-000000000002"
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Landing",
+      "group": "public",
+      "metadata": {
+        "purpose": "Public landing page; signed-in users redirect by role.",
+        "section": "public",
+        "personas": ["signed-out", "speaker"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"]
+        },
+        "sourceHints": ["web/src/app/page.tsx"]
+      }
+    },
+    {
+      "id": "sign-in",
+      "route": "/sign-in",
+      "label": "Sign In",
+      "group": "auth",
+      "metadata": {
+        "purpose": "Authentication entry for seeded speaker login.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Sign In"]
+        },
+        "sourceHints": ["web/src/app/(auth)/sign-in/page.tsx"]
+      }
+    },
+    {
+      "id": "waitlist",
+      "route": "/waitlist",
+      "label": "Waitlist",
+      "group": "public",
+      "metadata": {
+        "purpose": "Public conversion fallback.",
+        "section": "public",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"]
+        },
+        "sourceHints": ["web/src/app/(public)/waitlist/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-events",
+      "route": "/my/events",
+      "label": "My Events",
+      "group": "speaker",
+      "screenshot": "screenshots/deckchecker-speaker/my-events.png",
+      "metadata": {
+        "purpose": "Speaker home route listing assigned events, including the production nav-map fixture.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "signed-out",
+            "to": "/sign-in?next=/my/events"
+          }
+        ],
+        "expectations": {
+          "signedOutRedirect": "/sign-in?next=/my/events",
+          "selectors": ["main"],
+          "text": ["My Events", "Nav Map Speaker Workflow Fixture"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/events/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-event-detail",
+      "route": "/my/events/[eventId]",
+      "label": "Speaker Event Detail",
+      "group": "speaker",
+      "screenshot": "screenshots/deckchecker-speaker/event-detail.png",
+      "metadata": {
+        "purpose": "Speaker event detail with sessions and submission status.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Nav Map Speaker Workflow Fixture"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/events/[id]/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-invitation",
+      "route": "/my/events/[eventId]/invitation",
+      "label": "Invitation",
+      "group": "speaker",
+      "screenshot": "screenshots/deckchecker-speaker/invitation.png",
+      "metadata": {
+        "purpose": "Speaker invitation response surface for the pending fixture session.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Accept Invitation"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/events/[id]/invitation/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-upload",
+      "route": "/my/events/[eventId]/upload?session=[acceptedSessionId]",
+      "label": "Upload Deck",
+      "group": "speaker",
+      "screenshot": "screenshots/deckchecker-speaker/upload.png",
+      "metadata": {
+        "purpose": "Speaker deck upload surface for the accepted fixture session. First pilot verifies UI only and does not upload files.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Upload Deck", "nav-map-speaker-workflow-fixture.pptx"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/events/[id]/upload/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-results",
+      "route": "/my/events/[eventId]/results?session=[acceptedSessionId]",
+      "label": "Results",
+      "group": "speaker",
+      "screenshot": "screenshots/deckchecker-speaker/results.png",
+      "metadata": {
+        "purpose": "Speaker scan results surface for the accepted fixture session.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Scan Results", "nav-map-speaker-workflow-fixture.pptx"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/events/[id]/results/page.tsx"]
+      }
+    },
+    {
+      "id": "speaker-profile",
+      "route": "/my/profile",
+      "label": "Speaker Profile",
+      "group": "speaker",
+      "metadata": {
+        "purpose": "Speaker profile form. First pilot verifies UI only and does not save edits.",
+        "section": "speaker",
+        "personas": ["speaker"],
+        "authRequirement": "speaker",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"],
+          "status": 200
+        },
+        "sourceHints": ["web/src/app/(speaker)/my/profile/page.tsx"]
+      }
+    },
+    {
+      "id": "admin-dashboard-boundary",
+      "route": "/admin/dashboard",
+      "label": "Admin Boundary",
+      "group": "boundary",
+      "metadata": {
+        "purpose": "Boundary route used to verify speaker cannot access admin dashboard.",
+        "section": "boundary",
+        "personas": ["speaker"],
+        "authRequirement": "admin",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"]
+        },
+        "sourceHints": ["web/src/app/(admin)/admin/dashboard/page.tsx"]
+      }
+    },
+    {
+      "id": "planner-events-boundary",
+      "route": "/events",
+      "label": "Planner Boundary",
+      "group": "boundary",
+      "metadata": {
+        "purpose": "Boundary route used to verify speaker cannot access planner event list.",
+        "section": "boundary",
+        "personas": ["speaker"],
+        "authRequirement": "planner",
+        "authRequired": true,
+        "expectations": {
+          "selectors": ["main"]
+        },
+        "sourceHints": ["web/src/app/(planner)/events/page.tsx"]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "sign-in-to-speaker-events-1",
+      "source": "sign-in",
+      "target": "speaker-events",
+      "type": "redirect",
+      "label": "Sign in as speaker",
+      "action": "Sign in as speaker",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-events-to-speaker-event-detail-2",
+      "source": "speaker-events",
+      "target": "speaker-event-detail",
+      "type": "link",
+      "label": "Open assigned event",
+      "action": "Open assigned event",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-event-detail-to-speaker-invitation-3",
+      "source": "speaker-event-detail",
+      "target": "speaker-invitation",
+      "type": "link",
+      "label": "Review invitation",
+      "action": "Review invitation",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-event-detail-to-speaker-upload-4",
+      "source": "speaker-event-detail",
+      "target": "speaker-upload",
+      "type": "link",
+      "label": "Open upload surface",
+      "action": "Open upload surface",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-upload-to-speaker-results-5",
+      "source": "speaker-upload",
+      "target": "speaker-results",
+      "type": "link",
+      "label": "Review scan results",
+      "action": "Review scan results",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-events-to-speaker-profile-6",
+      "source": "speaker-events",
+      "target": "speaker-profile",
+      "type": "link",
+      "label": "Open profile",
+      "action": "Open profile",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-events-to-sign-in-7",
+      "source": "speaker-events",
+      "target": "sign-in",
+      "type": "redirect",
+      "label": "Redirect signed-out visitor",
+      "action": "Redirect signed-out visitor",
+      "personas": ["signed-out"]
+    }
+  ],
+  "groups": [
+    {
+      "id": "public",
+      "label": "Public"
+    },
+    {
+      "id": "auth",
+      "label": "Auth"
+    },
+    {
+      "id": "speaker",
+      "label": "Speaker"
+    },
+    {
+      "id": "boundary",
+      "label": "Role Boundaries"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Speaker sign-in and event list",
+      "steps": ["sign-in", "speaker-events"]
+    },
+    {
+      "name": "Speaker event review",
+      "steps": ["speaker-events", "speaker-event-detail", "speaker-invitation"]
+    },
+    {
+      "name": "Speaker deck workflow",
+      "steps": ["speaker-event-detail", "speaker-upload", "speaker-results"]
+    },
+    {
+      "name": "Speaker auth boundaries",
+      "steps": ["speaker-events", "admin-dashboard-boundary", "planner-events-boundary"],
+      "partial": true
+    }
+  ]
+}

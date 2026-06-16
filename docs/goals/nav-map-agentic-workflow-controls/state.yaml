@@ -1,0 +1,331 @@
+version: 2
+
+goal:
+  title: 'Nav Map Agentic Workflow Controls'
+  slug: 'nav-map-agentic-workflow-controls'
+  kind: existing_plan
+  tranche: 'Document and preserve implemented agentic workflow controls.'
+  status: done
+  oracle:
+    signal: 'README and board state accurately describe clickable workflow filters, graph focus behavior, scanner context filters, and auth-state redaction safety.'
+    cadence: 'after Task 5 documentation verification'
+    final_proof: 'README sanity checks and GoalBuddy board validation pass without inspecting secrets or claiming unrun browser/build proof.'
+  intake:
+    original_request: 'Add docs and a GoalBuddy board for the already-implemented agentic workflow controls.'
+    interpreted_outcome: 'Create concise user documentation and a measurable board with receipts for Tasks 1-5.'
+    input_shape: existing_plan
+    audience: 'nav-map users, coding agents, and future GoalBuddy reviewers'
+    authority: approved
+    proof_type: artifact
+    completion_proof: 'README and state.yaml exist, are internally consistent, and pass safe local sanity checks.'
+    likely_misfire: 'Claiming final implementation proof or browser screenshots from the documentation task without actually running them.'
+    blind_spots_considered:
+      - 'Auth-state examples can accidentally encourage copying storage-state contents into prompts.'
+      - 'Documentation can drift from CLI flag names and graph behavior.'
+      - 'GoalBuddy receipts must separate prior implementation context from Task 5 verification.'
+    existing_plan_facts:
+      - 'Core workflow filters were implemented in packages/core/src/workflowFilters.ts with tests.'
+      - 'UI overview chips apply filters in NavMap/WorkflowOverview and Escape clears filters.'
+      - 'Graph styling highlights matching nodes and edges for workflow filters.'
+      - 'Scanner context CLI supports --section, --persona, --auth, --health, --evidence filters, comma-separated values, contract summaries, and redaction.'
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: none
+  local:
+    status: not_started
+    url: null
+    command: 'npx goalbuddy board docs/goals/nav-map-agentic-workflow-controls'
+
+active_task: null
+
+acceptance_criteria:
+  - 'README explains clickable workflow overview chips.'
+  - 'README explains graph focus behavior for matching and non-matching nodes/edges.'
+  - 'README explains Escape clearing workflow filters.'
+  - 'README documents scanner context filters: --section, --persona, --auth, --health, and --evidence.'
+  - 'README includes one or two CLI examples using deckchecker/prcard manifests.'
+  - 'README states auth-state and redaction safety without exposing storage-state contents.'
+  - 'Board records receipts for Tasks 1-4 based on implementation context.'
+  - 'Task 5 records only verification that was actually run.'
+
+tasks:
+  - id: T001
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Implement core workflow filter derivation and matching logic with focused tests.'
+    allowed_files:
+      - 'packages/core/src/workflowFilters.ts'
+      - 'packages/core/src/workflowFilters.test.ts'
+    verify:
+      - 'Focused core workflow filter tests.'
+    stop_if:
+      - 'Need files outside assigned implementation slice.'
+      - 'Filter logic cannot remain generic over workflow metadata.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/workflowFilters.ts'
+        - 'packages/core/src/workflowFilters.test.ts'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- workflowFilters'
+          status: pass
+          evidence: 'Focused workflow filter tests passed during Task 1 review; final focused core test sweep also passed.'
+      summary: 'Core workflow filters were implemented with tests. Filters cover workflow sections, personas, auth requirements, health states, evidence presence, and matching behavior used by UI and graph styling.'
+      evidence:
+        - 'Implementation context provided by Task 5 prompt confirms packages/core/src/workflowFilters.ts and tests exist.'
+      limitations:
+        - 'Final browser proof is recorded by the PM audit rather than this worker receipt.'
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Wire workflow overview chips to graph filter state and keyboard clearing.'
+    allowed_files:
+      - 'packages/core/src/components/NavMap.tsx'
+      - 'packages/core/src/components/NavMapChrome.tsx'
+      - 'packages/core/src/components/NavMapShell.tsx'
+      - 'packages/core/src/components/NavMap.test.tsx'
+      - 'packages/core/src/components/panels/WorkflowOverview.tsx'
+      - 'packages/core/src/components/panels/WorkflowOverview.test.tsx'
+      - 'packages/core/src/components/panels/StatusBanners.tsx'
+      - 'packages/core/src/hooks/useKeyboardNav.ts'
+    verify:
+      - 'Focused NavMap/WorkflowOverview interaction tests.'
+    stop_if:
+      - 'Need product-specific PRcard or Deckchecker logic.'
+      - 'Escape conflicts with existing panel/search clearing semantics.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/components/NavMap.tsx'
+        - 'packages/core/src/components/NavMapChrome.tsx'
+        - 'packages/core/src/components/NavMapShell.tsx'
+        - 'packages/core/src/components/NavMap.test.tsx'
+        - 'packages/core/src/components/panels/WorkflowOverview.tsx'
+        - 'packages/core/src/components/panels/WorkflowOverview.test.tsx'
+        - 'packages/core/src/components/panels/StatusBanners.tsx'
+        - 'packages/core/src/hooks/useKeyboardNav.ts'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- WorkflowOverview NavMap useKeyboardNav'
+          status: pass
+          evidence: 'Focused interaction tests passed during Task 3 review; final focused core test sweep also passed.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map typecheck'
+          status: pass
+      summary: 'Workflow overview chips apply workflow filters in NavMap/WorkflowOverview, and Escape clears workflow filters alongside existing escape behavior.'
+      evidence:
+        - 'Implementation context provided by Task 5 prompt confirms chip filtering and Escape clearing are already implemented.'
+      limitations:
+        - 'Final browser proof is recorded by the PM audit rather than this worker receipt.'
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Style graph nodes and edges so active workflow filters visibly focus matching workflow paths.'
+    allowed_files:
+      - 'packages/core/src/hooks/useGraphStyling.ts'
+      - 'packages/core/src/hooks/useGraphStyling.test.ts'
+      - 'packages/core/src/utils/graphNodeStyling.ts'
+      - 'packages/core/src/utils/graphEdgeStyling.ts'
+      - 'packages/core/src/utils/graphStyling.ts'
+    verify:
+      - 'Focused graph styling tests.'
+    stop_if:
+      - 'Need app-specific styling branches.'
+      - 'Filtered graph styling hides required context or breaks unfiltered maps.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/hooks/useGraphStyling.ts'
+        - 'packages/core/src/hooks/useGraphStyling.test.ts'
+        - 'packages/core/src/utils/graphNodeStyling.ts'
+        - 'packages/core/src/utils/graphEdgeStyling.ts'
+        - 'packages/core/src/utils/graphStyling.ts'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- useGraphStyling'
+          status: pass
+        - cmd: 'pnpm --filter @neonwatty/nav-map typecheck'
+          status: pass
+      summary: 'Graph styling highlights matching workflow nodes and edges while dimming non-matching graph elements when a workflow filter is active.'
+      evidence:
+        - 'Implementation context provided by Task 5 prompt confirms matching node/edge highlighting is already implemented.'
+      limitations:
+        - 'Final browser proof is recorded by the PM audit rather than this worker receipt.'
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Add scanner context filters, contract summaries, comma-separated values, and redaction behavior.'
+    allowed_files:
+      - 'packages/scanner/src/commands/context.ts'
+      - 'packages/scanner/src/modes/context.ts'
+      - 'packages/scanner/src/__tests__/context.test.ts'
+      - 'packages/scanner/src/__tests__/commands.test.ts'
+      - 'packages/scanner/src/modes/agent-contract.ts'
+    verify:
+      - 'Focused scanner context tests.'
+      - 'Sample context contract output sanity check.'
+      - 'Secret-pattern scan of generated context output.'
+    stop_if:
+      - 'Need to inspect or print storage-state JSON, secrets, cookies, tokens, private keys, OAuth secrets, env values, or .nav-map/auth contents.'
+      - 'Context filters cannot preserve redacted contract output.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/scanner/src/commands/context.ts'
+        - 'packages/scanner/src/modes/context.ts'
+        - 'packages/scanner/src/__tests__/context.test.ts'
+        - 'packages/scanner/src/__tests__/commands.test.ts'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map-scanner test -- context commands'
+          status: pass
+          evidence: '21 test files passed, 1 skipped; 160 tests passed, 2 skipped in final focused scanner verification.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map-scanner build'
+          status: pass
+        - cmd: 'node packages/scanner/dist/cli.js context packages/demo/public/deckchecker-speaker.workflow.json --auth speaker --format json --contract -o /tmp/deckchecker-speaker-context-filter.contract.json'
+          status: pass
+          evidence: 'workflow-context contract summary filters.auth=speaker, routeCount 6, flowCount 4.'
+        - cmd: 'node packages/scanner/dist/cli.js context packages/demo/public/prcard.workflow.json --persona signed-in-with-github --evidence screenshot --format json --contract -o /tmp/prcard-github-screenshot-context-filter.contract.json'
+          status: pass
+          evidence: 'workflow-context contract summary filters.persona=signed-in-with-github and filters.evidence=screenshot, routeCount 3, flowCount 3.'
+        - cmd: 'rg secret-pattern scan over /tmp/deckchecker-speaker-context-filter.contract.json and /tmp/prcard-github-screenshot-context-filter.contract.json'
+          status: pass
+          evidence: 'No secret-shaped strings, storage-state paths, cookies, tokens, private keys, database URLs, webhook secrets, password/api-key shapes, or .nav-map/auth paths were found.'
+      summary: 'Scanner context supports --section, --persona, --auth, --health, and --evidence filters with comma-separated values, contract summaries, and redaction safeguards.'
+      evidence:
+        - 'Implementation context provided by Task 5 prompt confirms these context CLI capabilities are already implemented.'
+      limitations:
+        - 'Context artifacts are local receipts under /tmp and are not committed.'
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: 'Add concise README documentation and this GoalBuddy board for the already-implemented agentic workflow controls.'
+    allowed_files:
+      - 'README.md'
+      - 'docs/goals/nav-map-agentic-workflow-controls/goal.md'
+      - 'docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+      - 'docs/goals/nav-map-agentic-workflow-controls/notes/README.md'
+    verify:
+      - 'npx goalbuddy --help'
+      - 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+      - 'node -e README/board sanity check'
+      - 'git diff --check -- README.md docs/goals/nav-map-agentic-workflow-controls/goal.md docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+    stop_if:
+      - 'Need files outside allowed_files.'
+      - 'Need to inspect or print secrets, cookies, tokens, private keys, OAuth secrets, env values, storage-state JSON, or anything under .nav-map/auth.'
+      - 'GoalBuddy state checker or README/board sanity still fails after two fix attempts.'
+      - 'Another active Worker may touch README.md or this goal directory.'
+    receipt:
+      result: done
+      changed_files:
+        - 'README.md'
+        - 'docs/goals/nav-map-agentic-workflow-controls/goal.md'
+        - 'docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+        - 'docs/goals/nav-map-agentic-workflow-controls/notes/README.md'
+      commands:
+        - cmd: 'npx goalbuddy --help'
+          status: pass
+          evidence: 'GoalBuddy CLI is installed and lists available commands.'
+        - cmd: 'node -e README/board sanity check'
+          status: pass
+          evidence: 'Required README strings and T001-T005 receipts are present.'
+        - cmd: 'git diff --check -- README.md docs/goals/nav-map-agentic-workflow-controls/goal.md docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+          status: pass
+        - cmd: 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agentic-workflow-controls/state.yaml'
+          status: pass
+          evidence: 'GoalBuddy state checker passed after receipt and final-audit fixes.'
+      summary: 'Added README documentation for workflow overview chip filters, graph focus behavior, Escape clearing, context CLI filters, examples, and redaction/auth-state safety. Created this GoalBuddy board with receipts for Tasks 1-5.'
+      limitations:
+        - 'Browser screenshots and monorepo build are recorded by the final PM audit rather than this docs worker receipt.'
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Final audit for the Agentic Workflow Controls board.'
+    inputs:
+      - 'All done receipts'
+      - 'Focused tests'
+      - 'Context contract artifacts'
+      - 'Local demo browser proof'
+    constraints:
+      - 'Do not inspect or print secrets, cookies, tokens, storage-state JSON, private keys, OAuth secrets, webhook secrets, service-role keys, or env values.'
+      - 'Reject completion if clickable workflow filters, scanner context filters, docs, board validity, or local demo proof are missing.'
+    expected_output:
+      - 'complete | not_complete'
+      - 'full_outcome_complete: true | false'
+      - 'Known limitations'
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: 'Agentic workflow controls are complete for the first pass: reusable workflow filters feed graph focus styling, overview chips are clickable and keyboard-clearable, scanner context can emit filtered contracts, docs describe the agent loop, and the board validates.'
+      evidence:
+        - 'Core focused tests passed: pnpm --filter @neonwatty/nav-map test -- workflowFilters useGraphStyling WorkflowOverview NavMap useKeyboardNav.'
+        - 'Scanner focused tests passed: pnpm --filter @neonwatty/nav-map-scanner test -- context commands.'
+        - 'Core typecheck passed.'
+        - 'Scanner build passed.'
+        - 'Monorepo build passed: pnpm build.'
+        - 'Local demo HTTP check passed: curl -I http://127.0.0.1:41739/ returned 200 OK.'
+        - 'Browser proof passed for PRcard: persona Signed In With Github chip applied, banner visible, screenshot saved, no console or page errors.'
+        - 'Browser proof passed for Deckchecker: auth Speaker chip applied, banner visible, screenshot saved, no console or page errors.'
+        - 'Deckchecker speaker context contract generated with auth filter speaker, routeCount 6, flowCount 4.'
+        - 'PRcard GitHub screenshot context contract generated with persona signed-in-with-github, evidence screenshot, routeCount 3, flowCount 3.'
+        - 'Secret-pattern scan across generated context contracts returned no matches.'
+        - 'GoalBuddy checker passed for docs/goals/nav-map-agentic-workflow-controls/state.yaml.'
+      screenshots:
+        - '/tmp/nav-map-prcard-auth-filter.png'
+        - '/tmp/nav-map-deckchecker-speaker-auth-filter.png'
+      limitations:
+        - 'Live page inspection remains a reserved manifest/agent-explorer surface, not part of this slice.'
+        - 'The local demo screenshots prove filter visibility and UI rendering, not production Deckchecker account behavior.'
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - 'pnpm --filter @neonwatty/nav-map test -- workflowFilters useGraphStyling WorkflowOverview NavMap useKeyboardNav'
+      - 'pnpm --filter @neonwatty/nav-map-scanner test -- context commands'
+      - 'pnpm --filter @neonwatty/nav-map typecheck'
+      - 'pnpm --filter @neonwatty/nav-map-scanner build'
+      - 'pnpm build'
+      - 'curl -I http://127.0.0.1:41739/'
+      - 'Playwright browser proof for PRcard persona Signed In With Github workflow filter'
+      - 'Playwright browser proof for Deckchecker auth Speaker workflow filter'
+      - 'node packages/scanner/dist/cli.js context packages/demo/public/deckchecker-speaker.workflow.json --auth speaker --format json --contract -o /tmp/deckchecker-speaker-context-filter.contract.json'
+      - 'node packages/scanner/dist/cli.js context packages/demo/public/prcard.workflow.json --persona signed-in-with-github --evidence screenshot --format json --contract -o /tmp/prcard-github-screenshot-context-filter.contract.json'
+      - 'rg secret-pattern scan across generated context contracts'
+      - 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agentic-workflow-controls/state.yaml'

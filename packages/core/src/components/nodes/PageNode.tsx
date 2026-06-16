@@ -17,6 +17,11 @@ function PageNodeComponent({ data, selected }: NodeProps) {
 
   const coverageStatus = showCoverage ? nodeData.coverage?.status : undefined;
   const coverageBorderColor = getCoverageBorderColor(coverageStatus);
+  const metadata = nodeData.metadata;
+  const healthStatus = metadata?.health?.status;
+  const personas = Array.isArray(metadata?.personas) ? metadata.personas : [];
+  const authRequirement =
+    typeof metadata?.authRequirement === 'string' ? metadata.authRequirement : undefined;
 
   return (
     <div
@@ -101,7 +106,7 @@ function PageNodeComponent({ data, selected }: NodeProps) {
           }}
         >
           {nodeData.label}
-          {Boolean(nodeData.metadata?.authRequired) && (
+          {Boolean(metadata?.authRequired) && (
             <span
               style={{
                 fontSize: 9,
@@ -115,8 +120,41 @@ function PageNodeComponent({ data, selected }: NodeProps) {
               &#x1F512;
             </span>
           )}
+          {healthStatus && healthStatus !== 'unknown' && (
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: getHealthColor(healthStatus),
+                display: 'inline-block',
+                flex: '0 0 auto',
+              }}
+              title={`Health: ${healthStatus}`}
+            />
+          )}
           {coverageStatus && <CoverageBadge status={coverageStatus} />}
         </div>
+        {(authRequirement || personas.length > 0) && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              marginTop: 5,
+              flexWrap: 'wrap',
+            }}
+          >
+            {authRequirement && (
+              <NodeBadge isDark={isDark} label={formatCompactLabel(authRequirement)} />
+            )}
+            {personas.length > 0 && (
+              <NodeBadge
+                isDark={isDark}
+                label={`${personas.length} ${personas.length === 1 ? 'state' : 'states'}`}
+              />
+            )}
+          </div>
+        )}
         <div
           style={{
             fontSize: 10,
@@ -139,3 +177,37 @@ function PageNodeComponent({ data, selected }: NodeProps) {
 }
 
 export const PageNode = memo(PageNodeComponent);
+
+function NodeBadge({ isDark, label }: { isDark: boolean; label: string }) {
+  return (
+    <span
+      style={{
+        maxWidth: 76,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        fontSize: 9,
+        lineHeight: '13px',
+        padding: '0 5px',
+        borderRadius: 4,
+        background: isDark ? '#20202c' : '#eef1f6',
+        color: isDark ? '#aeb4c8' : '#4b5565',
+        border: `1px solid ${isDark ? '#2f3040' : '#dde2eb'}`,
+      }}
+      title={label}
+    >
+      {label}
+    </span>
+  );
+}
+
+function getHealthColor(status: string): string {
+  if (status === 'healthy') return '#35b779';
+  if (status === 'warning') return '#e3a52f';
+  if (status === 'failing') return '#e05252';
+  return '#7a8496';
+}
+
+function formatCompactLabel(value: string): string {
+  return value.replace(/-/g, ' ');
+}

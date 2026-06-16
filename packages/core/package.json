@@ -38,6 +38,11 @@
       "import": "./dist/validation.js",
       "require": "./dist/validation.cjs"
     },
+    "./workflow": {
+      "types": "./dist/workflow.d.ts",
+      "import": "./dist/workflow.js",
+      "require": "./dist/workflow.cjs"
+    },
     "./styles.css": "./dist/index.css"
   },
   "files": [

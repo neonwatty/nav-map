@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, CSSProperties, ErrorInfo, MouseEvent } from 'react';
 import {
   ReactFlowProvider,
@@ -14,6 +14,8 @@ import '@xyflow/react/dist/style.css';
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';
 import type { AnalyticsAdapter } from '../analytics/types';
+import type { WorkflowFilter } from '../workflowFilters';
+import { matchWorkflowFilter } from '../workflowFilters';
 import { useKeyboardNav } from '../hooks/useKeyboardNav';
 import { useGraphStyling } from '../hooks/useGraphStyling';
 import { useNavMapState } from '../hooks/useNavMap';
@@ -79,7 +81,7 @@ function NavMapInner({
   analytics: analyticsAdapter,
   className,
   style,
-  defaultViewMode = 'hierarchy',
+  defaultViewMode,
   defaultEdgeMode = 'smooth',
   theme,
   hideToolbar = false,
@@ -90,6 +92,8 @@ function NavMapInner({
   onHelpClose,
 }: NavMapProps) {
   const graph = useNavMapGraphSource({ graph: graphProp, graphUrl, onValidationError });
+  const workflowLayout = graph?.meta.workflow?.layout;
+  const initialViewMode = defaultViewMode ?? workflowLayout?.defaultViewMode ?? 'hierarchy';
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [layoutDone, setLayoutDone] = useState(false);
@@ -98,10 +102,13 @@ function NavMapInner({
   const [showRedirects, setShowRedirects] = usePersistentState('nav-map:show-redirects', false);
   const [viewMode, setViewMode] = usePersistentState<ViewMode>(
     'nav-map:view-mode',
-    defaultViewMode
+    initialViewMode
   );
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
+  const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter | null>(null);
   const [treeRootId, setTreeRootId] = useState<string | null>(null);
+  const resolvedTreeRootId =
+    treeRootId ?? resolveDefaultTreeRootId(graph, workflowLayout?.defaultTreeRootId);
   const [edgeMode, setEdgeMode] = usePersistentState<EdgeMode>(
     'nav-map:edge-mode',
     defaultEdgeMode
@@ -195,7 +202,7 @@ function NavMapInner({
     viewMode,
     viewModeRef,
     selectedFlowIndex,
-    treeRootId,
+    treeRootId: resolvedTreeRootId,
     edgeMode,
     showSharedNav,
     nodes,
@@ -228,6 +235,18 @@ function NavMapInner({
     setTreeRootId,
     setCenter,
   });
+  const handleWorkflowFilterChange = useCallback(
+    (filter: WorkflowFilter | null) => {
+      setWorkflowFilter(filter);
+      if (filter) {
+        setFocusedGroupId(null);
+        setAuditFocus(null);
+        guardedSetShowSearch(false);
+        setSearchQuery('');
+      }
+    },
+    [guardedSetShowSearch, setAuditFocus, setFocusedGroupId]
+  );
 
   // Keyboard navigation (extracted to hook)
   useKeyboardNav({
@@ -252,6 +271,8 @@ function NavMapInner({
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    workflowFilterActive: Boolean(workflowFilter),
+    clearWorkflowFilter: () => handleWorkflowFilterChange(null),
     setShowRedirects,
     undo,
     canUndo,
@@ -260,6 +281,10 @@ function NavMapInner({
   });
 
   const { onNodeDragStart, onNodeDragStop } = useNodeDragUndo({ nodesRef, pushSnapshot });
+  const workflowFilterMatch = useMemo(
+    () => matchWorkflowFilter(graph, workflowFilter),
+    [graph, workflowFilter]
+  );
 
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
@@ -275,6 +300,8 @@ function NavMapInner({
     showRedirects,
     searchMatchIds,
     auditFocusNodeIds,
+    workflowFocusNodeIds: workflowFilterMatch?.nodeIds ?? null,
+    workflowFocusEdgeIds: workflowFilterMatch?.edgeIds ?? null,
   });
 
   // Double-click opens gallery if ANY flow has gallery data for this node
@@ -307,11 +334,12 @@ function NavMapInner({
   // prettier-ignore
   const shellProps: ComponentProps<typeof NavMapShell> = {
     ctx, graph, containerRef, className, style, theme, hideToolbar, isNarrow, analyticsAdapter,
-    viewMode, setViewMode, selectedFlowIndex, setSelectedFlowIndex, treeRootId, setTreeRootId,
+    viewMode, setViewMode, selectedFlowIndex, setSelectedFlowIndex, treeRootId: resolvedTreeRootId, setTreeRootId,
     focusedGroupId, setFocusedGroupId, edgeMode, setEdgeMode, showSharedNav, setShowSharedNav,
     showRedirects, setShowRedirects, focusMode, setFocusMode, isAnimatingFlow, setIsAnimatingFlow,
     searchQuery, showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
     setShowCoverage, hasCoverageData, auditFocusLabel: auditFocus?.label ?? null,
+    workflowFilter, setWorkflowFilter: handleWorkflowFilterChange,
     clearAuditFocus: () => setAuditFocus(null), walkthrough, layoutDone, nodes, styledNodes,
     styledEdges, viewport, hierarchyExpandedGroups, setHierarchyExpandedGroups,
     expandAllHierarchyGroups, collapseAllHierarchyGroups, selectedNode, contextMenu,
@@ -324,6 +352,21 @@ function NavMapInner({
   };
 
   return <NavMapShell {...shellProps} />;
+}
+
+function resolveDefaultTreeRootId(
+  graph: NavMapGraph | null,
+  preferredRootId?: string
+): string | null {
+  if (!graph?.nodes.length) return null;
+  if (preferredRootId && graph.nodes.some(node => node.id === preferredRootId)) {
+    return preferredRootId;
+  }
+  const firstFlowStep = graph.flows?.find(flow => flow.steps.length > 0)?.steps[0];
+  if (firstFlowStep && graph.nodes.some(node => node.id === firstFlowStep)) {
+    return firstFlowStep;
+  }
+  return graph.nodes[0].id;
 }
 
 export function NavMap(props: NavMapProps) {

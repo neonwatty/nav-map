@@ -7,7 +7,7 @@ export interface NavMapNode {
   group: string;
   screenshot?: string;
   filePath?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: NavMapWorkflowMetadata;
   coverage?: CoverageData;
 }
 
@@ -16,9 +16,12 @@ export interface NavMapEdge {
   source: string;
   target: string;
   label?: string;
+  action?: string;
+  personas?: string[];
   type: 'link' | 'redirect' | 'router-push' | 'shared-nav' | 'test-transition';
   discovery?: 'static-link' | 'observed-interaction';
   sourceCode?: { file: string; line: number; component?: string };
+  metadata?: Record<string, unknown>;
 }
 
 export interface NavMapGroup {
@@ -60,6 +63,54 @@ export interface CoverageData {
   lastRun: string;
 }
 
+export type NavMapHealthStatus = 'healthy' | 'warning' | 'failing' | 'unchecked' | 'unknown';
+
+export interface NavMapExpectedRedirect {
+  to: string;
+  when?: string;
+  reason?: string;
+}
+
+export interface NavMapInspectHint {
+  url?: string;
+  selector?: string;
+  notes?: string;
+}
+
+export interface NavMapWorkflowHealth {
+  status: NavMapHealthStatus;
+  message?: string;
+  checkedAt?: string;
+}
+
+export interface NavMapWorkflowNodeExpectations {
+  selectors?: string[];
+  text?: string[];
+  signedOutRedirect?: string;
+  finalUrl?: string;
+  status?: number;
+}
+
+export interface NavMapWorkflowLayout {
+  defaultViewMode?: ViewMode;
+  defaultTreeRootId?: string;
+  sectionOrder?: string[];
+}
+
+export interface NavMapWorkflowMetadata extends Record<string, unknown> {
+  purpose?: string;
+  section?: string;
+  personas?: string[];
+  authRequirement?: string;
+  authRequired?: boolean;
+  expectedRedirects?: NavMapExpectedRedirect[];
+  health?: NavMapWorkflowHealth;
+  inspect?: NavMapInspectHint;
+  tags?: string[];
+  expectations?: NavMapWorkflowNodeExpectations;
+  sourceHints?: string[];
+}
+
 export interface NavMapFlow {
   name: string;
   steps: string[];
@@ -79,6 +130,12 @@ export interface NavMapGraph {
     generatedAt: string;
     generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record' | 'merged';
     framework?: 'nextjs-app' | 'nextjs-pages' | 'generic';
+    workflow?: {
+      description?: string;
+      personas?: Array<{ id: string; label: string; description?: string }>;
+      layout?: NavMapWorkflowLayout;
+      [key: string]: unknown;
+    };
     diagnostics?: {
       crawl?: {
         attemptedPages: number;

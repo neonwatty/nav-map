@@ -4,6 +4,7 @@ import type { AnalyticsAdapter } from '../analytics/types';
 import { NavMapContext, type NavMapContextValue } from '../hooks/useNavMap';
 import type { WalkthroughState } from '../hooks/useWalkthrough';
 import type { EdgeMode, NavMapGraph, NavMapTheme, ViewMode } from '../types';
+import type { WorkflowFilter } from '../workflowFilters';
 import { NavMapCanvas } from './NavMapCanvas';
 import { NavMapChrome } from './NavMapChrome';
 import { NavMapPanels } from './NavMapPanels';
@@ -50,7 +51,9 @@ interface NavMapShellProps {
   setShowCoverage: Dispatch<SetStateAction<boolean>>;
   hasCoverageData: boolean;
   auditFocusLabel?: string | null;
+  workflowFilter: WorkflowFilter | null;
   clearAuditFocus: () => void;
+  setWorkflowFilter: (filter: WorkflowFilter | null) => void;
   walkthrough: WalkthroughState;
   layoutDone: boolean;
   nodes: Node[];
@@ -144,6 +147,7 @@ export function NavMapShell(props: NavMapShellProps) {
             analyticsAdapter={props.analyticsAdapter}
             showCoverage={showCoverage}
             hasCoverageData={props.hasCoverageData}
+            workflowFilter={props.workflowFilter}
             walkthrough={props.walkthrough}
             onViewModeChange={mode => {
               props.setViewMode(mode);
@@ -178,6 +182,7 @@ export function NavMapShell(props: NavMapShellProps) {
             onClearFocus={() => props.setFocusedGroupId(null)}
             onClearAuditFocus={props.clearAuditFocus}
             onClearSearch={() => props.setSearchQuery('')}
+            onWorkflowFilterChange={props.setWorkflowFilter}
             onWalkthroughGoTo={index => {
               props.walkthrough.goTo(index);
               const nodeId = props.walkthrough.path[index];

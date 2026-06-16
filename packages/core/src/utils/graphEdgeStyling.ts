@@ -12,9 +12,19 @@ export function styleEdges({
   focusedGroupId,
   nodeGroupMap,
   auditFocusNodeIds,
+  searchMatchIds,
+  workflowFocusEdgeIds,
 }: StyleEdgesOptions): Edge[] {
   if (auditFocusNodeIds && auditFocusNodeIds.size > 0) {
     return filteredEdges.map(edge => styleAuditEdge(edge, auditFocusNodeIds));
+  }
+
+  if (searchMatchIds && searchMatchIds.size > 0) {
+    return filteredEdges;
+  }
+
+  if (workflowFocusEdgeIds && workflowFocusEdgeIds.size > 0) {
+    return filteredEdges.map(edge => styleWorkflowEdge(edge, workflowFocusEdgeIds));
   }
 
   if (viewMode === 'map' && activeFlow) return styleFlowEdges(filteredEdges, activeFlow);
@@ -48,6 +58,21 @@ function styleAuditEdge(edge: Edge, auditFocusNodeIds: Set<string>): Edge {
       ...edge.style,
       opacity: isFocused ? 1 : 0.08,
       stroke: isFocused ? '#ef4444' : undefined,
+      strokeWidth: isFocused ? 2.5 : undefined,
+      pointerEvents: (isFocused ? 'auto' : 'none') as CSSProperties['pointerEvents'],
+      transition: 'opacity 200ms ease',
+    },
+  };
+}
+
+function styleWorkflowEdge(edge: Edge, workflowFocusEdgeIds: Set<string>): Edge {
+  const isFocused = workflowFocusEdgeIds.has(edge.id);
+  return {
+    ...edge,
+    style: {
+      ...edge.style,
+      opacity: isFocused ? 1 : 0.08,
+      stroke: isFocused ? '#2563eb' : undefined,
       strokeWidth: isFocused ? 2.5 : undefined,
       pointerEvents: (isFocused ? 'auto' : 'none') as CSSProperties['pointerEvents'],
       transition: 'opacity 200ms ease',

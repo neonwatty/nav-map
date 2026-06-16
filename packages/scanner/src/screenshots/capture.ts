@@ -5,7 +5,8 @@ import { optimizeScreenshot } from './optimize.js';
 export async function captureScreenshots(
   routes: { route: string; id: string }[],
   baseUrl: string,
-  outputDir: string
+  outputDir: string,
+  options: { storageState?: string } = {}
 ): Promise<Map<string, string>> {
   const results = new Map<string, string>();
 
@@ -27,6 +28,7 @@ export async function captureScreenshots(
     browser = await pw.chromium.launch({ headless: true });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
+      ...(options.storageState ? { storageState: options.storageState } : {}),
     });
     const page = await context.newPage();
 

@@ -13,12 +13,13 @@ Interactive navigation map visualization for Next.js apps and websites. Scan you
 - **Search with preview** — Cmd+K with screenshot thumbnails and neighbor counts
 - **Group focus** — double-click a group to isolate it
 - **Gallery viewer** — browse flow step screenshots in a filmstrip
+- **Workflow overview** — summarize sections, personas, auth states, redirects, health, and evidence from project manifests
 - **Edge modes** — smooth curves, obstacle-aware routing, or corridor bundling
 - **Right-click context menu** — copy route, open in browser, open in editor
 - **Ctrl+Z undo** — undo node drags and group collapses
 - **Semantic zoom** — 3 tiers: overview (groups only), compact (labels), detail (screenshots)
 - **Dark/light mode** — auto-detects system preference
-- **87 unit tests** with CI
+- **Unit tests** with CI
 
 ## Quick Start
 
@@ -123,6 +124,168 @@ You can create `nav-map.json` manually without using the scanner:
 
 Edge types: `link`, `redirect`, `router-push`, `shared-nav`
 
+## Workflow Atlas Manifests
+
+For product-level maps, keep app-specific workflow knowledge in a project manifest and convert it to the standard `NavMapGraph` shape. This keeps `nav-map` generic while allowing each app to define personas, signed-in/signed-out states, human-readable actions, redirects, health, screenshots, and future inspection hints.
+
+```json
+{
+  "version": "workflow-atlas/1.0",
+  "name": "My App Workflow Atlas",
+  "baseUrl": "http://localhost:3000",
+  "layout": {
+    "defaultViewMode": "map",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["public", "app"]
+  },
+  "personas": [
+    { "id": "signed-out", "label": "Signed out visitor" },
+    { "id": "signed-in", "label": "Signed in user" }
+  ],
+  "sections": [
+    { "id": "public", "label": "Public Funnel", "routePrefix": "/" },
+    { "id": "app", "label": "Signed-in App", "routePrefix": "/app" }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "section": "public",
+      "purpose": "Explain the product and start signup.",
+      "personas": ["signed-out"],
+      "authRequirement": "public",
+      "health": "healthy",
+      "inspect": { "selector": "main" }
+    },
+    {
+      "id": "dashboard",
+      "route": "/app",
+      "label": "Dashboard",
+      "section": "app",
+      "purpose": "Primary signed-in workspace.",
+      "personas": ["signed-in"],
+      "authRequirement": "signed-in",
+      "expectedRedirects": [
+        { "when": "signed-out", "to": "/signin", "reason": "Requires a session" }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "dashboard",
+      "action": "Complete signup",
+      "type": "redirect",
+      "personas": ["signed-in"]
+    }
+  ],
+  "flows": [{ "name": "Activation", "steps": ["home", "dashboard"] }]
+}
+```
+
+Use `layout` when a project manifest knows the most readable first view. `defaultViewMode`
+can be `hierarchy`, `map`, `flow`, or `tree`; `defaultTreeRootId` keeps Tree view from
+opening without a root; and `sectionOrder` makes the atlas read in product-story order instead
+of incidental route or JSON order.
+
+Generate graph JSON from a manifest:
+
+```bash
+npx @neonwatty/nav-map-scanner workflow ./workflow.nav-map.json \
+  -o public/nav-map.json
+```
+
+Capture deterministic Playwright screenshots at the same time:
+
+```bash
+npx @neonwatty/nav-map-scanner workflow ./workflow.nav-map.json \
+  --base-url http://localhost:3000 \
+  --screenshot-dir public/screenshots/workflow \
+  -o public/nav-map.json
+```
+
+For protected routes, capture screenshots with a manifest auth-state id. The storage-state file is
+loaded by Playwright but its contents are never needed in logs or prompts:
+
+```bash
+npx @neonwatty/nav-map-scanner workflow ./workflow.nav-map.json \
+  --base-url http://localhost:3000 \
+  --auth-state speaker \
+  --screenshot-dir public/screenshots/speaker \
+  -o public/nav-map.json
+```
+
+The screenshot paths are written relative to the graph output directory, so a Next.js app can usually render with `screenshotBasePath=""` when both files live under `public/`.
+
+You can also convert manifests in code without the React component entry:
+
+```ts
+import { workflowManifestToGraph } from '@neonwatty/nav-map/workflow';
+
+const graph = workflowManifestToGraph(manifest);
+```
+
+Graphs with workflow metadata render a compact overview in the map chrome. It is derived from
+generic graph fields only: node `metadata.section`, `metadata.personas`,
+`metadata.authRequirement`, `metadata.expectedRedirects`, `metadata.health`, `metadata.inspect`,
+`metadata.sourceHints`, node screenshots, redirect edges, and flow galleries. This gives users and
+agents a first-glance inventory of product lanes, auth states, redirects, and evidence before a
+node is selected. Plain route maps without workflow or evidence signals do not show this overview.
+
+Overview chips are interactive filters. Click a section, persona, auth, health, or evidence chip to
+focus the graph on matching routes and workflow edges; matching nodes and edges remain emphasized
+while non-matching graph elements are dimmed. Click another chip to change the focus, click the
+active chip again to clear it, or press `Escape` to clear workflow filters from anywhere in the map.
+
+The demo app includes `packages/demo/public/prcard.workflow.json` and a generated `prcard.nav-map.json` fixture. It models PRcard public funnel, auth, quick setup, creator/card studio, published-card, redirect, API, and retired-route workflows without adding PRcard logic to nav-map core.
+
+The manifest `inspect` field is intentionally small today. It is reserved for future live inspection and agent explorer modes where a browser/Codex agent can walk routes, compare observed redirects and screenshots to the manifest, flag UX or health issues, and propose manifest updates.
+
+### Agent CLI Loop
+
+Use workflow manifests as compact, deterministic context for agents before they inspect an app:
+
+```bash
+nav-map context deckchecker-speaker.workflow.json --auth-state speaker --focus speaker --format markdown
+nav-map context deckchecker-speaker.workflow.json --auth-state speaker --focus speaker --format json --contract
+nav-map auth-state capture deckchecker-speaker.workflow.json --state speaker --base-url http://localhost:3000 --headed --out .nav-map/auth/deckchecker-speaker.storage.json
+nav-map auth-state verify deckchecker-speaker.workflow.json --state speaker --base-url http://localhost:3000 --contract
+nav-map probe deckchecker-speaker.workflow.json --base-url http://localhost:3000 --auth-state speaker --flow "Speaker deck workflow" --contract
+nav-map crawl http://localhost:3000/my/events --workflow-manifest deckchecker-speaker.workflow.json --auth-state speaker --max-pages 10
+nav-map workflow deckchecker-speaker.workflow.json --base-url http://localhost:3000 --auth-state speaker --screenshot-dir public/screenshots/speaker -o public/nav-map.json
+nav-map workflow deckchecker-speaker.workflow.json --inspect --format json --contract -o .nav-map/workflow.inspect.json
+nav-map diff deckchecker-speaker.workflow.json --probe .nav-map/probe-runs/latest.json --format json
+```
+
+Filter context before handing it to an agent with comma-separated values for sections, personas,
+auth states, health states, and evidence kinds:
+
+```bash
+nav-map context packages/demo/public/deckchecker-speaker.workflow.json \
+  --section speaker,boundary \
+  --persona speaker \
+  --auth speaker \
+  --evidence screenshot,redirect \
+  --format markdown
+
+nav-map context packages/demo/public/prcard.workflow.json \
+  --section studio,published \
+  --persona signed-in-with-github,public-viewer \
+  --auth signed-in-with-github,public \
+  --health healthy,warning \
+  --evidence screenshot,inspect \
+  --format json \
+  --contract
+```
+
+Auth state files can impersonate users. Keep `.nav-map/auth/` gitignored and never paste storage-state contents into logs, prompts, issues, or commits. Commands that accept `--workflow-manifest` and `--auth-state` resolve the storage-state path from the manifest and pass it to Playwright without needing the storage file contents in agent context.
+Context and contract output intentionally include auth-state ids and summaries, not raw
+storage-state JSON, cookies, bearer tokens, OAuth secrets, private keys, or env values.
+
+Use `--contract` when an agent needs a stable envelope rather than raw command data. Contract
+JSON includes `schemaVersion`, `kind`, `summary`, `data`, `artifacts`, and `nextActions`.
+
 ## NavMap Props
 
 All props are optional.
@@ -151,11 +314,16 @@ npx @neonwatty/nav-map-scanner <command> [options]
 | `scan <dir>` | Scan a Next.js project directory for routes |
 | `crawl <url>` | Crawl a live URL and discover pages |
 | `auth <url>` | Capture authentication state for protected pages |
+| `auth-state` | Capture or verify workflow auth states |
 | `record <dir>` | Record navigation with Playwright |
 | `record-flows <dir>` | Record user flows from Playwright test specs |
 | `generate` | Load `nav-map.config.json`, optionally log in, crawl, and write output |
 | `check-config` | Validate `nav-map.config.json` without launching a browser |
 | `diagnostics <file>` | Inspect crawl diagnostics from `nav-map.json` or diagnostics JSON |
+| `context <manifest>` | Render agent-consumable context from a workflow manifest |
+| `probe <manifest>` | Probe workflow routes and write verification receipts |
+| `diff <manifest>` | Render expected-vs-observed probe findings |
+| `workflow <manifest>` | Generate `nav-map.json` from a project workflow manifest, optionally with screenshots |
 
 ### `scan` options
 

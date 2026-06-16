@@ -1,0 +1,662 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { routeToId } from '@neonwatty/nav-map/workflow';
+import { chromium } from 'playwright';
+import { createAgentContract, type AgentContract } from './agent-contract.js';
+import { findAuthState, type AuthStateManifest, type WorkflowAuthState } from './auth-state.js';
+
+export interface ProbeNodeExpectations {
+  selectors?: string[];
+  text?: string[];
+  signedOutRedirect?: string;
+  finalUrl?: string;
+  status?: number;
+}
+
+export interface ProbeManifestNode {
+  id?: string;
+  route: string;
+  label: string;
+  expectations?: ProbeNodeExpectations;
+}
+
+export interface ProbeManifestFlow {
+  name: string;
+  steps: string[];
+}
+
+export interface ProbeManifest extends AuthStateManifest {
+  version?: 'workflow-atlas/1.0';
+  name: string;
+  routeVariables?: Record<string, string>;
+  nodes: ProbeManifestNode[];
+  flows?: ProbeManifestFlow[];
+}
+
+export type ProbeStatus = 'pass' | 'warn' | 'fail' | 'unchecked';
+
+export interface ProbeNodeObserved {
+  status?: number;
+  finalUrl: string;
+  matchedText: string[];
+  matchedSelectors: string[];
+  consoleErrors: string[];
+  failedRequests: string[];
+}
+
+export interface ProbeNodeResult {
+  nodeId: string;
+  route: string;
+  concreteRoute: string;
+  finalUrl: string;
+  status: ProbeStatus;
+  reason?: string;
+  screenshot?: string;
+  expected?: ProbeNodeExpectations;
+  observed?: ProbeNodeObserved;
+  checks?: ProbeCheckResult[];
+  consoleErrors: string[];
+  failedRequests: string[];
+}
+
+export interface ProbeCheckResult {
+  name: string;
+  status: ProbeStatus | 'skip';
+  expected?: unknown;
+  observed?: unknown;
+  reason?: string;
+}
+
+export interface ProbeRun {
+  app: string;
+  authState?: string;
+  authStateKind?: WorkflowAuthState['kind'];
+  baseUrl: string;
+  startedAt: string;
+  finishedAt: string;
+  results: ProbeNodeResult[];
+}
+
+export function resolveRouteTemplate(route: string, variables: Record<string, string>): string {
+  return route.replace(/\[([^\]]+)\]/g, (_match, key: string) => {
+    const value = variables[key];
+    if (!value) {
+      throw new Error(`Missing route variable: ${key}`);
+    }
+    return value;
+  });
+}
+
+export function evaluateProbeNode(options: {
+  nodeId: string;
+  authStateKind?: WorkflowAuthState['kind'];
+  expected?: ProbeNodeExpectations;
+  observed: ProbeNodeObserved;
+}): { status: ProbeStatus; reason?: string } {
+  const expected = options.expected;
+  if (!expected || !hasProbeExpectations(expected)) {
+    return { status: 'unchecked' };
+  }
+
+  if (expected.signedOutRedirect) {
+    if (expectsSignedOutRedirect(options.authStateKind)) {
+      if (!finalUrlMatches(options.observed.finalUrl, expected.signedOutRedirect)) {
+        return {
+          status: 'fail',
+          reason: `Expected signed-out redirect ending ${expected.signedOutRedirect}, observed ${options.observed.finalUrl}`,
+        };
+      }
+
+      return evaluateProbeHealth(options.observed);
+    }
+  }
+
+  if (expected.status !== undefined && options.observed.status !== expected.status) {
+    return {
+      status: 'fail',
+      reason: `Expected status ${expected.status}, observed ${options.observed.status ?? 'none'}`,
+    };
+  }
+
+  if (expected.finalUrl && !finalUrlMatches(options.observed.finalUrl, expected.finalUrl)) {
+    return {
+      status: 'fail',
+      reason: `Expected final URL ending ${expected.finalUrl}, observed ${options.observed.finalUrl}`,
+    };
+  }
+
+  for (const text of expected.text ?? []) {
+    if (!options.observed.matchedText.includes(text)) {
+      return { status: 'fail', reason: `Missing expected text: ${text}` };
+    }
+  }
+
+  for (const selector of expected.selectors ?? []) {
+    if (!options.observed.matchedSelectors.includes(selector)) {
+      return { status: 'fail', reason: `Missing expected selector: ${selector}` };
+    }
+  }
+
+  return evaluateProbeHealth(options.observed);
+}
+
+export async function runProbe(options: {
+  manifest: ProbeManifest;
+  baseUrl: string;
+  authState?: string;
+  flow?: string;
+  nodes?: string[];
+  outputPath: string;
+  screenshotsDir: string;
+  contract?: boolean;
+}): Promise<ProbeRun> {
+  const startedAt = new Date().toISOString();
+  const selectedNodes = selectProbeNodes(options.manifest, options);
+  const authState = resolveProbeAuthState(options.manifest, options.authState);
+  const browser = await chromium.launch({ headless: true });
+  const results: ProbeNodeResult[] = [];
+
+  try {
+    const context = await browser.newContext(
+      authState.storageState ? { storageState: authState.storageState } : {}
+    );
+    try {
+      const page = await context.newPage();
+      const consoleErrors: string[] = [];
+      const failedRequests: string[] = [];
+
+      page.on('console', message => {
+        if (message.type() === 'error') {
+          consoleErrors.push(sanitizeProbeString(message.text()));
+        }
+      });
+      page.on('requestfailed', request => {
+        failedRequests.push(
+          sanitizeProbeString(
+            `${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`.trim()
+          )
+        );
+      });
+
+      fs.mkdirSync(options.screenshotsDir, { recursive: true });
+      for (const node of selectedNodes) {
+        consoleErrors.length = 0;
+        failedRequests.length = 0;
+        const nodeId = node.id ?? routeToId(node.route);
+        const concreteRoute = resolveRouteTemplate(
+          node.route,
+          options.manifest.routeVariables ?? {}
+        );
+        const targetUrl = new URL(concreteRoute, options.baseUrl).toString();
+        const response = await page.goto(targetUrl, {
+          waitUntil: 'domcontentloaded',
+          timeout: 30_000,
+        });
+        await waitForProbeExpectations(page, node.expectations, authState.kind);
+        const matchedText = await collectMatchedText(page, node.expectations?.text ?? []);
+        const matchedSelectors = await collectMatchedSelectors(
+          page,
+          node.expectations?.selectors ?? []
+        );
+        const screenshot = path.join(options.screenshotsDir, `${nodeId}.png`);
+        await page.screenshot({ path: screenshot, fullPage: false });
+
+        const observed: ProbeNodeObserved = {
+          status: response?.status(),
+          finalUrl: sanitizeProbeString(page.url()),
+          matchedText,
+          matchedSelectors,
+          consoleErrors: [...consoleErrors],
+          failedRequests: [...failedRequests],
+        };
+        const evaluation = evaluateProbeNode({
+          nodeId,
+          authStateKind: authState.kind,
+          expected: node.expectations,
+          observed,
+        });
+
+        results.push({
+          nodeId,
+          route: sanitizeProbeString(node.route),
+          concreteRoute: sanitizeProbeString(concreteRoute),
+          finalUrl: observed.finalUrl,
+          status: evaluation.status,
+          reason: evaluation.reason ? sanitizeProbeString(evaluation.reason) : undefined,
+          screenshot,
+          expected: node.expectations
+            ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
+            : undefined,
+          observed,
+          checks: buildProbeChecks(node.expectations, observed, authState.kind),
+          consoleErrors: observed.consoleErrors,
+          failedRequests: observed.failedRequests,
+        });
+      }
+    } finally {
+      await Promise.resolve(context.close()).catch(() => undefined);
+    }
+  } finally {
+    await browser.close();
+  }
+
+  const run: ProbeRun = sanitizeProbeValue({
+    app: options.manifest.name,
+    authState: options.authState,
+    authStateKind: authState.kind,
+    baseUrl: options.baseUrl,
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    results,
+  }) as ProbeRun;
+
+  fs.mkdirSync(path.dirname(path.resolve(options.outputPath)), { recursive: true });
+  fs.writeFileSync(
+    options.outputPath,
+    JSON.stringify(options.contract ? buildProbeRunContract(run, options.outputPath) : run, null, 2)
+  );
+  return run;
+}
+
+export function buildProbeRunContract(
+  run: ProbeRun,
+  outputPath?: string
+): AgentContract<'probe-run', ProbeRun> {
+  const counts = countProbeStatuses(run.results);
+  return createAgentContract({
+    kind: 'probe-run',
+    generatedAt: run.finishedAt,
+    summary: {
+      app: run.app,
+      authState: run.authState ?? null,
+      authStateKind: run.authStateKind ?? null,
+      baseUrl: run.baseUrl,
+      total: run.results.length,
+      ...counts,
+    },
+    data: run,
+    artifacts: [
+      ...(outputPath
+        ? [{ kind: 'probe-receipt', path: outputPath, description: 'Probe run JSON receipt' }]
+        : []),
+      ...run.results
+        .filter(result => result.screenshot)
+        .map(result => ({
+          kind: 'screenshot',
+          path: result.screenshot,
+          description: `Screenshot for ${result.nodeId}`,
+        })),
+    ],
+    nextActions: [
+      {
+        label: 'Render probe diff JSON',
+        command: `nav-map diff <manifest> --probe ${shellArg(outputPath ?? '<probe-run>')} --format json`,
+        reason: 'Compare probe observations in a compact agent-readable diff contract.',
+        safety: 'writes-local-files',
+      },
+      {
+        label: 'Inspect failing or warning routes',
+        command: `nav-map context <manifest>${run.authState ? ` --auth-state ${shellArg(run.authState)}` : ''} --format json --contract`,
+        reason: 'Load manifest context before proposing route or expectation updates.',
+        safety: 'read-only',
+      },
+    ],
+  });
+}
+
+type ProbePage =
+  Awaited<
+    ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newContext']>
+  > extends infer Context
+    ? Context extends { newPage: () => Promise<infer Page> }
+      ? Page
+      : never
+    : never;
+
+function selectProbeNodes(
+  manifest: ProbeManifest,
+  options: { flow?: string; nodes?: string[] }
+): ProbeManifestNode[] {
+  const nodeIdMap = new Map(manifest.nodes.map(node => [node.id ?? routeToId(node.route), node]));
+  const selectedIds = explicitProbeNodeIds(manifest, options);
+
+  return selectedIds.map(id => {
+    const node = nodeIdMap.get(id);
+    if (!node) {
+      throw new Error(`Unknown probe node: ${id}`);
+    }
+    return node;
+  });
+}
+
+function explicitProbeNodeIds(
+  manifest: ProbeManifest,
+  options: { flow?: string; nodes?: string[] }
+): string[] {
+  if (options.nodes?.length) {
+    return options.nodes;
+  }
+
+  if (options.flow) {
+    const flow = manifest.flows?.find(item => item.name === options.flow);
+    if (!flow) {
+      throw new Error(`Unknown workflow flow: ${options.flow}`);
+    }
+    return flow.steps;
+  }
+
+  return manifest.nodes.map(node => node.id ?? routeToId(node.route));
+}
+
+interface ResolvedProbeAuthState {
+  kind?: WorkflowAuthState['kind'];
+  storageState?: string;
+}
+
+function resolveProbeAuthState(
+  manifest: ProbeManifest,
+  authStateId?: string
+): ResolvedProbeAuthState {
+  if (!authStateId) {
+    return { kind: 'anonymous' };
+  }
+
+  const state = findAuthState(manifest, authStateId);
+  if (!state) {
+    throw new Error(`Unknown auth state: ${authStateId}`);
+  }
+  if (state.kind !== 'storage-state') {
+    return { kind: state.kind };
+  }
+  if (!state.storageStatePath) {
+    throw new Error(`Auth state "${authStateId}" has no storageStatePath`);
+  }
+
+  return { kind: state.kind, storageState: path.resolve(state.storageStatePath) };
+}
+
+async function collectMatchedText(
+  page: ProbePage,
+  expectedText: readonly string[]
+): Promise<string[]> {
+  if (expectedText.length === 0) {
+    return [];
+  }
+
+  const bodyText = await page
+    .locator('body')
+    .innerText({ timeout: 1_000 })
+    .catch(() => '');
+  const normalizedBodyText = normalizeProbeText(bodyText);
+
+  return expectedText.filter(text => normalizedBodyText.includes(normalizeProbeText(text)));
+}
+
+async function collectMatchedSelectors(
+  page: ProbePage,
+  expectedSelectors: readonly string[]
+): Promise<string[]> {
+  const matched: string[] = [];
+  for (const selector of expectedSelectors) {
+    if (
+      await page
+        .locator(selector)
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
+      matched.push(selector);
+    }
+  }
+  return matched;
+}
+
+function finalUrlMatches(actual: string, expected: string): boolean {
+  const actualCandidates = urlMatchCandidates(actual);
+  const expectedCandidates = urlMatchCandidates(expected);
+
+  for (const actualCandidate of actualCandidates) {
+    for (const expectedCandidate of expectedCandidates) {
+      if (actualCandidate === expectedCandidate || actualCandidate.endsWith(expectedCandidate)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function hasProbeExpectations(expected: ProbeNodeExpectations): boolean {
+  return Boolean(
+    expected.status !== undefined ||
+    expected.finalUrl ||
+    expected.signedOutRedirect ||
+    expected.text?.length ||
+    expected.selectors?.length
+  );
+}
+
+function expectsSignedOutRedirect(authStateKind?: WorkflowAuthState['kind']): boolean {
+  return authStateKind === undefined || authStateKind === 'anonymous';
+}
+
+function evaluateProbeHealth(observed: ProbeNodeObserved): {
+  status: ProbeStatus;
+  reason?: string;
+} {
+  if (observed.consoleErrors.length > 0) {
+    return { status: 'warn', reason: 'Console errors observed' };
+  }
+
+  if (observed.failedRequests.length > 0) {
+    return { status: 'warn', reason: 'Failed network requests observed' };
+  }
+
+  return { status: 'pass' };
+}
+
+function buildProbeChecks(
+  expected: ProbeNodeExpectations | undefined,
+  observed: ProbeNodeObserved,
+  authStateKind?: WorkflowAuthState['kind']
+): ProbeCheckResult[] {
+  if (!expected || !hasProbeExpectations(expected)) {
+    return [{ name: 'expectations', status: 'unchecked', reason: 'No expectations declared' }];
+  }
+
+  const checks: ProbeCheckResult[] = [];
+  const signedOutRedirectApplies = Boolean(
+    expected.signedOutRedirect && expectsSignedOutRedirect(authStateKind)
+  );
+
+  if (expected.signedOutRedirect) {
+    checks.push({
+      name: 'signedOutRedirect',
+      status: signedOutRedirectApplies
+        ? finalUrlMatches(observed.finalUrl, expected.signedOutRedirect)
+          ? 'pass'
+          : 'fail'
+        : 'skip',
+      expected: expected.signedOutRedirect,
+      observed: observed.finalUrl,
+      reason: signedOutRedirectApplies
+        ? undefined
+        : 'Signed-out redirect expectation only applies to anonymous probes',
+    });
+  }
+
+  if (signedOutRedirectApplies) {
+    checks.push(...healthChecks(observed));
+    return checks;
+  }
+
+  if (expected.status !== undefined) {
+    checks.push({
+      name: 'status',
+      status: observed.status === expected.status ? 'pass' : 'fail',
+      expected: expected.status,
+      observed: observed.status,
+    });
+  }
+  if (expected.finalUrl) {
+    checks.push({
+      name: 'finalUrl',
+      status: finalUrlMatches(observed.finalUrl, expected.finalUrl) ? 'pass' : 'fail',
+      expected: expected.finalUrl,
+      observed: observed.finalUrl,
+    });
+  }
+  for (const text of expected.text ?? []) {
+    checks.push({
+      name: 'text',
+      status: observed.matchedText.includes(text) ? 'pass' : 'fail',
+      expected: text,
+      observed: observed.matchedText,
+    });
+  }
+  for (const selector of expected.selectors ?? []) {
+    checks.push({
+      name: 'selector',
+      status: observed.matchedSelectors.includes(selector) ? 'pass' : 'fail',
+      expected: selector,
+      observed: observed.matchedSelectors,
+    });
+  }
+
+  checks.push(...healthChecks(observed));
+  return checks;
+}
+
+function healthChecks(observed: ProbeNodeObserved): ProbeCheckResult[] {
+  return [
+    {
+      name: 'consoleErrors',
+      status: observed.consoleErrors.length > 0 ? 'warn' : 'pass',
+      observed: observed.consoleErrors.length,
+    },
+    {
+      name: 'failedRequests',
+      status: observed.failedRequests.length > 0 ? 'warn' : 'pass',
+      observed: observed.failedRequests.length,
+    },
+  ];
+}
+
+function countProbeStatuses(results: ProbeNodeResult[]): Record<ProbeStatus, number> {
+  return {
+    pass: results.filter(result => result.status === 'pass').length,
+    warn: results.filter(result => result.status === 'warn').length,
+    fail: results.filter(result => result.status === 'fail').length,
+    unchecked: results.filter(result => result.status === 'unchecked').length,
+  };
+}
+
+async function waitForProbeExpectations(
+  page: ProbePage,
+  expected?: ProbeNodeExpectations,
+  authStateKind?: WorkflowAuthState['kind']
+): Promise<void> {
+  if (!expected || !hasProbeExpectations(expected)) {
+    return;
+  }
+
+  if (expected.signedOutRedirect && expectsSignedOutRedirect(authStateKind)) {
+    return;
+  }
+
+  const waits: Promise<unknown>[] = [];
+  for (const text of expected.text ?? []) {
+    waits.push(
+      page
+        .getByText(text)
+        .first()
+        .waitFor({ state: 'visible', timeout: 10_000 })
+        .catch(() => undefined)
+    );
+  }
+
+  for (const selector of expected.selectors ?? []) {
+    waits.push(
+      page
+        .locator(selector)
+        .first()
+        .waitFor({ state: 'visible', timeout: 10_000 })
+        .catch(() => undefined)
+    );
+  }
+
+  if (waits.length > 0) {
+    await Promise.all(waits);
+  }
+}
+
+function normalizeProbeText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function urlMatchCandidates(value: string): Set<string> {
+  const candidates = new Set<string>([value]);
+  addDecodedCandidate(candidates, value);
+
+  try {
+    const url = new URL(value);
+    const pathValue = `${url.pathname}${url.search}${url.hash}`;
+    candidates.add(pathValue);
+    addDecodedCandidate(candidates, pathValue);
+  } catch {
+    // Relative URLs are already represented by the original value.
+  }
+
+  return candidates;
+}
+
+function addDecodedCandidate(candidates: Set<string>, value: string): void {
+  try {
+    candidates.add(decodeURIComponent(value));
+  } catch {
+    // Keep the original candidate when decoding fails.
+  }
+}
+
+function shellArg(value: string): string {
+  if (/^[A-Za-z0-9_./:@=-]+$/.test(value)) {
+    return value;
+  }
+  return JSON.stringify(value);
+}
+
+function sanitizeProbeValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return sanitizeProbeString(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeProbeValue(item));
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, sanitizeProbeValue(nestedValue)])
+    );
+  }
+  return value;
+}
+
+function sanitizeProbeString(value: string): string {
+  return value
+    .replace(
+      /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+      '[redacted]'
+    )
+    .replace(
+      /\b(access_token|refresh_token|id_token|token|api[_-]?key|secret|password|private[_-]?key)\s*[:=]\s*([^&\s]+)/gi,
+      '$1=[redacted]'
+    )
+    .replace(
+      /"(access_token|refresh_token|id_token|token|api[_-]?key|secret|password|private[_-]?key)"\s*:\s*"[^"]*"/gi,
+      '"$1":"[redacted]"'
+    )
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [redacted]')
+    .replace(/\bAuthorization:\s*Basic\s+[A-Za-z0-9._~+/=-]+/gi, 'Authorization: Basic [redacted]')
+    .replace(/(postgres(?:ql)?:\/\/)[^\s]+/gi, '$1[redacted]')
+    .replace(/\b(cookie|set-cookie):\s*[^\n\r]+/gi, '$1: [redacted]')
+    .replace(/\bwhsec_[A-Za-z0-9_=-]+/gi, 'whsec_[redacted]');
+}

@@ -3,3 +3,5 @@ dist/
 .next/
 pnpm-lock.yaml
 *.md
+docs/goals/**/.goalbuddy-board/
+packages/demo/next-env.d.ts

@@ -11,13 +11,29 @@ const graph: NavMapGraph = {
   version: '1.0',
   meta: { name: 'Test', generatedAt: '2026-01-01T00:00:00.000Z', generatedBy: 'manual' },
   nodes: [
-    { id: 'home', route: '/', label: 'Home', group: 'root', screenshot: 'home.png' },
+    {
+      id: 'home',
+      route: '/',
+      label: 'Home',
+      group: 'root',
+      screenshot: 'home.png',
+      metadata: { purpose: 'Start', personas: ['signed-out'] },
+      filePath: 'app/page.tsx',
+    },
     { id: 'docs', route: '/docs', label: 'Docs', group: 'content' },
     { id: 'billing', route: '/settings/billing', label: 'Billing', group: 'settings' },
     { id: 'team', route: '/settings/team', label: 'Team', group: 'settings' },
   ],
   edges: [
-    { id: 'home-docs', source: 'home', target: 'docs', label: 'Docs', type: 'link' },
+    {
+      id: 'home-docs',
+      source: 'home',
+      target: 'docs',
+      label: 'Docs',
+      action: 'Open docs',
+      personas: ['signed-out'],
+      type: 'link',
+    },
     { id: 'docs-billing', source: 'docs', target: 'billing', type: 'router-push' },
     { id: 'billing-team', source: 'billing', target: 'team', type: 'link' },
   ],
@@ -43,15 +59,26 @@ describe('useViewModeLayout builders', () => {
         id: 'home-docs',
         source: 'home',
         target: 'docs',
-        data: { label: 'Docs', edgeType: 'link' },
+        data: expect.objectContaining({
+          label: 'Docs',
+          edgeType: 'link',
+          action: 'Open docs',
+          personas: ['signed-out'],
+        }),
       }),
       expect.objectContaining({
         id: 'docs-billing',
         source: 'docs',
         target: 'billing',
-        data: { label: '', edgeType: 'router-push' },
+        data: expect.objectContaining({ label: '', edgeType: 'router-push' }),
       }),
     ]);
+    expect(layout?.nodes[0].data).toEqual(
+      expect.objectContaining({
+        metadata: { purpose: 'Start', personas: ['signed-out'] },
+        filePath: 'app/page.tsx',
+      })
+    );
   });
 
   it('returns null when the selected flow does not exist', () => {
@@ -69,6 +96,12 @@ describe('useViewModeLayout builders', () => {
     expect(layout.nonReachableNodes.map(node => [node.id, node.position.x])).toEqual([
       ['home', -300],
     ]);
+    expect(layout.nonReachableNodes[0].data).toEqual(
+      expect.objectContaining({
+        metadata: { purpose: 'Start', personas: ['signed-out'] },
+        filePath: 'app/page.tsx',
+      })
+    );
   });
 
   it('collapses hierarchy groups and deduplicates grouped hierarchy edges', () => {
@@ -90,6 +123,12 @@ describe('useViewModeLayout builders', () => {
       'home->docs',
       'home->hier-group-settings',
     ]);
+    expect(layout.nodes.find(node => node.id === 'home')?.data).toEqual(
+      expect.objectContaining({
+        metadata: { purpose: 'Start', personas: ['signed-out'] },
+        filePath: 'app/page.tsx',
+      })
+    );
   });
 
   it('injects map group callbacks into group nodes', () => {

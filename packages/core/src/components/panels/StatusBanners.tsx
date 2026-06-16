@@ -1,4 +1,6 @@
 import type { NavMapGraph, ViewMode } from '../../types';
+import type { WorkflowFilter } from '../../workflowFilters';
+import { workflowFilterLabel } from '../../workflowFilters';
 
 interface StatusBannersProps {
   isDark: boolean;
@@ -10,10 +12,12 @@ interface StatusBannersProps {
   focusMode: boolean;
   showCoverage: boolean;
   showSearch: boolean;
+  workflowFilter: WorkflowFilter | null;
   graph: NavMapGraph | null;
   onClearFocus: () => void;
   onClearAuditFocus?: () => void;
   onClearSearch?: () => void;
+  onClearWorkflowFilter?: () => void;
 }
 
 const bannerBase = (isDark: boolean, top = 50): React.CSSProperties => ({
@@ -29,6 +33,10 @@ const bannerBase = (isDark: boolean, top = 50): React.CSSProperties => ({
   fontSize: 13,
 });
 
+function bannerTop(slot: number): number {
+  return 50 + slot * 38;
+}
+
 export function StatusBanners({
   isDark,
   viewMode,
@@ -40,35 +48,50 @@ export function StatusBanners({
   focusMode,
   showCoverage,
   showSearch,
+  workflowFilter,
   onClearFocus,
   onClearAuditFocus,
   onClearSearch,
+  onClearWorkflowFilter,
 }: StatusBannersProps) {
   const accent = isDark ? '#7aacff' : '#3355aa';
   const muted = isDark ? '#888' : '#666';
-  const hasModeBanner =
-    (viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex]) ||
-    viewMode === 'tree' ||
-    Boolean(focusedGroupId) ||
-    Boolean(auditFocusLabel);
-  const explanationTop = hasModeBanner ? 88 + (focusedGroupId && auditFocusLabel ? 38 : 0) : 50;
+  const workflowFilterText = workflowFilterLabel(workflowFilter);
+  const activeFlowName =
+    viewMode === 'flow' && selectedFlowIndex !== null
+      ? graph?.flows?.[selectedFlowIndex]?.name
+      : undefined;
+  const hasFlowBanner = Boolean(activeFlowName);
+  const hasTreeBanner = viewMode === 'tree';
+  const hasModeBanner = hasFlowBanner || hasTreeBanner;
+  const focusedTop = bannerTop(Number(hasModeBanner));
+  const auditTop = bannerTop(Number(hasModeBanner) + Number(Boolean(focusedGroupId)));
+  const workflowTop = bannerTop(
+    Number(hasModeBanner) + Number(Boolean(focusedGroupId)) + Number(Boolean(auditFocusLabel))
+  );
+  const explanationTop = bannerTop(
+    Number(hasModeBanner) +
+      Number(Boolean(focusedGroupId)) +
+      Number(Boolean(auditFocusLabel)) +
+      Number(Boolean(workflowFilterText))
+  );
 
   return (
     <>
-      {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
-        <div style={{ ...bannerBase(isDark), fontWeight: 600, color: accent }}>
-          Flow: {graph.flows![selectedFlowIndex].name}
+      {activeFlowName && (
+        <div style={{ ...bannerBase(isDark, bannerTop(0)), fontWeight: 600, color: accent }}>
+          Flow: {activeFlowName}
         </div>
       )}
 
       {viewMode === 'tree' && !treeRootId && (
-        <div style={{ ...bannerBase(isDark), color: muted }}>
+        <div style={{ ...bannerBase(isDark, bannerTop(0)), color: muted }}>
           Click any node to set it as tree root
         </div>
       )}
 
       {viewMode === 'tree' && treeRootId && (
-        <div style={{ ...bannerBase(isDark), fontWeight: 600, color: accent }}>
+        <div style={{ ...bannerBase(isDark, bannerTop(0)), fontWeight: 600, color: accent }}>
           Tree from: {graph?.nodes.find(n => n.id === treeRootId)?.label ?? treeRootId}
         </div>
       )}
@@ -76,7 +99,7 @@ export function StatusBanners({
       {focusedGroupId && (
         <div
           style={{
-            ...bannerBase(isDark),
+            ...bannerBase(isDark, focusedTop),
             fontWeight: 600,
             color: accent,
             display: 'flex',
@@ -106,8 +129,7 @@ export function StatusBanners({
       {auditFocusLabel && (
         <div
           style={{
-            ...bannerBase(isDark),
-            top: focusedGroupId ? 88 : 50,
+            ...bannerBase(isDark, auditTop),
             fontWeight: 600,
             color: '#ef4444',
             display: 'flex',
@@ -119,6 +141,36 @@ export function StatusBanners({
           <button
             onClick={onClearAuditFocus}
             aria-label="Clear audit focus"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: isDark ? '#555' : '#aaa',
+              cursor: 'pointer',
+              fontSize: 14,
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            <span aria-hidden="true">&#x2715;</span>
+          </button>
+        </div>
+      )}
+
+      {workflowFilterText && (
+        <div
+          style={{
+            ...bannerBase(isDark, workflowTop),
+            fontWeight: 600,
+            color: accent,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          Workflow filter: {workflowFilterText}
+          <button
+            onClick={onClearWorkflowFilter}
+            aria-label="Clear workflow filter"
             style={{
               background: 'none',
               border: 'none',
