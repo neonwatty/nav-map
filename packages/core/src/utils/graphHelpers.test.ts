@@ -14,13 +14,28 @@ const groups: NavMapGroup[] = [
 ];
 
 const nodes: NavMapNode[] = [
-  { id: 'home', route: '/', label: 'Home', group: 'marketing', screenshot: 'home.jpeg' },
+  {
+    id: 'home',
+    route: '/',
+    label: 'Home',
+    group: 'marketing',
+    screenshot: 'home.jpeg',
+    metadata: { purpose: 'Start here', personas: ['signed-out'] },
+  },
   { id: 'blog', route: '/blog', label: 'Blog', group: 'marketing' },
   { id: 'login', route: '/auth/login', label: 'Login', group: 'auth', screenshot: 'login.jpeg' },
 ];
 
 const edges: NavMapEdge[] = [
-  { id: 'e1', source: 'home', target: 'blog', label: 'nav', type: 'link' },
+  {
+    id: 'e1',
+    source: 'home',
+    target: 'blog',
+    label: 'nav',
+    action: 'Open blog',
+    personas: ['signed-out'],
+    type: 'link',
+  },
   { id: 'e2', source: 'home', target: 'login', label: 'redirect', type: 'redirect' },
   { id: 'e3', source: 'login', target: 'home', label: 'back', type: 'link' },
 ];
@@ -62,6 +77,13 @@ describe('buildCompoundNodes', () => {
     expect(home!.type).toBe('pageNode');
     expect(blog!.type).toBe('compactNode');
   });
+
+  it('preserves workflow metadata on page nodes', () => {
+    const result = buildCompoundNodes(nodes, groups);
+    const home = result.find(n => n.id === 'home');
+
+    expect(home?.data?.metadata).toEqual({ purpose: 'Start here', personas: ['signed-out'] });
+  });
 });
 
 describe('toReactFlowEdges', () => {
@@ -69,6 +91,17 @@ describe('toReactFlowEdges', () => {
     const result = toReactFlowEdges(edges);
     expect(result[0].data?.edgeType).toBe('link');
     expect(result[1].data?.edgeType).toBe('redirect');
+  });
+
+  it('preserves workflow edge action and persona metadata', () => {
+    const result = toReactFlowEdges(edges);
+
+    expect(result[0].data).toEqual(
+      expect.objectContaining({
+        action: 'Open blog',
+        personas: ['signed-out'],
+      })
+    );
   });
 
   it('sets all edges to navEdge type', () => {

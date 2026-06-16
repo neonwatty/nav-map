@@ -6,6 +6,7 @@ import {
   hasCrawlDiagnosticIssues,
   writeCrawlDiagnosticsReport,
 } from '../diagnostics-report.js';
+import { readAuthStateManifest, resolveOptionalAuthStateStoragePath } from '../modes/auth-state.js';
 import { crawlUrl } from '../modes/crawl.js';
 import { formatGraphRunSummary } from './run-summary.js';
 
@@ -21,6 +22,8 @@ export function createCrawlCommand(): Command {
     .option('--max-interactions <n>', 'Maximum click candidates to try per page', '20')
     .option('--include-interaction <pattern...>', 'Only click interactions matching these labels')
     .option('--exclude-interaction <pattern...>', 'Skip interactions matching these labels')
+    .option('--workflow-manifest <path>', 'Workflow manifest used to resolve --auth-state')
+    .option('--auth-state <state>', 'Workflow auth state id for authenticated crawling')
     .option('--diagnostics-output <path>', 'Write crawl diagnostics JSON sidecar')
     .option(
       '--fail-on-diagnostics',
@@ -35,6 +38,7 @@ export function createCrawlCommand(): Command {
           name: opts.name,
           screenshotDir: opts.screenshotDir,
           maxPages: parseInt(opts.maxPages, 10),
+          storageState: resolveCrawlStorageState(opts.workflowManifest, opts.authState),
           interactions: opts.interactions !== false,
           maxInteractionsPerPage: parseInt(opts.maxInteractions, 10),
           includeInteraction: opts.includeInteraction,
@@ -64,4 +68,21 @@ export function createCrawlCommand(): Command {
         process.exit(1);
       }
     });
+}
+
+function resolveCrawlStorageState(
+  workflowManifestPath?: string,
+  authStateId?: string
+): string | undefined {
+  if (!authStateId) {
+    return undefined;
+  }
+  if (!workflowManifestPath) {
+    throw new Error('--workflow-manifest is required when --auth-state is provided');
+  }
+
+  return resolveOptionalAuthStateStoragePath(
+    readAuthStateManifest(workflowManifestPath),
+    authStateId
+  );
 }

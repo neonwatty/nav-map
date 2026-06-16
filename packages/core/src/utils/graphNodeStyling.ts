@@ -13,6 +13,7 @@ export function styleNodes({
   focusedGroupId,
   searchMatchIds,
   auditFocusNodeIds,
+  workflowFocusNodeIds,
 }: StyleNodesOptions): Node[] {
   if (searchMatchIds && searchMatchIds.size > 0) {
     return visibleNodes.map(node => styleSearchNode(node, searchMatchIds));
@@ -20,6 +21,10 @@ export function styleNodes({
 
   if (auditFocusNodeIds && auditFocusNodeIds.size > 0) {
     return visibleNodes.map(node => styleAuditNode(node, auditFocusNodeIds));
+  }
+
+  if (workflowFocusNodeIds && workflowFocusNodeIds.size > 0) {
+    return visibleNodes.map(node => styleWorkflowNode(node, workflowFocusNodeIds));
   }
 
   if (viewMode === 'map' && activeFlow) return styleFlowNodes(visibleNodes, activeFlow);
@@ -62,6 +67,20 @@ function styleAuditNode(node: Node, auditFocusNodeIds: Set<string>): Node {
       pointerEvents: (isFocused ? 'auto' : 'none') as CSSProperties['pointerEvents'],
       transition: 'opacity 200ms ease',
       ...(isFocused ? { filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.55))' } : {}),
+    },
+  };
+}
+
+function styleWorkflowNode(node: Node, workflowFocusNodeIds: Set<string>): Node {
+  const isFocused = workflowFocusNodeIds.has(node.id);
+  return {
+    ...node,
+    style: {
+      ...node.style,
+      opacity: isFocused ? 1 : 0.14,
+      pointerEvents: (isFocused ? 'auto' : 'none') as CSSProperties['pointerEvents'],
+      transition: 'opacity 200ms ease',
+      ...(isFocused ? { filter: 'drop-shadow(0 0 8px rgba(37,99,235,0.5))' } : {}),
     },
   };
 }

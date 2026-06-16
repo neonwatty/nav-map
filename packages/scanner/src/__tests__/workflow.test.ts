@@ -1,0 +1,235 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { runWorkflowInspectManifest, runWorkflowManifest } from '../modes/workflow.js';
+
+const mocks = vi.hoisted(() => ({
+  captureScreenshotsMock: vi.fn(),
+}));
+
+vi.mock('../screenshots/capture.js', () => ({
+  captureScreenshots: mocks.captureScreenshotsMock,
+}));
+
+const tempDirs: string[] = [];
+
+function makeTempDir() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-workflow-'));
+  tempDirs.push(dir);
+  return dir;
+}
+
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  vi.clearAllMocks();
+});
+
+describe('runWorkflowManifest', () => {
+  beforeEach(() => {
+    mocks.captureScreenshotsMock.mockResolvedValue(new Map());
+  });
+
+  it('writes graph JSON from a workflow manifest without screenshots', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'workflow.json');
+    const outputPath = path.join(dir, 'public', 'prcard.nav-map.json');
+
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Fixture Workflow',
+        generatedAt: '2026-06-13T00:00:00.000Z',
+        nodes: [
+          {
+            id: 'home',
+            route: '/home',
+            label: 'Home',
+            section: 'public',
+            purpose: 'Introduce the app.',
+          },
+          {
+            id: 'creator',
+            route: '/creator',
+            label: 'Creator',
+            section: 'studio',
+            authRequirement: 'signed-in',
+          },
+        ],
+        edges: [{ source: 'home', target: 'creator', action: 'Start creating' }],
+      })
+    );
+
+    const result = await runWorkflowManifest(manifestPath, {
+      output: outputPath,
+      screenshots: false,
+    });
+
+    expect(result).toMatchObject({
+      outputPath,
+      nodeCount: 2,
+      edgeCount: 1,
+      groupCount: 2,
+      screenshotCount: 0,
+    });
+
+    const graph = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(graph.nodes[0].metadata.purpose).toBe('Introduce the app.');
+    expect(graph.nodes[1].metadata.authRequired).toBe(true);
+    expect(graph.edges[0].label).toBe('Start creating');
+    expect(mocks.captureScreenshotsMock).not.toHaveBeenCalled();
+  });
+
+  it('captures screenshots with auth state and resolved route variables', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'workflow.json');
+    const outputPath = path.join(dir, 'public', 'deckchecker.nav-map.json');
+    const screenshotPath = path.join(dir, 'screenshots', 'speaker-upload.webp');
+
+    mocks.captureScreenshotsMock.mockResolvedValue(new Map([['speaker-upload', screenshotPath]]));
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Deckchecker Speaker',
+        generatedAt: '2026-06-13T00:00:00.000Z',
+        routeVariables: { eventId: 'event-1', sessionId: 'session-1' },
+        authStates: [
+          {
+            id: 'speaker',
+            kind: 'storage-state',
+            storageStatePath: '.nav-map/auth/speaker.storage.json',
+          },
+        ],
+        nodes: [
+          {
+            id: 'speaker-upload',
+            route: '/my/events/[eventId]/upload?session=[sessionId]',
+            label: 'Upload',
+            section: 'speaker',
+            authRequirement: 'speaker',
+          },
+        ],
+      })
+    );
+
+    const result = await runWorkflowManifest(manifestPath, {
+      output: outputPath,
+      baseUrl: 'https://deckchecker.app',
+      screenshotDir: path.join(dir, 'screenshots'),
+      authState: 'speaker',
+    });
+
+    expect(result.screenshotCount).toBe(1);
+    expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
+      [
+        {
+          id: 'speaker-upload',
+          route: '/my/events/event-1/upload?session=session-1',
+        },
+      ],
+      'https://deckchecker.app',
+      path.join(dir, 'screenshots'),
+      { storageState: path.resolve('.nav-map/auth/speaker.storage.json') }
+    );
+
+    const graph = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(graph.nodes[0].screenshot).toBe('../screenshots/speaker-upload.webp');
+  });
+
+  it('throws a helpful error for invalid manifests', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'bad-workflow.json');
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Bad',
+        nodes: [{ route: 'missing-slash', label: 'Bad route' }],
+      })
+    );
+
+    await expect(runWorkflowManifest(manifestPath)).rejects.toThrow(
+      'nodes.0.route: route must start with "/"'
+    );
+  });
+
+  it('writes a versioned workflow inspect contract without storage-state paths', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'workflow.json');
+    const outputPath = path.join(dir, 'workflow.inspect.json');
+
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Deckchecker Speaker',
+        layout: { defaultViewMode: 'map', defaultTreeRootId: 'speaker-events' },
+        sections: [{ id: 'speaker', label: 'Speaker' }],
+        personas: [{ id: 'speaker', label: 'Speaker' }],
+        authStates: [
+          {
+            id: 'speaker',
+            kind: 'storage-state',
+            storageStatePath: '.nav-map/auth/speaker.storage.json',
+            verify: { route: '/my/events' },
+          },
+        ],
+        nodes: [
+          {
+            id: 'speaker-events',
+            route: '/my/events',
+            label: 'My Events',
+            section: 'speaker',
+            personas: ['speaker'],
+            authRequirement: 'speaker',
+            expectations: { selectors: ['main'] },
+            screenshot: 'screenshots/speaker-events.webp',
+            sourceHints: ['web/src/app/(speaker)/my/events/page.tsx'],
+          },
+        ],
+        edges: [{ source: 'speaker-events', target: 'speaker-events', action: 'Refresh' }],
+        flows: [{ name: 'Speaker events', steps: ['speaker-events'] }],
+      })
+    );
+
+    const result = await runWorkflowInspectManifest(manifestPath, {
+      output: outputPath,
+      contract: true,
+      generatedAt: '2026-06-15T00:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      outputPath,
+      valid: true,
+      nodeCount: 1,
+      edgeCount: 1,
+      flowCount: 1,
+    });
+
+    const contract = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(contract).toMatchObject({
+      schemaVersion: 'nav-map-agent-contract/v1',
+      kind: 'workflow-inspect',
+      summary: {
+        app: 'Deckchecker Speaker',
+        valid: true,
+        nodeCount: 1,
+        edgeCount: 1,
+        flowCount: 1,
+        authStateCount: 1,
+      },
+    });
+    expect(contract.data.authStates[0]).toEqual({
+      id: 'speaker',
+      kind: 'storage-state',
+      hasVerify: true,
+      hasCapture: false,
+    });
+    expect(JSON.stringify(contract)).not.toContain('speaker.storage.json');
+    expect(JSON.stringify(contract)).not.toContain('.nav-map/auth');
+  });
+});

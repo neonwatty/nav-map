@@ -11,6 +11,7 @@ export interface StyleNodesOptions {
   focusedGroupId: string | null;
   searchMatchIds: Set<string> | null;
   auditFocusNodeIds: Set<string> | null;
+  workflowFocusNodeIds: Set<string> | null;
 }
 
 export interface StyleEdgesOptions {
@@ -22,6 +23,8 @@ export interface StyleEdgesOptions {
   focusedGroupId: string | null;
   nodeGroupMap: Map<string, string>;
   auditFocusNodeIds: Set<string> | null;
+  searchMatchIds: Set<string> | null;
+  workflowFocusEdgeIds: Set<string> | null;
 }
 
 export { filterRedirectEdges, getVisibleEdges, getVisibleNodes } from './graphStylingVisibility';

@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { NavMapGraph } from '@neonwatty/nav-map';
+import {
+  workflowManifestToGraph,
+  type NavMapGraph,
+  type WorkflowManifest,
+} from '@neonwatty/nav-map';
 
 const HELP_DISMISSED_KEY = 'nav-map:demo-help-dismissed';
+const VIEW_MODE_KEY = 'nav-map:view-mode';
+type DemoDataset = 'prcard' | 'deckchecker-speaker' | 'bleep';
 
 const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default: mod.NavMap })), {
   ssr: false,
@@ -14,13 +20,31 @@ const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default
 export default function HomePage() {
   const [graph, setGraph] = useState<NavMapGraph | null>(null);
   const [showInitialHelp, setShowInitialHelp] = useState(false);
+  const [dataset, setDataset] = useState<DemoDataset>(() => readInitialDataset());
 
   useEffect(() => {
     setShowInitialHelp(window.localStorage.getItem(HELP_DISMISSED_KEY) !== 'true');
-    fetch('/bleep-app.nav-map.json')
-      .then(r => r.json())
-      .then(setGraph);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGraph(null);
+
+    loadDemoGraph(dataset)
+      .then(nextGraph => {
+        if (!cancelled) {
+          persistDefaultViewMode(nextGraph);
+          setGraph(nextGraph);
+        }
+      })
+      .catch(error => {
+        console.error('Failed to load demo graph:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dataset]);
 
   if (!graph) {
     return (
@@ -42,10 +66,53 @@ export default function HomePage() {
 
   return (
     <main style={{ width: '100vw', height: '100vh' }}>
+      <label
+        style={{
+          position: 'absolute',
+          right: 14,
+          top: 14,
+          zIndex: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 12,
+          color: '#c8c8d0',
+          background: 'rgba(10, 10, 15, 0.88)',
+          border: '1px solid rgba(120, 130, 155, 0.3)',
+          borderRadius: 8,
+          padding: '7px 9px',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        Dataset
+        <select
+          value={dataset}
+          onChange={event => {
+            const nextDataset = event.target.value as DemoDataset;
+            const url = new URL(window.location.href);
+            url.searchParams.set('dataset', nextDataset);
+            window.history.replaceState(null, '', url);
+            setDataset(nextDataset);
+          }}
+          style={{
+            color: '#f0f2f8',
+            background: '#151722',
+            border: '1px solid #303448',
+            borderRadius: 6,
+            fontSize: 12,
+            padding: '3px 8px',
+          }}
+        >
+          <option value="prcard">PRcard workflow</option>
+          <option value="deckchecker-speaker">Deckchecker speaker</option>
+          <option value="bleep">Bleep app scan</option>
+        </select>
+      </label>
       <NavMap
+        key={dataset}
         graph={graph}
         screenshotBasePath=""
-        defaultViewMode="hierarchy"
+        defaultViewMode={defaultViewModeForGraph(graph)}
         defaultEdgeMode="smooth"
         defaultShowHelp={showInitialHelp}
         onHelpClose={() => {
@@ -58,4 +125,55 @@ export default function HomePage() {
       />
     </main>
   );
+}
+
+function readInitialDataset(): DemoDataset {
+  if (typeof window === 'undefined') return 'prcard';
+  const dataset = new URLSearchParams(window.location.search).get('dataset');
+  return isDemoDataset(dataset) ? dataset : 'prcard';
+}
+
+function isDemoDataset(value: string | null): value is DemoDataset {
+  return value === 'prcard' || value === 'deckchecker-speaker' || value === 'bleep';
+}
+
+type DemoViewMode = 'hierarchy' | 'map' | 'flow' | 'tree';
+
+function defaultViewModeForGraph(graph: NavMapGraph): DemoViewMode {
+  const viewMode = graph.meta.workflow?.layout?.defaultViewMode;
+  return isDemoViewMode(viewMode) ? viewMode : 'hierarchy';
+}
+
+function persistDefaultViewMode(graph: NavMapGraph): void {
+  window.localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(defaultViewModeForGraph(graph)));
+}
+
+function isDemoViewMode(value: unknown): value is DemoViewMode {
+  return value === 'hierarchy' || value === 'map' || value === 'flow' || value === 'tree';
+}
+
+async function loadDemoGraph(dataset: DemoDataset): Promise<NavMapGraph> {
+  if (dataset === 'bleep') {
+    return fetchJson<NavMapGraph>('/bleep-app.nav-map.json');
+  }
+
+  if (dataset === 'deckchecker-speaker') {
+    const generated = await fetch('/deckchecker-speaker.nav-map.json');
+    if (generated.ok) return (await generated.json()) as NavMapGraph;
+
+    const manifest = await fetchJson<WorkflowManifest>('/deckchecker-speaker.workflow.json');
+    return workflowManifestToGraph(manifest);
+  }
+
+  const generated = await fetch('/prcard.nav-map.json');
+  if (generated.ok) return (await generated.json()) as NavMapGraph;
+
+  const manifest = await fetchJson<WorkflowManifest>('/prcard.workflow.json');
+  return workflowManifestToGraph(manifest);
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  return (await response.json()) as T;
 }

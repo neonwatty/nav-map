@@ -1,9 +1,11 @@
 import type { AnalyticsAdapter } from '../analytics/types';
 import type { EdgeMode, NavMapGraph, ViewMode } from '../types';
+import type { WorkflowFilter } from '../workflowFilters';
 import type { WalkthroughState } from '../hooks/useWalkthrough';
 import { NavMapToolbar } from './panels/NavMapToolbar';
 import { StatusBanners } from './panels/StatusBanners';
 import { WalkthroughBar } from './panels/WalkthroughBar';
+import { WorkflowOverview } from './panels/WorkflowOverview';
 
 interface NavMapChromeProps {
   graph: NavMapGraph | null;
@@ -25,6 +27,7 @@ interface NavMapChromeProps {
   analyticsAdapter?: AnalyticsAdapter;
   showCoverage: boolean;
   hasCoverageData: boolean;
+  workflowFilter: WorkflowFilter | null;
   walkthrough: WalkthroughState;
   onViewModeChange: (mode: ViewMode) => void;
   onFlowSelect: (index: number | null) => void;
@@ -42,6 +45,7 @@ interface NavMapChromeProps {
   onClearFocus: () => void;
   onClearAuditFocus: () => void;
   onClearSearch: () => void;
+  onWorkflowFilterChange: (filter: WorkflowFilter | null) => void;
   onWalkthroughGoTo: (index: number) => void;
   onWalkthroughPresent: () => void;
   onWalkthroughClear: () => void;
@@ -67,6 +71,7 @@ export function NavMapChrome({
   analyticsAdapter,
   showCoverage,
   hasCoverageData,
+  workflowFilter,
   walkthrough,
   onViewModeChange,
   onFlowSelect,
@@ -84,6 +89,7 @@ export function NavMapChrome({
   onClearFocus,
   onClearAuditFocus,
   onClearSearch,
+  onWorkflowFilterChange,
   onWalkthroughGoTo,
   onWalkthroughPresent,
   onWalkthroughClear,
@@ -121,6 +127,15 @@ export function NavMapChrome({
         />
       )}
 
+      <WorkflowOverview
+        graph={graph}
+        isDark={isDark}
+        viewMode={viewMode}
+        selectedFlowIndex={selectedFlowIndex}
+        activeFilter={workflowFilter}
+        onFilterChange={onWorkflowFilterChange}
+      />
+
       <StatusBanners
         isDark={isDark}
         viewMode={viewMode}
@@ -131,10 +146,12 @@ export function NavMapChrome({
         focusMode={focusMode}
         showCoverage={showCoverage}
         showSearch={showSearch}
+        workflowFilter={workflowFilter}
         graph={graph}
         onClearFocus={onClearFocus}
         onClearAuditFocus={onClearAuditFocus}
         onClearSearch={onClearSearch}
+        onClearWorkflowFilter={() => onWorkflowFilterChange(null)}
       />
 
       {graph && (

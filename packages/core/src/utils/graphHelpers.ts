@@ -1,5 +1,12 @@
 import type { Node, Edge } from '@xyflow/react';
-import type { NavMapGraph, NavMapNode, NavMapEdge, NavMapGroup, CoverageData } from '../types';
+import type {
+  NavMapGraph,
+  NavMapNode,
+  NavMapEdge,
+  NavMapGroup,
+  CoverageData,
+  NavMapWorkflowMetadata,
+} from '../types';
 import type { GroupNodeData } from '../components/nodes/GroupNode';
 
 export interface RFNodeData {
@@ -8,7 +15,7 @@ export interface RFNodeData {
   group: string;
   screenshot?: string;
   filePath?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: NavMapWorkflowMetadata;
   coverage?: CoverageData;
   [key: string]: unknown;
 }
@@ -93,7 +100,10 @@ export function toReactFlowEdges(edges: NavMapEdge[]): Edge[] {
     data: {
       label: e.label,
       edgeType: e.type,
+      action: e.action,
+      personas: e.personas,
       discovery: e.discovery,
+      metadata: e.metadata,
     },
   }));
 }

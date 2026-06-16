@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  crawlUrl,
   createEdgeId,
   groupFromPath,
   normalizeUrl,
@@ -11,7 +12,38 @@ import {
 import { dedupeInteractionCandidates, isSafeInteractionText } from '../modes/interaction-filter.js';
 import fixtureNavigations from './fixtures/dynamic-crawl-navigations.json' with { type: 'json' };
 
+const mocks = vi.hoisted(() => ({
+  launchMock: vi.fn(),
+  newContextMock: vi.fn(),
+  browserCloseMock: vi.fn(),
+  processCrawlPageMock: vi.fn(),
+}));
+
+vi.mock('playwright', () => ({
+  chromium: {
+    launch: mocks.launchMock,
+  },
+}));
+
+vi.mock('../modes/crawl-page.js', () => ({
+  processCrawlPage: mocks.processCrawlPageMock,
+}));
+
 describe('crawl helpers', () => {
+  beforeEach(() => {
+    mocks.launchMock.mockReset();
+    mocks.newContextMock.mockReset();
+    mocks.browserCloseMock.mockReset();
+    mocks.processCrawlPageMock.mockReset();
+
+    mocks.newContextMock.mockResolvedValue({});
+    mocks.launchMock.mockResolvedValue({
+      newContext: mocks.newContextMock,
+      close: mocks.browserCloseMock,
+    });
+    mocks.processCrawlPageMock.mockResolvedValue(undefined);
+  });
+
   it('normalizes hashes and trailing slashes', () => {
     expect(normalizeUrl('https://example.com/docs/#intro')).toBe('https://example.com/docs');
   });
@@ -91,5 +123,26 @@ describe('crawl helpers', () => {
       { id: '1', text: 'Open settings' },
       { id: '3', text: 'Open profile' },
     ]);
+  });
+
+  it('creates an authenticated browser context when storage state is provided', async () => {
+    await crawlUrl({
+      startUrl: 'https://example.com/my/events',
+      maxPages: 1,
+      storageState: '/tmp/speaker.storage.json',
+      screenshotDir: undefined,
+    });
+
+    expect(mocks.newContextMock).toHaveBeenCalledWith({
+      storageState: '/tmp/speaker.storage.json',
+    });
+    expect(mocks.processCrawlPageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: {},
+        currentUrl: 'https://example.com/my/events',
+        origin: 'https://example.com',
+      })
+    );
+    expect(mocks.browserCloseMock).toHaveBeenCalledOnce();
   });
 });

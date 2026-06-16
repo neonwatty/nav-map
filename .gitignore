@@ -11,6 +11,7 @@ dist/
 auth.json
 *.auth.json
 .auth/
+.nav-map/auth/
 
 # Scanner output (regenerated)
 nav-map.json

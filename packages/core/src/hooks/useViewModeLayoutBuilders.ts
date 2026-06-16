@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
-import type { NavMapGraph } from '../types';
+import type { NavMapEdge, NavMapGraph, NavMapNode } from '../types';
 import { buildGraphFromJson } from '../utils/graphHelpers';
 import { buildRouteHierarchy } from '../utils/routeHierarchy';
 
@@ -40,7 +40,7 @@ export function buildFlowLayoutInput(
       source: src,
       target: tgt,
       type: 'navEdge',
-      data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
+      data: buildEdgeData(existingEdge),
     });
   }
 
@@ -50,13 +50,7 @@ export function buildFlowLayoutInput(
       id: stepId,
       type: graphNode?.screenshot ? 'pageNode' : 'compactNode',
       position: { x: 0, y: 0 },
-      data: {
-        label: graphNode?.label ?? stepId,
-        route: graphNode?.route ?? '',
-        group: graphNode?.group ?? '',
-        screenshot: graphNode?.screenshot,
-        flowStepNumber: index + 1,
-      },
+      data: buildNodeData(graphNode, stepId, { flowStepNumber: index + 1 }),
     };
   });
 
@@ -90,7 +84,7 @@ export function buildTreeLayoutInput(graph: NavMapGraph, treeRootId: string): Tr
           source: current,
           target: neighbor,
           type: 'navEdge',
-          data: { label: existingEdge?.label ?? '', edgeType: existingEdge?.type ?? 'link' },
+          data: buildEdgeData(existingEdge),
         });
       }
     }
@@ -100,7 +94,7 @@ export function buildTreeLayoutInput(graph: NavMapGraph, treeRootId: string): Tr
     id: n.id,
     type: n.screenshot ? 'pageNode' : 'compactNode',
     position: { x: 0, y: 0 },
-    data: { label: n.label, route: n.route, group: n.group, screenshot: n.screenshot },
+    data: buildNodeData(n),
     style: { opacity: visited.has(n.id) ? 1 : 0.1, transition: 'opacity 0.3s' },
   }));
 
@@ -140,7 +134,7 @@ export function buildHierarchyLayoutInput(
       id: n.id,
       type: n.screenshot ? 'pageNode' : 'compactNode',
       position: { x: 0, y: 0 },
-      data: { label: n.label, route: n.route, group: n.group, screenshot: n.screenshot },
+      data: buildNodeData(n),
     });
     includedNodeIds.add(n.id);
   }
@@ -172,7 +166,7 @@ export function buildHierarchyLayoutInput(
           type: n.screenshot ? 'pageNode' : 'compactNode',
           position: { x: 0, y: 0 },
           parentId: groupNodeId,
-          data: { label: n.label, route: n.route, group: n.group, screenshot: n.screenshot },
+          data: buildNodeData(n),
         });
         includedNodeIds.add(n.id);
       }
@@ -217,11 +211,39 @@ export function buildHierarchyLayoutInput(
       source: resolvedParent,
       target: resolvedChild,
       type: 'navEdge',
-      data: { label: '', edgeType: 'link' },
+      data: buildEdgeData(),
     });
   }
 
   return { nodes, edges };
+}
+
+function buildNodeData(
+  node?: NavMapNode,
+  fallbackId?: string,
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    label: node?.label ?? fallbackId ?? '',
+    route: node?.route ?? '',
+    group: node?.group ?? '',
+    screenshot: node?.screenshot,
+    filePath: node?.filePath,
+    metadata: node?.metadata,
+    coverage: node?.coverage,
+    ...extra,
+  };
+}
+
+function buildEdgeData(edge?: NavMapEdge): Record<string, unknown> {
+  return {
+    label: edge?.label ?? '',
+    edgeType: edge?.type ?? 'link',
+    action: edge?.action,
+    personas: edge?.personas,
+    discovery: edge?.discovery,
+    metadata: edge?.metadata,
+  };
 }
 
 export function buildMapLayoutInput(

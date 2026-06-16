@@ -30,6 +30,8 @@ interface KeyboardNavDeps {
   sharedNavEdgesRef: React.MutableRefObject<Edge[]>;
   focusedGroupId: string | null;
   setFocusedGroupId: (id: string | null) => void;
+  workflowFilterActive: boolean;
+  clearWorkflowFilter: () => void;
   setShowRedirects: (v: boolean | ((p: boolean) => boolean)) => void;
   undo: () => HistoryEntry | null;
   canUndo: boolean;
@@ -60,6 +62,8 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    workflowFilterActive,
+    clearWorkflowFilter,
     setShowRedirects,
     undo,
     canUndo,
@@ -109,6 +113,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
           if (showSearch) setShowSearch(false);
           else if (showHelp) setShowHelp(false);
           else if (focusedGroupId) setFocusedGroupId(null);
+          else if (workflowFilterActive) clearWorkflowFilter();
           else {
             ctx.setSelectedNodeId(null);
             walkthrough.clear();
@@ -223,6 +228,8 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
     sharedNavEdgesRef,
     focusedGroupId,
     setFocusedGroupId,
+    workflowFilterActive,
+    clearWorkflowFilter,
     setShowRedirects,
     undo,
     canUndo,

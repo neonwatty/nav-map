@@ -41,6 +41,43 @@ const flowGraph: NavMapGraph = {
   ],
 };
 
+const workflowGraph: NavMapGraph = {
+  ...minimalGraph,
+  meta: {
+    ...minimalGraph.meta,
+    name: 'Workflow App',
+    workflow: {
+      personas: [{ id: 'speaker', label: 'Speaker' }],
+      layout: { sectionOrder: ['public', 'speaker'] },
+    },
+  },
+  nodes: [
+    {
+      id: 'home',
+      route: '/',
+      label: 'Home',
+      group: 'main',
+      metadata: {
+        section: 'public',
+        authRequirement: 'public',
+        personas: ['speaker'],
+      },
+    },
+    {
+      id: 'dashboard',
+      route: '/dashboard',
+      label: 'Dashboard',
+      group: 'main',
+      metadata: {
+        section: 'speaker',
+        authRequirement: 'speaker',
+        personas: ['speaker'],
+      },
+    },
+  ],
+  edges: [{ id: 'home-dashboard', source: 'home', target: 'dashboard', type: 'link' }],
+};
+
 describe('NavMap props', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -130,5 +167,85 @@ describe('NavMap props', () => {
 
     expect(await screen.findByText('Flow: Primary Signup')).toBeTruthy();
     expect(screen.getByDisplayValue('Primary Signup')).toBeTruthy();
+  });
+
+  it('uses workflow layout default view mode when no prop is provided', async () => {
+    render(
+      <NavMap
+        graph={{
+          ...flowGraph,
+          meta: {
+            ...flowGraph.meta,
+            workflow: {
+              layout: { defaultViewMode: 'flow', defaultTreeRootId: 'n1' },
+            },
+          },
+        }}
+      />
+    );
+
+    expect(await screen.findByText('Flow: Primary Signup')).toBeTruthy();
+    expect(screen.getByDisplayValue('Primary Signup')).toBeTruthy();
+  });
+
+  it('shows and clears an active workflow filter after clicking an overview chip', () => {
+    render(<NavMap graph={workflowGraph} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter workflow by auth: Speaker' }));
+
+    expect(screen.getByText('Workflow filter: Auth: Speaker')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear workflow filter' }));
+
+    expect(screen.queryByText('Workflow filter: Auth: Speaker')).toBeNull();
+  });
+
+  it('clears an active workflow filter with Escape', () => {
+    render(<NavMap graph={workflowGraph} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter workflow by auth: Speaker' }));
+    expect(screen.getByText('Workflow filter: Auth: Speaker')).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByText('Workflow filter: Auth: Speaker')).toBeNull();
+  });
+
+  it('stacks workflow filter banners below flow banners', async () => {
+    render(
+      <NavMap
+        graph={{
+          ...workflowGraph,
+          flows: [{ name: 'Speaker Flow', steps: ['home', 'dashboard'] }],
+        }}
+        defaultViewMode="flow"
+      />
+    );
+
+    const flowBanner = await screen.findByText('Flow: Speaker Flow');
+    fireEvent.click(screen.getByRole('button', { name: 'Filter workflow by auth: Speaker' }));
+
+    expect(flowBanner.style.top).toBe('50px');
+    expect(screen.getByText('Workflow filter: Auth: Speaker').style.top).toBe('88px');
+  });
+
+  it('closes active search when applying a workflow filter', () => {
+    render(<NavMap graph={workflowGraph} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.change(screen.getByPlaceholderText('Search pages...'), {
+      target: { value: 'dashboard' },
+    });
+    expect(
+      screen.getByText('Search is highlighting matching routes and dimming the rest.')
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter workflow by auth: Speaker' }));
+
+    expect(screen.getByText('Workflow filter: Auth: Speaker')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Search pages...')).toBeNull();
+    expect(
+      screen.queryByText('Search is highlighting matching routes and dimming the rest.')
+    ).toBeNull();
   });
 });

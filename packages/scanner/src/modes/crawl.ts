@@ -40,7 +40,9 @@ export async function crawlUrl(options: CrawlOptions): Promise<NavMapGraph> {
 
   const state = createCrawlState(normalizeUrl(startUrl));
   const browser = options.context ? null : await chromium.launch({ headless: true });
-  const context = options.context ?? (await browser!.newContext());
+  const context =
+    options.context ??
+    (await browser!.newContext(options.storageState ? { storageState: options.storageState } : {}));
 
   try {
     while (state.queue.length > 0 && state.visited.size < maxPages) {

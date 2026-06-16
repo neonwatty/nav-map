@@ -37,6 +37,8 @@ const baseDeps = {
   showRedirects: true,
   searchMatchIds: null,
   auditFocusNodeIds: null,
+  workflowFocusNodeIds: null,
+  workflowFocusEdgeIds: null,
 };
 
 describe('useGraphStyling', () => {
@@ -264,6 +266,109 @@ describe('useGraphStyling', () => {
       expect(redirectEdge?.style?.opacity).toBe(1);
       expect(redirectEdge?.style?.stroke).toBe('#ef4444');
       expect(inboundEdge?.style?.opacity).toBe(0.08);
+    });
+  });
+
+  describe('workflow focus highlighting', () => {
+    const nodes: Node[] = [
+      makeNode('home', 'marketing'),
+      makeNode('setup', 'app'),
+      makeNode('billing', 'app'),
+    ];
+    const edges: Edge[] = [
+      makeEdge('e1', 'home', 'setup', 'link'),
+      makeEdge('e2', 'setup', 'billing', 'link'),
+    ];
+
+    it('dims unrelated nodes when workflow nodes are focused', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          workflowFocusNodeIds: new Set(['setup', 'billing']),
+        })
+      );
+
+      const setup = result.current.styledNodes.find(node => node.id === 'setup');
+      const billing = result.current.styledNodes.find(node => node.id === 'billing');
+      const home = result.current.styledNodes.find(node => node.id === 'home');
+
+      expect(setup?.style?.opacity).toBe(1);
+      expect(billing?.style?.opacity).toBe(1);
+      expect(home?.style?.opacity).toBe(0.14);
+      expect(home?.style?.pointerEvents).toBe('none');
+      expect(setup?.style?.filter).toContain('drop-shadow');
+    });
+
+    it('highlights matching workflow edges and dims unrelated edges', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          workflowFocusEdgeIds: new Set(['e2']),
+        })
+      );
+
+      const matchedEdge = result.current.styledEdges.find(edge => edge.id === 'e2');
+      const unrelatedEdge = result.current.styledEdges.find(edge => edge.id === 'e1');
+
+      expect(matchedEdge?.style?.opacity).toBe(1);
+      expect(matchedEdge?.style?.stroke).toBe('#2563eb');
+      expect(matchedEdge?.style?.strokeWidth).toBe(2.5);
+      expect(unrelatedEdge?.style?.opacity).toBe(0.08);
+      expect(unrelatedEdge?.style?.pointerEvents).toBe('none');
+    });
+
+    it('keeps search and audit focus priority above workflow focus', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          searchMatchIds: new Set(['home']),
+          auditFocusNodeIds: new Set(['billing']),
+          workflowFocusNodeIds: new Set(['setup']),
+          workflowFocusEdgeIds: new Set(['e2']),
+        })
+      );
+
+      const home = result.current.styledNodes.find(node => node.id === 'home');
+      const setup = result.current.styledNodes.find(node => node.id === 'setup');
+      const billing = result.current.styledNodes.find(node => node.id === 'billing');
+      const matchedEdge = result.current.styledEdges.find(edge => edge.id === 'e2');
+
+      expect(home?.style?.opacity).toBe(1);
+      expect(setup?.style?.opacity).toBe(0.12);
+      expect(billing?.style?.opacity).toBe(0.12);
+      expect(matchedEdge?.style?.stroke).toBeUndefined();
+      expect(matchedEdge?.style?.opacity).toBe(0.08);
+    });
+
+    it('does not apply workflow edge focus while search is active', () => {
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes,
+          edges,
+          zoomedNodes: nodes,
+          searchMatchIds: new Set(['home']),
+          workflowFocusEdgeIds: new Set(['e2']),
+        })
+      );
+
+      const matchedEdge = result.current.styledEdges.find(edge => edge.id === 'e2');
+      const unrelatedEdge = result.current.styledEdges.find(edge => edge.id === 'e1');
+
+      expect(matchedEdge?.style?.opacity).toBeUndefined();
+      expect(matchedEdge?.style?.stroke).toBeUndefined();
+      expect(matchedEdge?.style?.strokeWidth).toBeUndefined();
+      expect(unrelatedEdge?.style?.opacity).toBeUndefined();
+      expect(unrelatedEdge?.style?.pointerEvents).toBeUndefined();
     });
   });
 });

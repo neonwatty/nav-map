@@ -1,0 +1,576 @@
+{
+  "version": "1.0",
+  "meta": {
+    "name": "PRcard Workflow Atlas",
+    "baseUrl": "http://localhost:3000",
+    "generatedAt": "2026-06-13T00:00:00.000Z",
+    "generatedBy": "manual",
+    "framework": "generic",
+    "workflow": {
+      "fixtureApp": "PRcard",
+      "fixtureSource": "/Users/neonwatty/Desktop/prbar-web",
+      "agentExplorerFuture": {
+        "goal": "Allow Codex/Chrome to walk these nodes, compare observed redirects and screenshots, and propose manifest updates.",
+        "suggestedArtifacts": [
+          "observedUrl",
+          "screenshot",
+          "consoleErrors",
+          "networkFailures",
+          "uxNotes"
+        ]
+      },
+      "description": "High-level PRcard funnel, auth, setup, creator, published-card, redirect, and API workflow map.",
+      "layout": {
+        "defaultViewMode": "flow",
+        "defaultTreeRootId": "home",
+        "sectionOrder": ["public", "auth", "setup", "studio", "published", "api", "retired"]
+      },
+      "personas": [
+        {
+          "id": "signed-out",
+          "label": "Signed out visitor",
+          "description": "Visitor who can inspect public proof and must authenticate before setup."
+        },
+        {
+          "id": "signed-in",
+          "label": "Signed in creator",
+          "description": "Allowed creator with a PRcard session but no confirmed GitHub installation yet."
+        },
+        {
+          "id": "signed-in-with-github",
+          "label": "Signed in with GitHub",
+          "description": "Creator who can import GitHub proof and publish a card."
+        },
+        {
+          "id": "public-viewer",
+          "label": "Public viewer",
+          "description": "Anyone opening a published PRcard slug."
+        }
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "root",
+      "route": "/",
+      "label": "Root Redirect",
+      "group": "public",
+      "screenshot": "screenshots/prcard/root.webp",
+      "metadata": {
+        "purpose": "Entry route that redirects visitors to the active public app shell.",
+        "section": "public",
+        "personas": ["signed-out", "signed-in", "public-viewer"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectedRedirects": [
+          {
+            "to": "/home",
+            "reason": "The root Next.js page immediately redirects to the public home route."
+          }
+        ],
+        "health": {
+          "status": "healthy",
+          "message": "Expected redirect"
+        },
+        "inspect": {
+          "selector": "main",
+          "notes": "Use the final redirected page for visual inspection."
+        }
+      }
+    },
+    {
+      "id": "home",
+      "route": "/home",
+      "label": "Home",
+      "group": "public",
+      "screenshot": "screenshots/prcard/home.webp",
+      "metadata": {
+        "purpose": "Public funnel entry inside PrototypeApp with signup and product exploration paths.",
+        "section": "public",
+        "personas": ["signed-out", "signed-in"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        },
+        "inspect": {
+          "selector": "main"
+        }
+      }
+    },
+    {
+      "id": "card",
+      "route": "/card",
+      "label": "Public Card Teaser",
+      "group": "public",
+      "screenshot": "screenshots/prcard/card.webp",
+      "metadata": {
+        "purpose": "Signed-out visitors can try the card look, layout, and proof modules with sample data.",
+        "section": "public",
+        "personas": ["signed-out", "public-viewer"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        },
+        "inspect": {
+          "selector": "main",
+          "notes": "Primary public PRcard teaser surface."
+        }
+      }
+    },
+    {
+      "id": "signin",
+      "route": "/signin",
+      "label": "Sign In",
+      "group": "auth",
+      "screenshot": "screenshots/prcard/signin.webp",
+      "metadata": {
+        "purpose": "PrototypeApp sign-in route that starts OAuth-based authentication.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        }
+      }
+    },
+    {
+      "id": "signup",
+      "route": "/signup",
+      "label": "Sign Up",
+      "group": "auth",
+      "screenshot": "screenshots/prcard/signup.webp",
+      "metadata": {
+        "purpose": "Signup route used when signed-out visitors try protected setup or creator paths.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        }
+      }
+    },
+    {
+      "id": "auth-sign-in-github",
+      "route": "/auth/sign-in?provider=github&next=/quick-setup",
+      "label": "OAuth Start",
+      "group": "auth",
+      "screenshot": "screenshots/prcard/auth-sign-in-github.webp",
+      "metadata": {
+        "purpose": "Starts provider OAuth and redirects to Supabase/GitHub when auth config is available.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "expectedRedirects": [
+          {
+            "when": "missing auth provider config",
+            "to": "/signin?auth=missing-env",
+            "reason": "Local development may not have OAuth environment configured."
+          },
+          {
+            "when": "configured GitHub provider",
+            "to": "GitHub/Supabase OAuth URL"
+          }
+        ],
+        "health": {
+          "status": "unchecked",
+          "message": "External OAuth depends on local configuration."
+        }
+      }
+    },
+    {
+      "id": "auth-callback",
+      "route": "/auth/callback?next=/quick-setup",
+      "label": "OAuth Callback",
+      "group": "auth",
+      "screenshot": "screenshots/prcard/auth-callback.webp",
+      "metadata": {
+        "purpose": "Receives the OAuth callback and returns authenticated creators to setup.",
+        "section": "auth",
+        "personas": ["signed-in"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "to": "/quick-setup",
+            "reason": "The next parameter points successful auth toward first-run setup."
+          }
+        ],
+        "health": {
+          "status": "unchecked",
+          "message": "Requires provider callback state."
+        }
+      }
+    },
+    {
+      "id": "quick-setup",
+      "route": "/quick-setup",
+      "label": "Quick Setup",
+      "group": "setup",
+      "screenshot": "screenshots/prcard/quick-setup.webp",
+      "metadata": {
+        "purpose": "Three-step create, review, and publish flow after account creation.",
+        "section": "setup",
+        "personas": ["signed-in", "signed-in-with-github"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "signed-out",
+            "to": "/signup",
+            "reason": "Quick setup requires an allowed authenticated account."
+          }
+        ],
+        "health": {
+          "status": "warning",
+          "message": "Signed-out screenshot captures should land on signup."
+        },
+        "inspect": {
+          "selector": "main",
+          "notes": "Inspect signed-in and GitHub-connected variants separately when credentials are available."
+        },
+        "tags": ["first-run", "protected"]
+      }
+    },
+    {
+      "id": "github-setup",
+      "route": "/api/github/setup?format=json",
+      "label": "GitHub Setup API",
+      "group": "api",
+      "screenshot": "screenshots/prcard/github-setup.webp",
+      "metadata": {
+        "purpose": "Reports GitHub App setup readiness and returns install or pending-verification state.",
+        "section": "api",
+        "personas": ["signed-in", "signed-in-with-github"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "installation_id without JSON accept",
+            "to": "/connect-github",
+            "reason": "Browser installs are routed back into PrototypeApp."
+          }
+        ],
+        "health": {
+          "status": "unchecked",
+          "message": "Response depends on GitHub App and auth configuration."
+        }
+      }
+    },
+    {
+      "id": "connect-github",
+      "route": "/connect-github",
+      "label": "Connect GitHub",
+      "group": "setup",
+      "screenshot": "screenshots/prcard/connect-github.webp",
+      "metadata": {
+        "purpose": "PrototypeApp route used after GitHub installation handoff.",
+        "section": "setup",
+        "personas": ["signed-in"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "health": {
+          "status": "unchecked"
+        }
+      }
+    },
+    {
+      "id": "creator",
+      "route": "/creator",
+      "label": "Creator",
+      "group": "studio",
+      "screenshot": "screenshots/prcard/creator.webp",
+      "metadata": {
+        "purpose": "Canonical private PRcard Creator route for editing source-backed public snapshots.",
+        "section": "studio",
+        "personas": ["signed-in-with-github"],
+        "authRequirement": "signed-in-with-github",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "no persisted card state",
+            "to": "/quick-setup",
+            "reason": "Creator only opens after setup has persisted card state."
+          }
+        ],
+        "health": {
+          "status": "warning",
+          "message": "Fixture or signed-out access redirects to setup."
+        },
+        "inspect": {
+          "selector": "main",
+          "notes": "Inspect with seeded persisted state for the full editor."
+        },
+        "tags": ["protected", "editor"]
+      }
+    },
+    {
+      "id": "published-card",
+      "route": "/maya.codes",
+      "label": "Published Card",
+      "group": "published",
+      "screenshot": "screenshots/prcard/published-card.webp",
+      "metadata": {
+        "purpose": "Public published PRcard slug rendered from public-safe snapshot data.",
+        "section": "published",
+        "personas": ["public-viewer", "signed-out", "signed-in"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        },
+        "inspect": {
+          "selector": "main"
+        }
+      }
+    },
+    {
+      "id": "public-snapshot-api",
+      "route": "/api/public/snapshot/maya.codes",
+      "label": "Public Snapshot API",
+      "group": "api",
+      "screenshot": "screenshots/prcard/public-snapshot-api.webp",
+      "metadata": {
+        "purpose": "Public JSON endpoint for a published PRcard snapshot.",
+        "section": "api",
+        "personas": ["public-viewer"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "health": {
+          "status": "healthy"
+        }
+      }
+    },
+    {
+      "id": "retired-advanced-studio",
+      "route": "/advanced-studio",
+      "label": "Retired Studio Route",
+      "group": "retired",
+      "screenshot": "screenshots/prcard/retired-advanced-studio.webp",
+      "metadata": {
+        "purpose": "Retired route that should not reappear as an active user-facing studio path.",
+        "section": "retired",
+        "personas": ["signed-out", "signed-in"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectedRedirects": [
+          {
+            "to": "notFound()",
+            "reason": "The route map documents this as retired."
+          }
+        ],
+        "health": {
+          "status": "healthy",
+          "message": "Expected 404"
+        },
+        "tags": ["retired"]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "root-to-home-1",
+      "source": "root",
+      "target": "home",
+      "type": "redirect",
+      "label": "Redirect to active home route",
+      "action": "Redirect to active home route",
+      "personas": ["signed-out", "signed-in", "public-viewer"]
+    },
+    {
+      "id": "home-to-card-2",
+      "source": "home",
+      "target": "card",
+      "type": "link",
+      "label": "Try the public card",
+      "action": "Try the public card",
+      "personas": ["signed-out", "public-viewer"]
+    },
+    {
+      "id": "home-to-signup-3",
+      "source": "home",
+      "target": "signup",
+      "type": "link",
+      "label": "Create account",
+      "action": "Create account",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "card-to-signup-4",
+      "source": "card",
+      "target": "signup",
+      "type": "link",
+      "label": "Start signup from teaser",
+      "action": "Start signup from teaser",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "signin-to-auth-sign-in-github-5",
+      "source": "signin",
+      "target": "auth-sign-in-github",
+      "type": "redirect",
+      "label": "Continue with GitHub",
+      "action": "Continue with GitHub",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "signup-to-auth-sign-in-github-6",
+      "source": "signup",
+      "target": "auth-sign-in-github",
+      "type": "redirect",
+      "label": "Create account with GitHub",
+      "action": "Create account with GitHub",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "auth-sign-in-github-to-auth-callback-7",
+      "source": "auth-sign-in-github",
+      "target": "auth-callback",
+      "type": "redirect",
+      "label": "Provider returns callback",
+      "action": "Provider returns callback",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "auth-callback-to-quick-setup-8",
+      "source": "auth-callback",
+      "target": "quick-setup",
+      "type": "redirect",
+      "label": "Enter setup after auth",
+      "action": "Enter setup after auth",
+      "personas": ["signed-in"]
+    },
+    {
+      "id": "quick-setup-to-github-setup-9",
+      "source": "quick-setup",
+      "target": "github-setup",
+      "type": "link",
+      "label": "Check GitHub setup readiness",
+      "action": "Check GitHub setup readiness",
+      "personas": ["signed-in"]
+    },
+    {
+      "id": "github-setup-to-connect-github-10",
+      "source": "github-setup",
+      "target": "connect-github",
+      "type": "redirect",
+      "label": "Return from GitHub installation",
+      "action": "Return from GitHub installation",
+      "personas": ["signed-in"]
+    },
+    {
+      "id": "quick-setup-to-creator-11",
+      "source": "quick-setup",
+      "target": "creator",
+      "type": "router-push",
+      "label": "Publish draft and open creator",
+      "action": "Publish draft and open creator",
+      "personas": ["signed-in-with-github"]
+    },
+    {
+      "id": "creator-to-published-card-12",
+      "source": "creator",
+      "target": "published-card",
+      "type": "link",
+      "label": "Publish public card",
+      "action": "Publish public card",
+      "personas": ["signed-in-with-github"]
+    },
+    {
+      "id": "published-card-to-public-snapshot-api-13",
+      "source": "published-card",
+      "target": "public-snapshot-api",
+      "type": "link",
+      "label": "Fetch public-safe snapshot",
+      "action": "Fetch public-safe snapshot",
+      "personas": ["public-viewer"]
+    },
+    {
+      "id": "creator-to-quick-setup-14",
+      "source": "creator",
+      "target": "quick-setup",
+      "type": "redirect",
+      "label": "Redirect when no persisted card exists",
+      "action": "Redirect when no persisted card exists",
+      "personas": ["signed-in"]
+    },
+    {
+      "id": "quick-setup-to-signup-15",
+      "source": "quick-setup",
+      "target": "signup",
+      "type": "redirect",
+      "label": "Redirect signed-out visitor",
+      "action": "Redirect signed-out visitor",
+      "personas": ["signed-out"]
+    },
+    {
+      "id": "retired-advanced-studio-to-creator-16",
+      "source": "retired-advanced-studio",
+      "target": "creator",
+      "type": "link",
+      "label": "Canonical replacement is Creator",
+      "action": "Canonical replacement is Creator",
+      "personas": ["signed-in-with-github"]
+    }
+  ],
+  "groups": [
+    {
+      "id": "public",
+      "label": "Public Funnel",
+      "routePrefix": "/"
+    },
+    {
+      "id": "auth",
+      "label": "Auth",
+      "routePrefix": "/signin"
+    },
+    {
+      "id": "setup",
+      "label": "Quick Setup",
+      "routePrefix": "/quick-setup"
+    },
+    {
+      "id": "studio",
+      "label": "Creator Studio",
+      "routePrefix": "/creator"
+    },
+    {
+      "id": "published",
+      "label": "Published Card",
+      "routePrefix": "/maya.codes"
+    },
+    {
+      "id": "api",
+      "label": "Integration APIs",
+      "routePrefix": "/api"
+    },
+    {
+      "id": "retired",
+      "label": "Retired Routes",
+      "routePrefix": "/advanced-studio"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Signed-out activation",
+      "steps": ["home", "card", "signup", "auth-sign-in-github", "auth-callback", "quick-setup"]
+    },
+    {
+      "name": "GitHub-connected creator",
+      "steps": ["quick-setup", "github-setup", "connect-github", "creator", "published-card"]
+    },
+    {
+      "name": "Public card inspection",
+      "steps": ["published-card", "public-snapshot-api"]
+    },
+    {
+      "name": "Protected-route redirects",
+      "steps": ["quick-setup", "signup", "creator", "quick-setup"],
+      "partial": true
+    }
+  ]
+}

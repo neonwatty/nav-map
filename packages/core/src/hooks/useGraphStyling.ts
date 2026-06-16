@@ -23,6 +23,8 @@ interface GraphStylingDeps {
   showRedirects: boolean;
   searchMatchIds: Set<string> | null;
   auditFocusNodeIds: Set<string> | null;
+  workflowFocusNodeIds?: Set<string> | null;
+  workflowFocusEdgeIds?: Set<string> | null;
 }
 
 export function useGraphStyling(deps: GraphStylingDeps): {
@@ -43,6 +45,8 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     showRedirects,
     searchMatchIds,
     auditFocusNodeIds,
+    workflowFocusNodeIds = null,
+    workflowFocusEdgeIds = null,
   } = deps;
 
   const visibleNodes = useMemo(() => {
@@ -68,6 +72,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
       focusedGroupId,
       searchMatchIds,
       auditFocusNodeIds,
+      workflowFocusNodeIds,
     });
   }, [
     visibleNodes,
@@ -79,6 +84,7 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     focusedGroupId,
     searchMatchIds,
     auditFocusNodeIds,
+    workflowFocusNodeIds,
   ]);
 
   const styledEdges = useMemo(() => {
@@ -91,6 +97,8 @@ export function useGraphStyling(deps: GraphStylingDeps): {
       focusedGroupId,
       nodeGroupMap,
       auditFocusNodeIds,
+      searchMatchIds,
+      workflowFocusEdgeIds,
     });
   }, [
     filteredEdges,
@@ -101,6 +109,8 @@ export function useGraphStyling(deps: GraphStylingDeps): {
     focusedGroupId,
     nodeGroupMap,
     auditFocusNodeIds,
+    searchMatchIds,
+    workflowFocusEdgeIds,
   ]);
 
   return { styledNodes, styledEdges };

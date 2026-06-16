@@ -33,6 +33,18 @@ export type { AnalyticsAdapter, NavMapAnalytics as AnalyticsData } from './analy
 // Validation
 export { validateGraph } from './utils/validateGraph';
 export type { GraphValidationResult, GraphValidationError } from './utils/validateGraph';
+export { workflowManifestToGraph, validateWorkflowManifest, routeToId } from './workflowManifest';
+export type {
+  WorkflowManifest,
+  WorkflowManifestNode,
+  WorkflowManifestEdge,
+  WorkflowManifestFlow,
+  WorkflowManifestPersona,
+  WorkflowManifestSection,
+  WorkflowManifestToGraphOptions,
+  WorkflowManifestValidationError,
+  WorkflowManifestValidationResult,
+} from './workflowManifest';
 export { analyzeRouteHealth, formatRouteHealthReport } from './utils/routeHealth';
 export type {
   RouteHealthIssue,
@@ -84,4 +96,9 @@ export type {
   CoverageData,
   CoverageTestRef,
   TestStatus,
+  NavMapExpectedRedirect,
+  NavMapHealthStatus,
+  NavMapInspectHint,
+  NavMapWorkflowHealth,
+  NavMapWorkflowMetadata,
 } from './types';
