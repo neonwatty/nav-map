@@ -70,7 +70,7 @@ export default function HomePage() {
         style={{
           position: 'absolute',
           right: 14,
-          top: 14,
+          bottom: 14,
           zIndex: 20,
           display: 'flex',
           alignItems: 'center',
