@@ -38,6 +38,8 @@ export function ConnectionPanel({
 
   const screenshotSrc = node.screenshot ? `${screenshotBasePath}/${node.screenshot}` : undefined;
   const workflowMetadata = node.metadata;
+  const detailsLabel =
+    workflowMetadata?.kind === 'prototype-surface' ? 'Surface Details' : 'Page Details';
 
   return (
     <div
@@ -84,7 +86,7 @@ export function ConnectionPanel({
             marginBottom: 6,
           }}
         >
-          Page Details
+          {detailsLabel}
         </div>
         <div style={{ fontSize: 16, fontWeight: 600, color: colors.text }}>{node.label}</div>
         <div
@@ -188,6 +190,9 @@ function WorkflowMetadataSection({
         )}
         {metadata.authRequirement && (
           <MetadataRow label="Auth" value={formatLabel(metadata.authRequirement)} isDark={isDark} />
+        )}
+        {metadata.surfaceType && (
+          <MetadataRow label="Surface" value={formatLabel(metadata.surfaceType)} isDark={isDark} />
         )}
         {health && (
           <MetadataRow
@@ -363,6 +368,7 @@ function hasWorkflowMetadata(metadata: NavMapWorkflowMetadata): boolean {
     metadata.purpose ||
     metadata.section ||
     metadata.authRequirement ||
+    metadata.surfaceType ||
     metadata.health ||
     metadata.inspect ||
     metadata.personas?.length ||

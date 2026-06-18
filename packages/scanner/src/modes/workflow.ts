@@ -59,6 +59,14 @@ export interface WorkflowInspectPayload {
     hasScreenshot: boolean;
     sourceHints: string[];
   }[];
+  surfaces: {
+    id: string;
+    label: string;
+    type: string;
+    section?: string;
+    hasScreenshot: boolean;
+    sourceHints: string[];
+  }[];
   edges: {
     source: string;
     target: string;
@@ -137,7 +145,7 @@ export async function runWorkflowInspectManifest(
   return {
     outputPath,
     valid: payload.valid,
-    nodeCount: payload.nodes.length,
+    nodeCount: payload.nodes.length + payload.surfaces.length,
     edgeCount: payload.edges.length,
     flowCount: payload.flows.length,
   };
@@ -190,6 +198,14 @@ function buildWorkflowInspectPayload(manifest: WorkflowManifest): WorkflowInspec
       hasScreenshot: Boolean(node.screenshot),
       sourceHints: [...(node.sourceHints ?? [])],
     })),
+    surfaces: (manifest.surfaces ?? []).map(surface => ({
+      id: surface.id,
+      label: surface.label,
+      type: surface.type,
+      section: surface.section,
+      hasScreenshot: Boolean(surface.screenshot),
+      sourceHints: [...(surface.sourceHints ?? [])],
+    })),
     edges: (manifest.edges ?? []).map(edge => ({
       source: edge.source,
       target: edge.target,
@@ -215,7 +231,7 @@ function buildWorkflowInspectContract(
     summary: {
       app: payload.name,
       valid: payload.valid,
-      nodeCount: payload.nodes.length,
+      nodeCount: payload.nodes.length + payload.surfaces.length,
       edgeCount: payload.edges.length,
       flowCount: payload.flows.length,
       authStateCount: payload.authStates.length,

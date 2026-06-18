@@ -66,4 +66,35 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(screen.getByText('main')).toBeTruthy();
     expect(screen.getByText('Primary first-run setup surface.')).toBeTruthy();
   });
+
+  it('renders prototype surface metadata for concept nodes', () => {
+    const surfaceNode: NavMapNode = {
+      id: 'quick-setup-concept',
+      route: 'prototype://quick-setup-concept',
+      label: 'Quick Setup Concept',
+      group: 'prototype',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'generated-image',
+        purpose: 'Explore the first-run concept before implementation.',
+        section: 'prototype',
+      },
+    };
+
+    render(
+      <NavMapContext.Provider value={context}>
+        <ConnectionPanel
+          node={surfaceNode}
+          nodes={[surfaceNode]}
+          edges={[]}
+          onNavigate={() => {}}
+        />
+      </NavMapContext.Provider>
+    );
+
+    expect(screen.getByText('Surface Details')).toBeTruthy();
+    expect(screen.getByText('Surface')).toBeTruthy();
+    expect(screen.getByText('Generated Image')).toBeTruthy();
+    expect(screen.getByText('Explore the first-run concept before implementation.')).toBeTruthy();
+  });
 });

@@ -10,6 +10,7 @@ export type {
   WorkflowManifestFlow,
   WorkflowManifestPersona,
   WorkflowManifestSection,
+  WorkflowManifestSurface,
   WorkflowManifestToGraphOptions,
   WorkflowManifestValidationError,
   WorkflowManifestValidationResult,
@@ -24,6 +25,7 @@ export type {
   NavMapExpectedRedirect,
   NavMapHealthStatus,
   NavMapInspectHint,
+  NavMapPrototypeSurfaceType,
   NavMapWorkflowHealth,
   NavMapWorkflowMetadata,
 } from './types';

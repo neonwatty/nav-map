@@ -95,4 +95,31 @@ describe('analyzeRouteHealth', () => {
     expect(report).toContain('[HIGH] Settings is unreachable');
     expect(report).not.toContain('[LOW] Home has no passing route coverage');
   });
+
+  it('excludes prototype surfaces from route health totals and issues', () => {
+    const graph: NavMapGraph = {
+      ...baseGraph,
+      nodes: [
+        { id: 'home', route: '/', label: 'Home', group: 'root' },
+        {
+          id: 'home-concept',
+          route: 'prototype://home-concept',
+          label: 'Home Concept',
+          group: 'prototype',
+          metadata: { kind: 'prototype-surface', surfaceType: 'generated-image' },
+        },
+      ],
+      edges: [],
+    };
+
+    const summary = analyzeRouteHealth(graph);
+    const report = formatRouteHealthReport(graph);
+
+    expect(summary.totals.routes).toBe(1);
+    expect(summary.totals.surfaces).toBe(1);
+    expect(summary.issues.map(issue => issue.nodeIds)).not.toContain(['home-concept']);
+    expect(report).toContain('Routes: 1');
+    expect(report).toContain('Surfaces: 1');
+    expect(report).not.toContain('Home Concept');
+  });
 });

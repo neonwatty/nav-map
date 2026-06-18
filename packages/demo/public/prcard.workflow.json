@@ -7,7 +7,16 @@
   "layout": {
     "defaultViewMode": "flow",
     "defaultTreeRootId": "home",
-    "sectionOrder": ["public", "auth", "setup", "studio", "published", "api", "retired"]
+    "sectionOrder": [
+      "public",
+      "auth",
+      "setup",
+      "prototype",
+      "studio",
+      "published",
+      "api",
+      "retired"
+    ]
   },
   "personas": [
     {
@@ -46,6 +55,10 @@
       "id": "setup",
       "label": "Quick Setup",
       "routePrefix": "/quick-setup"
+    },
+    {
+      "id": "prototype",
+      "label": "Prototype Surfaces"
     },
     {
       "id": "studio",
@@ -320,6 +333,32 @@
       "tags": ["retired"]
     }
   ],
+  "surfaces": [
+    {
+      "id": "quick-setup-concept",
+      "label": "Quick Setup Concept",
+      "type": "generated-image",
+      "section": "prototype",
+      "purpose": "Design-reference surface for the first-run setup journey before it resolves to a live route.",
+      "screenshot": "screenshots/prcard/quick-setup.webp",
+      "sourceHints": ["docs/prototypes/prcard-quick-setup.md"],
+      "metadata": {
+        "fidelity": "concept"
+      }
+    },
+    {
+      "id": "creator-component-reference",
+      "label": "Creator Component Reference",
+      "type": "component",
+      "section": "prototype",
+      "purpose": "Reusable component reference for the source-backed card editor and publish controls.",
+      "screenshot": "screenshots/prcard/creator.webp",
+      "sourceHints": ["components/prcard/CreatorStudio.tsx"],
+      "metadata": {
+        "fidelity": "component"
+      }
+    }
+  ],
   "edges": [
     {
       "source": "root",
@@ -381,6 +420,13 @@
       "personas": ["signed-in"]
     },
     {
+      "source": "quick-setup-concept",
+      "target": "quick-setup",
+      "action": "Realized by route",
+      "type": "test-transition",
+      "personas": ["signed-in"]
+    },
+    {
       "source": "github-setup",
       "target": "connect-github",
       "type": "redirect",
@@ -392,6 +438,13 @@
       "target": "creator",
       "type": "router-push",
       "action": "Publish draft and open creator",
+      "personas": ["signed-in-with-github"]
+    },
+    {
+      "source": "creator-component-reference",
+      "target": "creator",
+      "action": "Component implemented in route",
+      "type": "test-transition",
       "personas": ["signed-in-with-github"]
     },
     {
@@ -434,7 +487,15 @@
     },
     {
       "name": "GitHub-connected creator",
-      "steps": ["quick-setup", "github-setup", "connect-github", "creator", "published-card"]
+      "steps": [
+        "quick-setup-concept",
+        "quick-setup",
+        "github-setup",
+        "connect-github",
+        "creator-component-reference",
+        "creator",
+        "published-card"
+      ]
     },
     {
       "name": "Public card inspection",

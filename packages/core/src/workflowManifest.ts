@@ -6,6 +6,8 @@ import type {
   NavMapGroup,
   NavMapHealthStatus,
   NavMapInspectHint,
+  NavMapNode,
+  NavMapPrototypeSurfaceType,
   NavMapWorkflowLayout,
   NavMapWorkflowHealth,
   NavMapWorkflowMetadata,
@@ -77,6 +79,17 @@ export interface WorkflowManifestNode {
   metadata?: Record<string, unknown>;
 }
 
+export interface WorkflowManifestSurface {
+  id: string;
+  label: string;
+  type: NavMapPrototypeSurfaceType;
+  section?: string;
+  purpose?: string;
+  screenshot?: string;
+  sourceHints?: string[];
+  metadata?: Record<string, unknown>;
+}
+
 export interface WorkflowManifestEdge {
   id?: string;
   source: string;
@@ -110,6 +123,7 @@ export interface WorkflowManifest {
   authStates?: WorkflowAuthState[];
   routeVariables?: WorkflowRouteVariables;
   nodes: WorkflowManifestNode[];
+  surfaces?: WorkflowManifestSurface[];
   edges?: WorkflowManifestEdge[];
   flows?: WorkflowManifestFlow[];
   metadata?: Record<string, unknown>;
@@ -202,6 +216,7 @@ export function validateWorkflowManifest(manifest: unknown): WorkflowManifestVal
       }
     });
   }
+  validateSurfaces(record.surfaces, nodeIds, errors);
 
   if (Array.isArray(record.edges)) {
     record.edges.forEach((edge, index) => {
@@ -259,7 +274,7 @@ export function workflowManifestToGraph(
     manifest.authStates?.map(authState => [authState.id, authState.kind])
   );
   const nodeSectionIds = new Set<string>();
-  const nodes = manifest.nodes.map(node => {
+  const routeNodes = manifest.nodes.map(node => {
     const id = node.id ?? routeToId(node.route);
     const group = node.section ?? inferSectionId(node.route);
     nodeSectionIds.add(group);
@@ -292,8 +307,30 @@ export function workflowManifestToGraph(
         : {}),
       ...(node.filePath ? { filePath: node.filePath } : {}),
       metadata,
-    };
+    } satisfies NavMapNode;
   });
+  const surfaceNodes = (manifest.surfaces ?? []).map(surface => {
+    const group = surface.section ?? 'prototype';
+    nodeSectionIds.add(group);
+    const metadata: NavMapWorkflowMetadata = {
+      ...(surface.metadata ?? {}),
+      kind: 'prototype-surface',
+      surfaceType: surface.type,
+      section: group,
+      ...(surface.purpose ? { purpose: surface.purpose } : {}),
+      ...(surface.sourceHints ? { sourceHints: surface.sourceHints } : {}),
+    };
+
+    return {
+      id: surface.id,
+      route: `prototype://${surface.id}`,
+      label: surface.label,
+      group,
+      ...(surface.screenshot ? { screenshot: surface.screenshot } : {}),
+      metadata,
+    } satisfies NavMapNode;
+  });
+  const nodes = [...routeNodes, ...surfaceNodes];
 
   const groups = buildGroups({
     sectionMap,
@@ -564,6 +601,58 @@ function validateLayout(value: unknown, errors: WorkflowManifestValidationError[
   }
 }
 
+function validateSurfaces(
+  value: unknown,
+  nodeIds: Set<string>,
+  errors: WorkflowManifestValidationError[]
+): void {
+  if (value === undefined) return;
+
+  if (!Array.isArray(value)) {
+    errors.push({ field: 'surfaces', message: 'surfaces must be an array of objects' });
+    return;
+  }
+
+  value.forEach((surface, index) => {
+    const surfaceRecord = asRecord(surface);
+    if (!surfaceRecord) {
+      errors.push({ field: `surfaces.${index}`, message: 'surface must be an object' });
+      return;
+    }
+
+    if (!isNonEmptyString(surfaceRecord.id)) {
+      errors.push({ field: `surfaces.${index}.id`, message: 'id must be a non-empty string' });
+    } else if (nodeIds.has(surfaceRecord.id)) {
+      errors.push({
+        field: `surfaces.${index}.id`,
+        message: `duplicate node id "${surfaceRecord.id}"`,
+      });
+    } else {
+      nodeIds.add(surfaceRecord.id);
+    }
+
+    if (!isNonEmptyString(surfaceRecord.label)) {
+      errors.push({
+        field: `surfaces.${index}.label`,
+        message: 'label must be a non-empty string',
+      });
+    }
+    if (!isPrototypeSurfaceType(surfaceRecord.type)) {
+      errors.push({
+        field: `surfaces.${index}.type`,
+        message:
+          'type must be screenshot, generated-image, html-mockup, video, keyframe, component, or concept-screen',
+      });
+    }
+    if (surfaceRecord.sourceHints !== undefined && !isStringArray(surfaceRecord.sourceHints)) {
+      errors.push({
+        field: `surfaces.${index}.sourceHints`,
+        message: 'sourceHints must be an array of strings',
+      });
+    }
+  });
+}
+
 function validateNodeExpectations(
   value: unknown,
   field: string,
@@ -663,6 +752,18 @@ function isStringArray(value: unknown): value is string[] {
 
 function isWorkflowAuthStateKind(value: unknown): value is WorkflowAuthStateKind {
   return value === 'anonymous' || value === 'storage-state' || value === 'setup-command';
+}
+
+function isPrototypeSurfaceType(value: unknown): value is NavMapPrototypeSurfaceType {
+  return (
+    value === 'screenshot' ||
+    value === 'generated-image' ||
+    value === 'html-mockup' ||
+    value === 'video' ||
+    value === 'keyframe' ||
+    value === 'component' ||
+    value === 'concept-screen'
+  );
 }
 
 function isWorkflowViewMode(value: unknown): value is ViewMode {

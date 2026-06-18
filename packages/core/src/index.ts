@@ -37,6 +37,7 @@ export { workflowManifestToGraph, validateWorkflowManifest, routeToId } from './
 export type {
   WorkflowManifest,
   WorkflowManifestNode,
+  WorkflowManifestSurface,
   WorkflowManifestEdge,
   WorkflowManifestFlow,
   WorkflowManifestPersona,
@@ -99,6 +100,7 @@ export type {
   NavMapExpectedRedirect,
   NavMapHealthStatus,
   NavMapInspectHint,
+  NavMapPrototypeSurfaceType,
   NavMapWorkflowHealth,
   NavMapWorkflowMetadata,
 } from './types';

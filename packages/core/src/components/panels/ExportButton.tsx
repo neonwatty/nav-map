@@ -215,17 +215,24 @@ export function buildViewSummary({
     selectedFlowIndex !== null && selectedFlowIndex !== undefined
       ? graph?.flows?.[selectedFlowIndex]
       : undefined;
+  const routeCount = graph?.nodes.filter(node => !isPrototypeSurfaceNode(node)).length ?? 0;
+  const surfaceCount = graph?.nodes.filter(isPrototypeSurfaceNode).length ?? 0;
   const lines = [
     `Nav Map: ${graph?.meta.name ?? graphName}`,
     viewMode ? `View: ${viewMode}` : null,
     flow ? `Flow: ${flow.name} (${flow.steps.length} steps)` : null,
-    graph ? `Routes: ${graph.nodes.length}` : null,
+    graph ? `Routes: ${routeCount}` : null,
+    surfaceCount > 0 ? `Surfaces: ${surfaceCount}` : null,
     graph ? `Edges: ${graph.edges.length}` : null,
     graph?.flows ? `Flows: ${graph.flows.length}` : null,
     url ? `URL: ${url}` : null,
   ];
 
   return lines.filter(Boolean).join('\n');
+}
+
+function isPrototypeSurfaceNode(node: NavMapGraph['nodes'][number]): boolean {
+  return node.metadata?.kind === 'prototype-surface' || node.route.startsWith('prototype://');
 }
 
 function dropdownItemStyle(isDark: boolean): React.CSSProperties {

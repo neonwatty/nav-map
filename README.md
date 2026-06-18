@@ -180,6 +180,17 @@ For product-level maps, keep app-specific workflow knowledge in a project manife
       "personas": ["signed-in"]
     }
   ],
+  "surfaces": [
+    {
+      "id": "dashboard-concept",
+      "label": "Dashboard Concept",
+      "type": "generated-image",
+      "section": "app",
+      "purpose": "Explore the signed-in workspace before implementation.",
+      "screenshot": "screenshots/prototypes/dashboard-concept.png",
+      "sourceHints": ["docs/prototypes/dashboard.md"]
+    }
+  ],
   "flows": [{ "name": "Activation", "steps": ["home", "dashboard"] }]
 }
 ```
@@ -217,6 +228,34 @@ npx @neonwatty/nav-map-scanner workflow ./workflow.nav-map.json \
 ```
 
 The screenshot paths are written relative to the graph output directory, so a Next.js app can usually render with `screenshotBasePath=""` when both files live under `public/`.
+
+Use `surfaces` for prototype or design artifacts that should appear in the workflow graph but are
+not live routes. Surface nodes support screenshots, generated images, HTML mockups, video or
+keyframe references, components, and concept screens:
+
+```json
+{
+  "surfaces": [
+    {
+      "id": "checkout-wireframe",
+      "label": "Checkout Wireframe",
+      "type": "html-mockup",
+      "section": "prototype",
+      "purpose": "Show the intended checkout review step before the route exists.",
+      "screenshot": "screenshots/prototypes/checkout-wireframe.png",
+      "sourceHints": ["mockups/checkout.html"]
+    }
+  ],
+  "edges": [{ "source": "checkout-wireframe", "target": "checkout", "action": "Implemented by" }],
+  "flows": [{ "name": "Prototype handoff", "steps": ["checkout-wireframe", "checkout"] }]
+}
+```
+
+Converted surface nodes use stable synthetic routes like `prototype://checkout-wireframe` and
+carry `metadata.kind: "prototype-surface"` plus `metadata.surfaceType`. They can be referenced by
+edges and flows like route nodes, but `nav-map workflow --base-url ... --screenshot-dir ...` only
+navigates live `nodes` for Playwright screenshot capture. Surface screenshots are treated as
+existing visual evidence from the manifest.
 
 You can also convert manifests in code without the React component entry:
 
