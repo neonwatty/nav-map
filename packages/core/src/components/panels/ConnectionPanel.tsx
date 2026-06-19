@@ -2,6 +2,13 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { NavMapNode, NavMapEdge, NavMapWorkflowMetadata } from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import {
+  getArtifactKindLabel,
+  getNodePreviewState,
+  getPreviewStatusLabel,
+  getPreviewStatusMessage,
+} from '../../utils/artifactPreview';
+import type { NavMapNodePreviewState } from '../../utils/artifactPreview';
 import { ConnectionListSection } from './ConnectionListSection';
 
 interface ConnectionPanelProps {
@@ -19,7 +26,7 @@ export function ConnectionPanel({
   onNavigate,
   isNarrow = false,
 }: ConnectionPanelProps) {
-  const { isDark, getGroupColors, screenshotBasePath } = useNavMapContext();
+  const { isDark, getGroupColors, screenshotBasePath, graph, previewMode } = useNavMapContext();
   const colors = getGroupColors(node.group);
 
   const { incoming, outgoing } = useMemo(() => {
@@ -37,6 +44,12 @@ export function ConnectionPanel({
   }, [node.id, edges, nodes]);
 
   const screenshotSrc = node.screenshot ? `${screenshotBasePath}/${node.screenshot}` : undefined;
+  const previewState = getNodePreviewState(node, graph ?? undefined);
+  const showLiveIframe =
+    previewMode === 'live' &&
+    previewState.status === 'available' &&
+    previewState.liveMode === 'iframe' &&
+    Boolean(previewState.liveUrl);
   const workflowMetadata = node.metadata;
   const detailsLabel =
     workflowMetadata?.kind === 'prototype-surface' ? 'Surface Details' : 'Page Details';
@@ -116,7 +129,21 @@ export function ConnectionPanel({
           overflow: 'hidden',
         }}
       >
-        {screenshotSrc ? (
+        {showLiveIframe ? (
+          <iframe
+            title={`Live preview: ${node.label}`}
+            src={previewState.liveUrl}
+            sandbox="allow-scripts allow-forms"
+            referrerPolicy="no-referrer"
+            allow=""
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 0,
+              background: isDark ? '#101018' : '#fff',
+            }}
+          />
+        ) : screenshotSrc ? (
           <img
             src={screenshotSrc}
             alt={node.label}
@@ -139,7 +166,11 @@ export function ConnectionPanel({
           borderTop: `1px solid ${isDark ? '#1e1e2a' : '#e0e2ea'}`,
         }}
       >
-        <WorkflowMetadataSection metadata={workflowMetadata} isDark={isDark} />
+        <WorkflowMetadataSection
+          metadata={workflowMetadata}
+          previewState={previewState}
+          isDark={isDark}
+        />
 
         <ConnectionListSection
           title="→ Navigates to"
@@ -162,20 +193,30 @@ export function ConnectionPanel({
 
 function WorkflowMetadataSection({
   metadata,
+  previewState,
   isDark,
 }: {
   metadata?: NavMapWorkflowMetadata;
+  previewState: NavMapNodePreviewState;
   isDark: boolean;
 }) {
-  if (!metadata || !hasWorkflowMetadata(metadata)) return null;
+  if (!metadata || !hasWorkflowMetadata(metadata)) {
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <PreviewStatusBlock previewState={previewState} isDark={isDark} />
+      </div>
+    );
+  }
 
-  const personas = Array.isArray(metadata.personas) ? metadata.personas : [];
-  const redirects = Array.isArray(metadata.expectedRedirects) ? metadata.expectedRedirects : [];
+  const personas = Array.isArray(metadata?.personas) ? metadata.personas : [];
+  const redirects = Array.isArray(metadata?.expectedRedirects) ? metadata.expectedRedirects : [];
   const health = metadata.health;
   const inspect = metadata.inspect;
 
   return (
     <div style={{ marginBottom: 16 }}>
+      <PreviewStatusBlock previewState={previewState} isDark={isDark} />
+
       {metadata.purpose && (
         <PanelBlock label="Purpose" isDark={isDark}>
           <div style={{ fontSize: 13, lineHeight: 1.45, color: isDark ? '#d0d4e0' : '#333b4a' }}>
@@ -256,6 +297,30 @@ function WorkflowMetadataSection({
         </PanelBlock>
       )}
     </div>
+  );
+}
+
+function PreviewStatusBlock({
+  previewState,
+  isDark,
+}: {
+  previewState: NavMapNodePreviewState;
+  isDark: boolean;
+}) {
+  const previewLimitations = previewState.limitations;
+
+  return (
+    <PanelBlock label="Preview Status" isDark={isDark}>
+      <div style={{ display: 'grid', gap: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#d0d4e0' : '#2f3748' }}>
+          {getArtifactKindLabel(previewState.artifactKind)} / {getPreviewStatusLabel(previewState)}
+        </div>
+        <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#cbd1df' : '#354052' }}>
+          {getPreviewStatusMessage(previewState)}
+        </div>
+        {previewLimitations.length > 0 && <BadgeList values={previewLimitations} isDark={isDark} />}
+      </div>
+    </PanelBlock>
   );
 }
 

@@ -94,8 +94,77 @@ describe('ConnectionPanel workflow metadata', () => {
     );
 
     expect(screen.getByText('Surface Details')).toBeTruthy();
+    expect(screen.getByText('Preview Status')).toBeTruthy();
+    expect(screen.getByText('Prototype / Static')).toBeTruthy();
+    expect(
+      screen.getByText('Static reference surface. This prototype has no live preview.')
+    ).toBeTruthy();
     expect(screen.getByText('Surface')).toBeTruthy();
     expect(screen.getByText('Generated Image')).toBeTruthy();
     expect(screen.getByText('Explore the first-run concept before implementation.')).toBeTruthy();
+  });
+
+  it('renders live mockup preview iframe and limitations in live mode', () => {
+    const mockupNode: NavMapNode = {
+      id: 'quick-setup-mockup',
+      route: 'prototype://quick-setup-mockup',
+      label: 'Quick Setup Mockup',
+      group: 'prototype',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'html-mockup',
+        purpose: 'Preview the quick setup mockup.',
+        section: 'prototype',
+        preview: {
+          liveStatus: 'available',
+          liveMode: 'iframe',
+          liveUrl: '/mockups/quick-setup.html',
+          limitations: ['fixture-data', 'no-real-auth'],
+        },
+      },
+    };
+
+    render(
+      <NavMapContext.Provider value={{ ...context, previewMode: 'live' }}>
+        <ConnectionPanel node={mockupNode} nodes={[mockupNode]} edges={[]} onNavigate={() => {}} />
+      </NavMapContext.Provider>
+    );
+
+    const iframe = screen.getByTitle('Live preview: Quick Setup Mockup');
+
+    expect(iframe.getAttribute('src')).toBe('/mockups/quick-setup.html');
+    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
+    expect(iframe.getAttribute('referrerpolicy')).toBe('no-referrer');
+    expect(iframe.getAttribute('allow')).toBe('');
+    expect(screen.getByText('Fixture Data')).toBeTruthy();
+    expect(screen.getByText('No Real Auth')).toBeTruthy();
+  });
+
+  it('uses screenshot preview instead of iframe in screenshots mode', () => {
+    const mockupNode: NavMapNode = {
+      id: 'quick-setup-mockup',
+      route: 'prototype://quick-setup-mockup',
+      label: 'Quick Setup Mockup',
+      group: 'prototype',
+      screenshot: 'quick-setup.png',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'html-mockup',
+        preview: {
+          liveStatus: 'available',
+          liveMode: 'iframe',
+          liveUrl: '/mockups/quick-setup.html',
+        },
+      },
+    };
+
+    render(
+      <NavMapContext.Provider value={context}>
+        <ConnectionPanel node={mockupNode} nodes={[mockupNode]} edges={[]} onNavigate={() => {}} />
+      </NavMapContext.Provider>
+    );
+
+    expect(screen.queryByTitle('Live preview: Quick Setup Mockup')).toBeNull();
+    expect(screen.getByAltText('Quick Setup Mockup').getAttribute('src')).toBe('/quick-setup.png');
   });
 });
