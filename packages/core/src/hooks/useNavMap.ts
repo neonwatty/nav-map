@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { NavMapGraph, GroupColors, EdgeMode, NavMapTheme } from '../types';
+import type { NavMapGraph, GroupColors, EdgeMode, NavMapTheme, NavMapPreviewMode } from '../types';
 import { getGroupColors as getColors } from '../utils/colors';
 
 export interface NavMapContextValue {
@@ -12,6 +12,7 @@ export interface NavMapContextValue {
   focusedGroupId: string | null;
   edgeMode: EdgeMode;
   showCoverage: boolean;
+  previewMode: NavMapPreviewMode;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -24,6 +25,7 @@ const defaultContext: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -36,7 +38,7 @@ export function useNavMapState(
   graph: NavMapGraph | null,
   screenshotBasePath: string,
   theme?: NavMapTheme
-): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage'> {
+): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage' | 'previewMode'> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;

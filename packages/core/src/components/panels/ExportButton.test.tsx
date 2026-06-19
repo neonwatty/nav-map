@@ -39,6 +39,7 @@ const contextValue: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 function renderExport(writeText = vi.fn().mockResolvedValue(undefined)) {

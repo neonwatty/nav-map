@@ -347,6 +347,24 @@
       }
     },
     {
+      "id": "quick-setup-html-mockup",
+      "label": "Quick Setup HTML Mockup",
+      "type": "html-mockup",
+      "section": "prototype",
+      "purpose": "Local embeddable mockup used to dogfood live preview behavior with fixture data.",
+      "screenshot": "screenshots/prcard/quick-setup.webp",
+      "sourceHints": ["packages/demo/public/mockups/prcard-quick-setup.html"],
+      "metadata": {
+        "fidelity": "html-mockup",
+        "preview": {
+          "liveUrl": "/mockups/prcard-quick-setup.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["fixture data", "no real auth", "not production"]
+        }
+      }
+    },
+    {
       "id": "creator-component-reference",
       "label": "Creator Component Reference",
       "type": "component",
@@ -427,6 +445,13 @@
       "personas": ["signed-in"]
     },
     {
+      "source": "quick-setup-html-mockup",
+      "target": "quick-setup",
+      "action": "Mockup realized by route",
+      "type": "test-transition",
+      "personas": ["signed-in"]
+    },
+    {
       "source": "github-setup",
       "target": "connect-github",
       "type": "redirect",
@@ -489,6 +514,7 @@
       "name": "GitHub-connected creator",
       "steps": [
         "quick-setup-concept",
+        "quick-setup-html-mockup",
         "quick-setup",
         "github-setup",
         "connect-github",

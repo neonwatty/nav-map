@@ -19,6 +19,7 @@ const contextValue: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 function renderSelector(onSelect = vi.fn(), selectedIndex: number | null = 0) {

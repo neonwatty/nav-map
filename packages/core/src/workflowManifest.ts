@@ -284,6 +284,8 @@ export function workflowManifestToGraph(
         : node.health;
     const metadata: NavMapWorkflowMetadata = {
       ...(node.metadata ?? {}),
+      artifactKind:
+        (node.metadata?.artifactKind as NavMapWorkflowMetadata['artifactKind']) ?? 'app',
       ...(node.purpose ? { purpose: node.purpose } : {}),
       section: group,
       ...(node.personas ? { personas: node.personas } : {}),
@@ -316,6 +318,9 @@ export function workflowManifestToGraph(
       ...(surface.metadata ?? {}),
       kind: 'prototype-surface',
       surfaceType: surface.type,
+      artifactKind:
+        (surface.metadata?.artifactKind as NavMapWorkflowMetadata['artifactKind']) ??
+        (surface.type === 'html-mockup' ? 'mockup' : 'prototype'),
       section: group,
       ...(surface.purpose ? { purpose: surface.purpose } : {}),
       ...(surface.sourceHints ? { sourceHints: surface.sourceHints } : {}),

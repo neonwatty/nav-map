@@ -70,6 +70,14 @@ export { detectGroups, assignGroups } from './layout/groupDetection';
 // Utilities
 export { getGroupColors, darkGroupColors, lightGroupColors } from './utils/colors';
 export {
+  getArtifactKind,
+  getNodePreviewState,
+  getArtifactKindLabel,
+  getPreviewStatusLabel,
+  getPreviewStatusMessage,
+} from './utils/artifactPreview';
+export type { NavMapNodePreviewState } from './utils/artifactPreview';
+export {
   buildGraphFromJson,
   buildCompoundNodes,
   toReactFlowNodes,
@@ -101,6 +109,11 @@ export type {
   NavMapHealthStatus,
   NavMapInspectHint,
   NavMapPrototypeSurfaceType,
+  NavMapArtifactKind,
+  NavMapPreviewMode,
+  NavMapLivePreviewStatus,
+  NavMapLivePreviewBlockedReason,
+  NavMapPreviewMetadata,
   NavMapWorkflowHealth,
   NavMapWorkflowMetadata,
 } from './types';

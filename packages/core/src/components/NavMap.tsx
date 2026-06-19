@@ -11,7 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme } from '../types';
+import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme, NavMapPreviewMode } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';
 import type { AnalyticsAdapter } from '../analytics/types';
 import type { WorkflowFilter } from '../workflowFilters';
@@ -112,6 +112,10 @@ function NavMapInner({
   const [edgeMode, setEdgeMode] = usePersistentState<EdgeMode>(
     'nav-map:edge-mode',
     defaultEdgeMode
+  );
+  const [previewMode, setPreviewMode] = usePersistentState<NavMapPreviewMode>(
+    'nav-map:preview-mode',
+    'screenshots'
   );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [showHelp, setShowHelp] = useState(defaultShowHelp && !hideHelp);
@@ -337,7 +341,7 @@ function NavMapInner({
     viewMode, setViewMode, selectedFlowIndex, setSelectedFlowIndex, treeRootId: resolvedTreeRootId, setTreeRootId,
     focusedGroupId, setFocusedGroupId, edgeMode, setEdgeMode, showSharedNav, setShowSharedNav,
     showRedirects, setShowRedirects, focusMode, setFocusMode, isAnimatingFlow, setIsAnimatingFlow,
-    searchQuery, showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
+    previewMode, setPreviewMode, searchQuery, showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
     setShowCoverage, hasCoverageData, auditFocusLabel: auditFocus?.label ?? null,
     workflowFilter, setWorkflowFilter: handleWorkflowFilterChange,
     clearAuditFocus: () => setAuditFocus(null), walkthrough, layoutDone, nodes, styledNodes,

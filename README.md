@@ -257,6 +257,29 @@ edges and flows like route nodes, but `nav-map workflow --base-url ... --screens
 navigates live `nodes` for Playwright screenshot capture. Surface screenshots are treated as
 existing visual evidence from the manifest.
 
+### Preview Modes
+
+Artifact kind describes what a workflow node represents, such as an app route, HTML mockup,
+component reference, or generated concept. Preview mode describes how the map can show it during
+review.
+
+- `App · Live`: a real app route that can render from the configured base URL.
+- `Mockup · Live`: a local or fixture-backed mockup, usually embedded in an iframe from
+  `metadata.preview.liveUrl`.
+- `Prototype · Static`: a concept, component reference, video, or static artifact that keeps its
+  screenshot fallback.
+- `App · Blocked`: an app route that exists but cannot render live because auth, setup, service
+  health, or other prerequisites are missing.
+
+Live mode is best-effort. Nodes without live rendering keep screenshot fallbacks so reviewers can
+still inspect prototype intent, blocked auth states, external-service gaps, and artifacts that are
+not safe or meaningful to execute inside the preview pane.
+
+When dogfooding preview behavior, record receipts for commands run, local URLs checked, routes
+tested, screenshots captured, auth state id if one was used, failures, warnings, and known
+limitations. Do not inspect or print Playwright auth storage, cookies, tokens, environment values,
+or secrets.
+
 You can also convert manifests in code without the React component entry:
 
 ```ts

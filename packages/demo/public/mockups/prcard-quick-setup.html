@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PRcard Quick Setup Mockup</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f3ee;
+        --panel: #ffffff;
+        --ink: #1c1f24;
+        --muted: #68717d;
+        --line: #d9d4ca;
+        --accent: #2563eb;
+        --accent-ink: #ffffff;
+        --ok: #16794c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1080px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 36px 0;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .panel,
+      .preview {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 18px 45px rgb(31 35 40 / 10%);
+      }
+
+      .panel {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 12ch;
+        font-size: clamp(38px, 7vw, 72px);
+        line-height: 0.96;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        margin: 18px 0 0;
+        max-width: 60ch;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.55;
+      }
+
+      .steps {
+        display: grid;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfaf8;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 15px;
+      }
+
+      .step span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .number,
+      .check {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .number {
+        border: 1px solid var(--line);
+      }
+
+      .check {
+        background: #ddf6e8;
+        color: var(--ok);
+      }
+
+      .status {
+        color: var(--ok);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 18px;
+        color: var(--ink);
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      .preview {
+        overflow: hidden;
+      }
+
+      .preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .preview-header strong {
+        font-size: 15px;
+      }
+
+      .preview-body {
+        padding: 20px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .banner {
+        min-height: 120px;
+        background:
+          linear-gradient(135deg, rgb(37 99 235 / 85%), rgb(22 121 76 / 75%)),
+          url("data:image/svg+xml,%3Csvg width='640' height='240' viewBox='0 0 640 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 180c90-78 178-76 264 6s174 76 264-18c38-42 75-60 112-54v126H0z' fill='%23fff' fill-opacity='.28'/%3E%3C/svg%3E");
+        background-size: cover;
+      }
+
+      .card-body {
+        padding: 20px;
+      }
+
+      .avatar {
+        width: 64px;
+        height: 64px;
+        margin-top: -52px;
+        border: 4px solid #fff;
+        border-radius: 999px;
+        background: #111827;
+      }
+
+      .name {
+        margin: 12px 0 4px;
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .role {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+
+      .repo-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .repo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #f3f6fb;
+        font-size: 14px;
+      }
+
+      .repo em {
+        color: var(--muted);
+        font-style: normal;
+      }
+
+      @media (max-width: 780px) {
+        main {
+          width: min(100vw - 20px, 560px);
+          padding: 20px 0;
+        }
+
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          padding: 22px;
+        }
+
+        .step {
+          grid-template-columns: 36px minmax(0, 1fr);
+        }
+
+        .status {
+          grid-column: 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main aria-label="PRcard quick setup mockup">
+      <div class="shell">
+        <section class="panel" aria-labelledby="setup-title">
+          <p class="eyebrow">Fixture data · local mockup</p>
+          <h1 id="setup-title">Set up your PRcard</h1>
+          <p class="lede">
+            Connect GitHub, pick the repositories that show your best work, and publish a public
+            profile card from a draft preview.
+          </p>
+
+          <div class="steps" aria-label="Quick setup steps">
+            <div class="step">
+              <div class="check" aria-hidden="true">✓</div>
+              <div>
+                <strong>GitHub connected</strong>
+                <span>Signed in as fixture creator.</span>
+              </div>
+              <div class="status">Ready</div>
+            </div>
+            <div class="step">
+              <div class="number" aria-hidden="true">2</div>
+              <div>
+                <strong>Select source repositories</strong>
+                <span>Choose pinned work for the first public card.</span>
+              </div>
+              <div class="status">Next</div>
+            </div>
+            <div class="step">
+              <div class="number" aria-hidden="true">3</div>
+              <div>
+                <strong>Publish draft</strong>
+                <span>Review the card and open the creator workspace.</span>
+              </div>
+              <div class="status">Pending</div>
+            </div>
+          </div>
+
+          <div class="actions" aria-label="Setup actions">
+            <a class="button primary" href="/quick-setup">Continue setup</a>
+            <a class="button" href="/creator">Preview creator</a>
+          </div>
+        </section>
+
+        <aside class="preview" aria-label="Public card preview">
+          <div class="preview-header">
+            <strong>Public card draft</strong>
+            <span class="status">Local only</span>
+          </div>
+          <div class="preview-body">
+            <div class="card">
+              <div class="banner" aria-hidden="true"></div>
+              <div class="card-body">
+                <div class="avatar" aria-hidden="true"></div>
+                <div class="name">Taylor Morgan</div>
+                <p class="role">Frontend engineer building review tools and release workflows.</p>
+                <div class="repo-list" aria-label="Selected repositories">
+                  <div class="repo"><strong>nav-map</strong><em>workflow atlas</em></div>
+                  <div class="repo"><strong>prcard</strong><em>creator profile</em></div>
+                  <div class="repo"><strong>release-notes</strong><em>automation</em></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>
