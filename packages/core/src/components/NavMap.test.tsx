@@ -248,4 +248,35 @@ describe('NavMap props', () => {
       screen.queryByText('Search is highlighting matching routes and dimming the rest.')
     ).toBeNull();
   });
+
+  it('renders a global preview mode toggle', async () => {
+    render(<NavMap graph={minimalGraph} />);
+
+    expect(await screen.findByRole('button', { name: 'Use screenshot previews' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use live previews where available' })).toBeTruthy();
+  });
+
+  it('persists the live preview mode preference', async () => {
+    render(<NavMap graph={minimalGraph} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Use live previews where available' })
+    );
+
+    expect(window.localStorage.getItem('nav-map:preview-mode')).toBe('"live"');
+  });
+
+  it('loads the persisted live preview mode preference', async () => {
+    window.localStorage.setItem('nav-map:preview-mode', '"live"');
+
+    const { unmount } = render(<NavMap graph={minimalGraph} />);
+    unmount();
+    render(<NavMap graph={minimalGraph} />);
+
+    expect(
+      (
+        await screen.findByRole('button', { name: 'Use live previews where available' })
+      ).getAttribute('aria-pressed')
+    ).toBe('true');
+  });
 });

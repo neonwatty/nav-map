@@ -15,6 +15,7 @@ const context: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 const node: NavMapNode = {

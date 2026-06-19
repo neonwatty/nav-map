@@ -1,5 +1,5 @@
 import type { AnalyticsAdapter } from '../analytics/types';
-import type { EdgeMode, NavMapGraph, ViewMode } from '../types';
+import type { EdgeMode, NavMapGraph, NavMapPreviewMode, ViewMode } from '../types';
 import type { WorkflowFilter } from '../workflowFilters';
 import type { WalkthroughState } from '../hooks/useWalkthrough';
 import { NavMapToolbar } from './panels/NavMapToolbar';
@@ -27,6 +27,7 @@ interface NavMapChromeProps {
   analyticsAdapter?: AnalyticsAdapter;
   showCoverage: boolean;
   hasCoverageData: boolean;
+  previewMode: NavMapPreviewMode;
   workflowFilter: WorkflowFilter | null;
   walkthrough: WalkthroughState;
   onViewModeChange: (mode: ViewMode) => void;
@@ -42,6 +43,7 @@ interface NavMapChromeProps {
   onSearch: () => void;
   onHelp: () => void;
   onToggleCoverage: () => void;
+  onPreviewModeChange: (mode: NavMapPreviewMode) => void;
   onClearFocus: () => void;
   onClearAuditFocus: () => void;
   onClearSearch: () => void;
@@ -71,6 +73,7 @@ export function NavMapChrome({
   analyticsAdapter,
   showCoverage,
   hasCoverageData,
+  previewMode,
   workflowFilter,
   walkthrough,
   onViewModeChange,
@@ -86,6 +89,7 @@ export function NavMapChrome({
   onSearch,
   onHelp,
   onToggleCoverage,
+  onPreviewModeChange,
   onClearFocus,
   onClearAuditFocus,
   onClearSearch,
@@ -124,6 +128,8 @@ export function NavMapChrome({
           showCoverage={showCoverage}
           hasCoverageData={hasCoverageData}
           onToggleCoverage={onToggleCoverage}
+          previewMode={previewMode}
+          onPreviewModeChange={onPreviewModeChange}
         />
       )}
 

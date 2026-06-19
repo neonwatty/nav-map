@@ -3,14 +3,17 @@ import type { Edge, Node } from '@xyflow/react';
 import type { AnalyticsAdapter } from '../analytics/types';
 import { NavMapContext, type NavMapContextValue } from '../hooks/useNavMap';
 import type { WalkthroughState } from '../hooks/useWalkthrough';
-import type { EdgeMode, NavMapGraph, NavMapTheme, ViewMode } from '../types';
+import type { EdgeMode, NavMapGraph, NavMapPreviewMode, NavMapTheme, ViewMode } from '../types';
 import type { WorkflowFilter } from '../workflowFilters';
 import { NavMapCanvas } from './NavMapCanvas';
 import { NavMapChrome } from './NavMapChrome';
 import { NavMapPanels } from './NavMapPanels';
 import { NavMapSideOverlays } from './NavMapSideOverlays';
 
-type BaseNavMapContext = Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage'>;
+type BaseNavMapContext = Omit<
+  NavMapContextValue,
+  'focusedGroupId' | 'edgeMode' | 'showCoverage' | 'previewMode'
+>;
 type CanvasProps = ComponentProps<typeof NavMapCanvas>;
 type SideOverlayProps = ComponentProps<typeof NavMapSideOverlays>;
 
@@ -34,6 +37,8 @@ interface NavMapShellProps {
   setFocusedGroupId: Dispatch<SetStateAction<string | null>>;
   edgeMode: EdgeMode;
   setEdgeMode: Dispatch<SetStateAction<EdgeMode>>;
+  previewMode: NavMapPreviewMode;
+  setPreviewMode: Dispatch<SetStateAction<NavMapPreviewMode>>;
   showSharedNav: boolean;
   setShowSharedNav: Dispatch<SetStateAction<boolean>>;
   showRedirects: boolean;
@@ -106,10 +111,11 @@ export function NavMapShell(props: NavMapShellProps) {
     focusedGroupId,
     edgeMode,
     showCoverage,
+    previewMode,
   } = props;
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage }}>
+    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage, previewMode }}>
       <div
         ref={containerRef}
         className={className}
@@ -179,6 +185,8 @@ export function NavMapShell(props: NavMapShellProps) {
             onSearch={() => props.guardedSetShowSearch(true)}
             onHelp={() => props.guardedSetShowHelp(true)}
             onToggleCoverage={() => props.setShowCoverage(prev => !prev)}
+            previewMode={props.previewMode}
+            onPreviewModeChange={props.setPreviewMode}
             onClearFocus={() => props.setFocusedGroupId(null)}
             onClearAuditFocus={props.clearAuditFocus}
             onClearSearch={() => props.setSearchQuery('')}

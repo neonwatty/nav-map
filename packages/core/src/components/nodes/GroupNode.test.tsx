@@ -14,6 +14,7 @@ const contextValue: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 function renderGroupNode(overrides: Partial<NodeProps['data']> = {}) {

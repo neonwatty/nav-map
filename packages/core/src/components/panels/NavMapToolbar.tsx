@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import type { NavMapGraph, ViewMode, EdgeMode } from '../../types';
+import type { NavMapGraph, ViewMode, EdgeMode, NavMapPreviewMode } from '../../types';
 import type { AnalyticsAdapter } from '../../analytics/types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { ViewModeSelector } from './ViewModeSelector';
+import { PreviewModeToggle } from './PreviewModeToggle';
 import { FlowSelector } from './FlowSelector';
 import { EdgeOptionsPopover } from './EdgeOptionsPopover';
 import { ToolbarMoreMenu } from './ToolbarMoreMenu';
@@ -11,6 +12,7 @@ import { toolbarButtonStyle } from './toolbarStyles';
 interface NavMapToolbarProps {
   graph: NavMapGraph | null;
   viewMode: ViewMode;
+  previewMode: NavMapPreviewMode;
   selectedFlowIndex: number | null;
   showSharedNav: boolean;
   showRedirects: boolean;
@@ -35,11 +37,13 @@ interface NavMapToolbarProps {
   showCoverage: boolean;
   hasCoverageData: boolean;
   onToggleCoverage: () => void;
+  onPreviewModeChange: (mode: NavMapPreviewMode) => void;
 }
 
 export function NavMapToolbar({
   graph,
   viewMode,
+  previewMode,
   selectedFlowIndex,
   showSharedNav,
   showRedirects,
@@ -64,6 +68,7 @@ export function NavMapToolbar({
   showCoverage,
   hasCoverageData,
   onToggleCoverage,
+  onPreviewModeChange,
 }: NavMapToolbarProps) {
   const { isDark } = useNavMapContext();
   const [showEdgePanel, setShowEdgePanel] = useState(false);
@@ -100,6 +105,7 @@ export function NavMapToolbar({
       }}
     >
       <ViewModeSelector viewMode={viewMode} onViewModeChange={onViewModeChange} />
+      <PreviewModeToggle value={previewMode} isDark={isDark} onChange={onPreviewModeChange} />
 
       {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
         <FlowSelector

@@ -23,6 +23,7 @@ const contextValue: NavMapContextValue = {
   focusedGroupId: null,
   edgeMode: 'smooth',
   showCoverage: false,
+  previewMode: 'screenshots',
 };
 
 function renderWithContext(node: React.ReactElement) {
