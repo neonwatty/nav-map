@@ -147,8 +147,11 @@ function validateNodes(
       continue;
     }
 
-    if (!record.route.startsWith('/')) {
-      errors.push({ field: 'nodes.route', message: `Node "${id}" route must start with "/"` });
+    if (!isValidNodeRoute(record)) {
+      errors.push({
+        field: 'nodes.route',
+        message: `Node "${id}" route must start with "/" or be a prototype surface route`,
+      });
     }
 
     if (nodeIds.has(id)) {
@@ -229,6 +232,14 @@ function validateEdges(
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+function isValidNodeRoute(node: Record<string, unknown>): boolean {
+  if (typeof node.route !== 'string') return false;
+  if (node.route.startsWith('/')) return true;
+
+  const metadata = asRecord(node.metadata);
+  return metadata?.kind === 'prototype-surface' && node.route.startsWith('prototype://');
 }
 
 function isNonEmptyString(value: unknown): value is string {
