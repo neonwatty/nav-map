@@ -1,0 +1,144 @@
+version: 2
+
+goal:
+  title: 'Nav Map Deckchecker Prototype Dogfood'
+  slug: 'nav-map-deckchecker-prototype-dogfood'
+  kind: existing_plan
+  tranche: 'Dogfood prototype surfaces in the Deckchecker speaker workflow.'
+  status: done
+  oracle:
+    signal: 'Deckchecker speaker workflow includes searchable/selectable prototype surfaces without route validation warnings.'
+    cadence: 'after local Git cleanup, manifest update, fixture generation, browser dogfood, and validation'
+    final_proof: 'Generated graph and inspect contract include two prototype surfaces; demo UI renders Surface Details for both; focused tests and validation pass.'
+  intake:
+    original_request: 'Do the recommended next steps after the prototype-surfaces merge.'
+    interpreted_outcome: 'Clean up local Git state and use prototype surfaces in a second realistic workflow.'
+    input_shape: existing_plan
+    audience: 'nav-map maintainers and future workflow manifest authors'
+    authority: approved
+    proof_type: demo
+    completion_proof: 'Git cleanup complete, Deckchecker manifest/fixture/docs updated, browser dogfood and tests passed.'
+    likely_misfire: 'Adding app-specific logic to core instead of keeping Deckchecker data in manifests/docs.'
+    blind_spots_considered:
+      - 'Deckchecker auth storage path appears in the manifest, but storage contents must not be inspected.'
+      - 'Synthetic prototype routes must not create validation warnings.'
+      - 'Generated fixture must be refreshed after manifest edits.'
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: none
+  local:
+    status: not_started
+    url: null
+    command: 'npx goalbuddy board docs/goals/nav-map-deckchecker-prototype-dogfood'
+
+active_task: null
+
+acceptance_criteria:
+  - 'Local main is aligned with origin/main.'
+  - 'Stale prototype branch from PR 145 is removed locally and remotely.'
+  - 'Deckchecker manifest includes html-mockup and keyframe prototype surfaces.'
+  - 'Generated Deckchecker nav-map fixture includes prototype:// surface routes.'
+  - 'Speaker deck workflow includes the prototype surface steps.'
+  - 'Inspect contract separates live nodes and surfaces.'
+  - 'Demo UI can select both surfaces and render Surface Details without validation warnings.'
+  - 'Focused tests and validation pass.'
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: low
+    objective: 'Sync local Git and remove stale prototype branches.'
+    receipt:
+      result: done
+      decision: complete
+      summary: 'Aligned local main to origin/main and deleted the stale codex/prototype-surfaces branch locally and remotely.'
+      commands:
+        - cmd: 'git reset --hard origin/main'
+          status: pass
+          evidence: 'HEAD reset to d93df3d.'
+        - cmd: 'git branch -D codex/prototype-surfaces'
+          status: pass
+        - cmd: 'git push origin --delete codex/prototype-surfaces'
+          status: pass
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Add Deckchecker speaker prototype surfaces as manifest/docs data.'
+    allowed_files:
+      - 'packages/demo/public/deckchecker-speaker.workflow.json'
+      - 'packages/demo/public/deckchecker-speaker.nav-map.json'
+      - 'docs/prototypes/deckchecker-speaker-surfaces.md'
+      - 'packages/scanner/src/__tests__/workflow.test.ts'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/demo/public/deckchecker-speaker.workflow.json'
+        - 'packages/demo/public/deckchecker-speaker.nav-map.json'
+        - 'docs/prototypes/deckchecker-speaker-surfaces.md'
+        - 'packages/scanner/src/__tests__/workflow.test.ts'
+      summary: 'Added Upload Deck HTML Mockup and Results Review Keyframe surfaces to the speaker deck workflow, regenerated the nav-map fixture, and documented the references.'
+      commands:
+        - cmd: 'node packages/scanner/dist/cli.js workflow packages/demo/public/deckchecker-speaker.workflow.json -o packages/demo/public/deckchecker-speaker.nav-map.json --no-screenshots'
+          status: pass
+          evidence: 'Generated 13 nodes, 9 edges, 5 groups, and 0 screenshots.'
+        - cmd: 'node packages/scanner/dist/cli.js workflow packages/demo/public/deckchecker-speaker.workflow.json --inspect --format json --contract -o /tmp/deckchecker-prototype-dogfood.inspect.json'
+          status: pass
+          evidence: 'Inspect output valid with 11 live nodes and 2 surfaces.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+          status: pass
+          evidence: 'Scanner workflow tests passed with the Deckchecker fixture regression.'
+  - id: T003
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Final browser and validation audit for Deckchecker prototype dogfood.'
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: 'Deckchecker prototype surfaces are searchable and selectable in the demo, render Surface Details for html-mockup and keyframe types, and emit no route validation warnings.'
+      commands:
+        - cmd: "curl -I 'http://127.0.0.1:3000/?dataset=deckchecker-speaker'"
+          status: pass
+          evidence: 'HTTP 200 OK.'
+        - cmd: 'Browser dogfood for Upload Deck HTML Mockup'
+          status: pass
+          evidence: 'Surface Details rendered Html Mockup, prototype://speaker-upload-html-mockup, purpose text, and zero validation warnings.'
+        - cmd: 'Browser dogfood for Results Review Keyframe'
+          status: pass
+          evidence: 'Surface Details rendered Keyframe, prototype://speaker-results-keyframe, purpose text, and zero validation warnings.'
+
+checks:
+  dirty_fingerprint: 'deckchecker prototype dogfood branch'
+  last_verification:
+    result: pass
+    task: T003
+    commands:
+      - 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+      - 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-deckchecker-prototype-dogfood/state.yaml'
+      - 'pnpm validate'

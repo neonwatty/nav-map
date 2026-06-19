@@ -20,7 +20,7 @@
       "layout": {
         "defaultViewMode": "map",
         "defaultTreeRootId": "speaker-events",
-        "sectionOrder": ["public", "auth", "speaker", "boundary"]
+        "sectionOrder": ["public", "auth", "speaker", "prototype", "boundary"]
       },
       "personas": [
         {
@@ -275,6 +275,38 @@
         },
         "sourceHints": ["web/src/app/(planner)/events/page.tsx"]
       }
+    },
+    {
+      "id": "speaker-upload-html-mockup",
+      "route": "prototype://speaker-upload-html-mockup",
+      "label": "Upload Deck HTML Mockup",
+      "group": "prototype",
+      "screenshot": "screenshots/deckchecker-speaker/upload.png",
+      "metadata": {
+        "relatedRoute": "speaker-upload",
+        "artifactStatus": "reference",
+        "kind": "prototype-surface",
+        "surfaceType": "html-mockup",
+        "section": "prototype",
+        "purpose": "Prototype reference for the upload instructions, deck chooser, and no-upload verification state before the live upload route.",
+        "sourceHints": ["docs/prototypes/deckchecker-speaker-surfaces.md"]
+      }
+    },
+    {
+      "id": "speaker-results-keyframe",
+      "route": "prototype://speaker-results-keyframe",
+      "label": "Results Review Keyframe",
+      "group": "prototype",
+      "screenshot": "screenshots/deckchecker-speaker/results.png",
+      "metadata": {
+        "relatedRoute": "speaker-results",
+        "artifactStatus": "reference",
+        "kind": "prototype-surface",
+        "surfaceType": "keyframe",
+        "section": "prototype",
+        "purpose": "Keyframe reference for the scan-results review moment after deck processing completes.",
+        "sourceHints": ["docs/prototypes/deckchecker-speaker-surfaces.md"]
+      }
     }
   ],
   "edges": [
@@ -306,8 +338,17 @@
       "personas": ["speaker"]
     },
     {
-      "id": "speaker-event-detail-to-speaker-upload-4",
+      "id": "speaker-event-detail-to-speaker-upload-html-mockup-4",
       "source": "speaker-event-detail",
+      "target": "speaker-upload-html-mockup",
+      "type": "test-transition",
+      "label": "Review upload mockup",
+      "action": "Review upload mockup",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-upload-html-mockup-to-speaker-upload-5",
+      "source": "speaker-upload-html-mockup",
       "target": "speaker-upload",
       "type": "link",
       "label": "Open upload surface",
@@ -315,8 +356,17 @@
       "personas": ["speaker"]
     },
     {
-      "id": "speaker-upload-to-speaker-results-5",
+      "id": "speaker-upload-to-speaker-results-keyframe-6",
       "source": "speaker-upload",
+      "target": "speaker-results-keyframe",
+      "type": "test-transition",
+      "label": "Review results keyframe",
+      "action": "Review results keyframe",
+      "personas": ["speaker"]
+    },
+    {
+      "id": "speaker-results-keyframe-to-speaker-results-7",
+      "source": "speaker-results-keyframe",
       "target": "speaker-results",
       "type": "link",
       "label": "Review scan results",
@@ -324,7 +374,7 @@
       "personas": ["speaker"]
     },
     {
-      "id": "speaker-events-to-speaker-profile-6",
+      "id": "speaker-events-to-speaker-profile-8",
       "source": "speaker-events",
       "target": "speaker-profile",
       "type": "link",
@@ -333,7 +383,7 @@
       "personas": ["speaker"]
     },
     {
-      "id": "speaker-events-to-sign-in-7",
+      "id": "speaker-events-to-sign-in-9",
       "source": "speaker-events",
       "target": "sign-in",
       "type": "redirect",
@@ -356,6 +406,10 @@
       "label": "Speaker"
     },
     {
+      "id": "prototype",
+      "label": "Prototype References"
+    },
+    {
       "id": "boundary",
       "label": "Role Boundaries"
     }
@@ -371,7 +425,13 @@
     },
     {
       "name": "Speaker deck workflow",
-      "steps": ["speaker-event-detail", "speaker-upload", "speaker-results"]
+      "steps": [
+        "speaker-event-detail",
+        "speaker-upload-html-mockup",
+        "speaker-upload",
+        "speaker-results-keyframe",
+        "speaker-results"
+      ]
     },
     {
       "name": "Speaker auth boundaries",

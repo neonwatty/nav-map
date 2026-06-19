@@ -199,6 +199,49 @@ describe('runWorkflowManifest', () => {
     });
   });
 
+  it('keeps Deckchecker prototype surfaces in the speaker deck workflow fixture', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.resolve('../demo/public/deckchecker-speaker.workflow.json');
+    const outputPath = path.join(dir, 'deckchecker-speaker.nav-map.json');
+
+    const result = await runWorkflowManifest(manifestPath, {
+      output: outputPath,
+      screenshots: false,
+    });
+
+    expect(result).toMatchObject({
+      nodeCount: 13,
+      edgeCount: 9,
+      groupCount: 5,
+      screenshotCount: 0,
+    });
+
+    const graph = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    const surfaces = graph.nodes.filter(
+      (node: { metadata?: { kind?: string } }) => node.metadata?.kind === 'prototype-surface'
+    );
+
+    expect(
+      surfaces.map((surface: { id: string; route: string; metadata: { surfaceType?: string } }) => [
+        surface.id,
+        surface.route,
+        surface.metadata.surfaceType,
+      ])
+    ).toEqual([
+      ['speaker-upload-html-mockup', 'prototype://speaker-upload-html-mockup', 'html-mockup'],
+      ['speaker-results-keyframe', 'prototype://speaker-results-keyframe', 'keyframe'],
+    ]);
+    expect(
+      graph.flows.find((flow: { name: string }) => flow.name === 'Speaker deck workflow')?.steps
+    ).toEqual([
+      'speaker-event-detail',
+      'speaker-upload-html-mockup',
+      'speaker-upload',
+      'speaker-results-keyframe',
+      'speaker-results',
+    ]);
+  });
+
   it('throws a helpful error for invalid manifests', async () => {
     const dir = makeTempDir();
     const manifestPath = path.join(dir, 'bad-workflow.json');
