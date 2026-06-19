@@ -157,6 +157,21 @@ describe('workflowManifestToGraph', () => {
           sourceHints: ['design/dashboard-empty-state.md'],
           metadata: { fidelity: 'concept' },
         },
+        {
+          id: 'dashboard-html-mockup',
+          label: 'Dashboard HTML Mockup',
+          type: 'html-mockup',
+          section: 'prototype',
+          screenshot: 'screenshots/prototypes/dashboard-html-mockup.png',
+          metadata: {
+            preview: {
+              liveUrl: '/mockups/dashboard.html',
+              liveMode: 'iframe',
+              liveStatus: 'available',
+              limitations: ['fixture data', 'no real auth'],
+            },
+          },
+        },
       ],
       edges: [
         {
@@ -169,7 +184,11 @@ describe('workflowManifestToGraph', () => {
       flows: [{ name: 'Prototype to implementation', steps: ['dashboard-concept', 'dashboard'] }],
     } as WorkflowManifest);
 
-    expect(graph.nodes.map(node => node.id)).toEqual(['dashboard', 'dashboard-concept']);
+    expect(graph.nodes.map(node => node.id)).toEqual([
+      'dashboard',
+      'dashboard-concept',
+      'dashboard-html-mockup',
+    ]);
     expect(graph.groups.map(group => group.id)).toEqual(['live', 'prototype']);
     expect(graph.nodes[1]).toMatchObject({
       id: 'dashboard-concept',
@@ -186,6 +205,24 @@ describe('workflowManifestToGraph', () => {
         fidelity: 'concept',
       },
     });
+    expect(graph.nodes[1].metadata?.artifactKind).toBe('prototype');
+    expect(graph.nodes[2]).toMatchObject({
+      id: 'dashboard-html-mockup',
+      route: 'prototype://dashboard-html-mockup',
+      metadata: {
+        artifactKind: 'mockup',
+        kind: 'prototype-surface',
+        surfaceType: 'html-mockup',
+        preview: {
+          liveUrl: '/mockups/dashboard.html',
+          liveMode: 'iframe',
+          liveStatus: 'available',
+          limitations: ['fixture data', 'no real auth'],
+        },
+      },
+    });
+    expect(graph.nodes[0].metadata?.artifactKind).toBe('app');
+    expect(graph.nodes[1].metadata?.artifactKind).toBe('prototype');
     expect(graph.edges[0]).toMatchObject({
       source: 'dashboard-concept',
       target: 'dashboard',
@@ -262,6 +299,24 @@ describe('workflowManifestToGraph', () => {
     expect(graph.nodes[0].metadata?.sourceHints).toEqual(
       deckcheckerSpeakerManifest.nodes[0].sourceHints
     );
+  });
+
+  it('keeps structured node purpose when metadata contains a stale purpose', () => {
+    const graph = workflowManifestToGraph({
+      version: 'workflow-atlas/1.0',
+      name: 'Purpose precedence',
+      nodes: [
+        {
+          id: 'dashboard',
+          route: '/dashboard',
+          label: 'Dashboard',
+          purpose: 'Structured purpose',
+          metadata: { purpose: 'Stale metadata purpose' },
+        },
+      ],
+    });
+
+    expect(graph.nodes[0].metadata?.purpose).toBe('Structured purpose');
   });
 
   it('keeps first-class workflow fields when manifest metadata contains conflicting keys', () => {
