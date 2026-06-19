@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { NavMapPreviewMode } from '../../types';
 
 interface PreviewModeToggleProps {
@@ -50,13 +51,36 @@ function PreviewButton({
   title: string;
   onClick: () => void;
 }) {
+  const pointerActivatedRef = useRef(false);
+
+  const activate = () => {
+    if (!active) onClick();
+  };
+
+  const activateFromPointer = () => {
+    if (pointerActivatedRef.current) return;
+    pointerActivatedRef.current = true;
+    activate();
+  };
+
   return (
     <button
       type="button"
       aria-label={title}
       aria-pressed={active}
       title={title}
-      onClick={onClick}
+      onPointerDown={activateFromPointer}
+      onMouseDown={event => {
+        if (event.button !== 0) return;
+        activateFromPointer();
+      }}
+      onClick={() => {
+        if (pointerActivatedRef.current) {
+          pointerActivatedRef.current = false;
+          return;
+        }
+        activate();
+      }}
       style={{
         border: 0,
         borderRadius: 5,
