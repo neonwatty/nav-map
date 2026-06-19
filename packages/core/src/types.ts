@@ -74,6 +74,28 @@ export type NavMapPrototypeSurfaceType =
   | 'component'
   | 'concept-screen';
 
+export type NavMapArtifactKind = 'prototype' | 'mockup' | 'app';
+
+export type NavMapPreviewMode = 'screenshots' | 'live';
+
+export type NavMapLivePreviewStatus = 'available' | 'static' | 'blocked';
+
+export type NavMapLivePreviewBlockedReason =
+  | 'missing-url'
+  | 'not-embeddable'
+  | 'auth-required'
+  | 'offline'
+  | 'unsupported';
+
+export interface NavMapPreviewMetadata {
+  liveUrl?: string;
+  liveMode?: 'iframe' | 'browser' | 'external';
+  liveStatus?: NavMapLivePreviewStatus;
+  blockedReason?: NavMapLivePreviewBlockedReason;
+  interactive?: boolean;
+  limitations?: string[];
+}
+
 export interface NavMapExpectedRedirect {
   to: string;
   when?: string;
@@ -109,6 +131,8 @@ export interface NavMapWorkflowLayout {
 export interface NavMapWorkflowMetadata extends Record<string, unknown> {
   kind?: 'route' | 'prototype-surface';
   surfaceType?: NavMapPrototypeSurfaceType;
+  artifactKind?: NavMapArtifactKind;
+  preview?: NavMapPreviewMetadata;
   purpose?: string;
   section?: string;
   personas?: string[];
