@@ -133,6 +133,26 @@ describe('validateGraph', () => {
     );
   });
 
+  it('accepts prototype surface nodes with synthetic routes', () => {
+    const result = validateGraph({
+      ...validGraph,
+      nodes: [
+        { id: 'n1', route: '/', label: 'Home', group: 'main' },
+        {
+          id: 'dashboard-concept',
+          route: 'prototype://dashboard-concept',
+          label: 'Dashboard Concept',
+          group: 'main',
+          metadata: { kind: 'prototype-surface', surfaceType: 'concept-screen' },
+        },
+      ],
+      edges: [{ id: 'e1', source: 'dashboard-concept', target: 'n1', type: 'test-transition' }],
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
   it('collects multiple errors', () => {
     const result = validateGraph({ version: '2.0' } as never);
     expect(result.errors.length).toBeGreaterThan(1);
