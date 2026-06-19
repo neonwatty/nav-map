@@ -1,15 +1,32 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
+import type { NavMapNode } from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import {
+  getArtifactKindLabel,
+  getNodePreviewState,
+  getPreviewStatusLabel,
+} from '../../utils/artifactPreview';
 import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
 import { GalleryBadge } from './GalleryBadge';
 
-function PageNodeComponent({ data, selected }: NodeProps) {
+function PageNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
-  const { isDark, getGroupColors, screenshotBasePath, showCoverage } = useNavMapContext();
+  const { graph, isDark, getGroupColors, screenshotBasePath, showCoverage } = useNavMapContext();
+  const previewNode = {
+    id,
+    route: nodeData.route,
+    label: nodeData.label,
+    group: nodeData.group,
+    ...(nodeData.screenshot !== undefined ? { screenshot: nodeData.screenshot } : {}),
+    ...(nodeData.filePath !== undefined ? { filePath: nodeData.filePath } : {}),
+    ...(nodeData.metadata !== undefined ? { metadata: nodeData.metadata } : {}),
+    ...(nodeData.coverage !== undefined ? { coverage: nodeData.coverage } : {}),
+  } satisfies NavMapNode;
+  const previewState = getNodePreviewState(previewNode, graph ?? undefined);
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
     ? `${screenshotBasePath}/${nodeData.screenshot}`
@@ -62,6 +79,18 @@ function PageNodeComponent({ data, selected }: NodeProps) {
           {flowStepNumber}
         </div>
       )}
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          padding: '6px 8px 0',
+          flexWrap: 'wrap',
+        }}
+      >
+        <NodeTab label={getArtifactKindLabel(previewState.artifactKind)} />
+        <NodeTab label={getPreviewStatusLabel(previewState)} />
+      </div>
 
       <div
         style={{
@@ -177,6 +206,26 @@ function PageNodeComponent({ data, selected }: NodeProps) {
 }
 
 export const PageNode = memo(PageNodeComponent);
+
+function NodeTab({ label }: { label: string }) {
+  return (
+    <span
+      style={{
+        fontSize: 9,
+        lineHeight: '13px',
+        fontWeight: 700,
+        padding: '1px 6px',
+        borderRadius: 4,
+        background: '#eef1f6',
+        color: '#4b5565',
+        border: '1px solid #dce1ea',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 function NodeBadge({ isDark, label }: { isDark: boolean; label: string }) {
   return (
