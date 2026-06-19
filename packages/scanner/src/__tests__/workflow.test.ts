@@ -140,6 +140,65 @@ describe('runWorkflowManifest', () => {
     expect(graph.nodes[0].screenshot).toBe('../screenshots/speaker-upload.webp');
   });
 
+  it('keeps prototype surfaces in workflow output but only captures screenshots for route nodes', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'workflow.json');
+    const outputPath = path.join(dir, 'public', 'prototype.nav-map.json');
+    const screenshotPath = path.join(dir, 'screenshots', 'dashboard.webp');
+
+    mocks.captureScreenshotsMock.mockResolvedValue(new Map([['dashboard', screenshotPath]]));
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Prototype Surfaces',
+        generatedAt: '2026-06-13T00:00:00.000Z',
+        nodes: [{ id: 'dashboard', route: '/dashboard', label: 'Dashboard', section: 'live' }],
+        surfaces: [
+          {
+            id: 'dashboard-concept',
+            label: 'Dashboard Concept',
+            type: 'generated-image',
+            section: 'prototype',
+            screenshot: 'screenshots/prototypes/dashboard-concept.png',
+          },
+        ],
+        edges: [{ source: 'dashboard-concept', target: 'dashboard', action: 'Implemented by' }],
+        flows: [{ name: 'Prototype to route', steps: ['dashboard-concept', 'dashboard'] }],
+      })
+    );
+
+    const result = await runWorkflowManifest(manifestPath, {
+      output: outputPath,
+      baseUrl: 'https://example.test',
+      screenshotDir: path.join(dir, 'screenshots'),
+    });
+
+    expect(result).toMatchObject({
+      nodeCount: 2,
+      edgeCount: 1,
+      screenshotCount: 1,
+    });
+    expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
+      [{ id: 'dashboard', route: '/dashboard' }],
+      'https://example.test',
+      path.join(dir, 'screenshots'),
+      {}
+    );
+
+    const graph = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(graph.nodes.find((node: { id: string }) => node.id === 'dashboard')?.screenshot).toBe(
+      '../screenshots/dashboard.webp'
+    );
+    expect(
+      graph.nodes.find((node: { id: string }) => node.id === 'dashboard-concept')
+    ).toMatchObject({
+      route: 'prototype://dashboard-concept',
+      screenshot: 'screenshots/prototypes/dashboard-concept.png',
+      metadata: { kind: 'prototype-surface', surfaceType: 'generated-image' },
+    });
+  });
+
   it('throws a helpful error for invalid manifests', async () => {
     const dir = makeTempDir();
     const manifestPath = path.join(dir, 'bad-workflow.json');
@@ -231,5 +290,54 @@ describe('runWorkflowManifest', () => {
     });
     expect(JSON.stringify(contract)).not.toContain('speaker.storage.json');
     expect(JSON.stringify(contract)).not.toContain('.nav-map/auth');
+  });
+
+  it('includes prototype surface summaries in workflow inspect output', async () => {
+    const dir = makeTempDir();
+    const manifestPath = path.join(dir, 'workflow.json');
+    const outputPath = path.join(dir, 'workflow.inspect.json');
+
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 'workflow-atlas/1.0',
+        name: 'Prototype Surfaces',
+        nodes: [{ id: 'dashboard', route: '/dashboard', label: 'Dashboard' }],
+        surfaces: [
+          {
+            id: 'dashboard-wireframe',
+            label: 'Dashboard Wireframe',
+            type: 'html-mockup',
+            section: 'prototype',
+            screenshot: 'screenshots/prototypes/dashboard-wireframe.png',
+            sourceHints: ['mockups/dashboard.html'],
+          },
+        ],
+      })
+    );
+
+    const result = await runWorkflowInspectManifest(manifestPath, {
+      output: outputPath,
+      generatedAt: '2026-06-15T00:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      nodeCount: 2,
+      edgeCount: 0,
+      flowCount: 0,
+    });
+
+    const inspect = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(inspect.surfaces).toEqual([
+      {
+        id: 'dashboard-wireframe',
+        label: 'Dashboard Wireframe',
+        type: 'html-mockup',
+        section: 'prototype',
+        hasScreenshot: true,
+        sourceHints: ['mockups/dashboard.html'],
+      },
+    ]);
+    expect(JSON.stringify(inspect)).not.toContain('.nav-map/auth');
   });
 });

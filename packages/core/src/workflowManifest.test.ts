@@ -137,6 +137,66 @@ describe('workflowManifestToGraph', () => {
     );
   });
 
+  it('converts prototype surfaces into reusable workflow graph nodes', () => {
+    const graph = workflowManifestToGraph({
+      version: 'workflow-atlas/1.0',
+      name: 'Prototype Surfaces',
+      sections: [
+        { id: 'live', label: 'Live App' },
+        { id: 'prototype', label: 'Prototype' },
+      ],
+      nodes: [{ id: 'dashboard', route: '/dashboard', label: 'Dashboard', section: 'live' }],
+      surfaces: [
+        {
+          id: 'dashboard-concept',
+          label: 'Dashboard Concept',
+          type: 'generated-image',
+          section: 'prototype',
+          purpose: 'Explore the empty-state layout before implementation.',
+          screenshot: 'screenshots/prototypes/dashboard-concept.png',
+          sourceHints: ['design/dashboard-empty-state.md'],
+          metadata: { fidelity: 'concept' },
+        },
+      ],
+      edges: [
+        {
+          source: 'dashboard-concept',
+          target: 'dashboard',
+          action: 'Implemented by',
+          type: 'test-transition',
+        },
+      ],
+      flows: [{ name: 'Prototype to implementation', steps: ['dashboard-concept', 'dashboard'] }],
+    } as WorkflowManifest);
+
+    expect(graph.nodes.map(node => node.id)).toEqual(['dashboard', 'dashboard-concept']);
+    expect(graph.groups.map(group => group.id)).toEqual(['live', 'prototype']);
+    expect(graph.nodes[1]).toMatchObject({
+      id: 'dashboard-concept',
+      route: 'prototype://dashboard-concept',
+      label: 'Dashboard Concept',
+      group: 'prototype',
+      screenshot: 'screenshots/prototypes/dashboard-concept.png',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'generated-image',
+        purpose: 'Explore the empty-state layout before implementation.',
+        section: 'prototype',
+        sourceHints: ['design/dashboard-empty-state.md'],
+        fidelity: 'concept',
+      },
+    });
+    expect(graph.edges[0]).toMatchObject({
+      source: 'dashboard-concept',
+      target: 'dashboard',
+      label: 'Implemented by',
+      type: 'test-transition',
+    });
+    expect(graph.flows).toEqual([
+      { name: 'Prototype to implementation', steps: ['dashboard-concept', 'dashboard'] },
+    ]);
+  });
+
   it('preserves Deckchecker Speaker auth metadata, route variables, and node expectations', () => {
     const deckcheckerSpeakerManifest: WorkflowManifest = {
       version: 'workflow-atlas/1.0',
@@ -509,6 +569,47 @@ describe('workflowManifestToGraph', () => {
         }),
         expect.objectContaining({
           field: 'nodes.0.sourceHints',
+          message: 'sourceHints must be an array of strings',
+        }),
+      ])
+    );
+  });
+
+  it('validates malformed prototype surfaces', () => {
+    const result = validateWorkflowManifest({
+      version: 'workflow-atlas/1.0',
+      name: 'Bad prototype surfaces',
+      nodes: [{ id: 'dashboard', route: '/dashboard', label: 'Dashboard' }],
+      surfaces: [
+        null,
+        {
+          id: 'dashboard',
+          label: '',
+          type: 'figma-frame',
+          sourceHints: ['mockups/dashboard.html', 42],
+        },
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'surfaces.0', message: 'surface must be an object' }),
+        expect.objectContaining({
+          field: 'surfaces.1.id',
+          message: 'duplicate node id "dashboard"',
+        }),
+        expect.objectContaining({
+          field: 'surfaces.1.label',
+          message: 'label must be a non-empty string',
+        }),
+        expect.objectContaining({
+          field: 'surfaces.1.type',
+          message:
+            'type must be screenshot, generated-image, html-mockup, video, keyframe, component, or concept-screen',
+        }),
+        expect.objectContaining({
+          field: 'surfaces.1.sourceHints',
           message: 'sourceHints must be an array of strings',
         }),
       ])

@@ -16,6 +16,13 @@ const graph: NavMapGraph = {
   nodes: [
     { id: 'home', route: '/', label: 'Home', group: 'root' },
     { id: 'signup', route: '/signup', label: 'Signup', group: 'root' },
+    {
+      id: 'signup-concept',
+      route: 'prototype://signup-concept',
+      label: 'Signup Concept',
+      group: 'prototype',
+      metadata: { kind: 'prototype-surface', surfaceType: 'generated-image' },
+    },
   ],
   edges: [{ id: 'home-signup', source: 'home', target: 'signup', type: 'link' }],
   groups: [{ id: 'root', label: 'Root' }],
@@ -60,6 +67,7 @@ describe('ExportButton', () => {
         'View: flow',
         'Flow: Signup Journey (2 steps)',
         'Routes: 2',
+        'Surfaces: 1',
         'Edges: 1',
         'Flows: 1',
         'URL: https://example.test/demo',

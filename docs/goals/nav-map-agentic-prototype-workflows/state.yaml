@@ -1,0 +1,279 @@
+version: 2
+
+goal:
+  title: 'Nav Map Agentic Prototype Workflows'
+  slug: 'nav-map-agentic-prototype-workflows'
+  kind: existing_plan
+  tranche: 'Implement reusable prototype surfaces for workflow manifests and graph rendering.'
+  status: done
+  oracle:
+    signal: 'Prototype surfaces are reusable manifest primitives that render as graph nodes without changing live route screenshot behavior.'
+    cadence: 'after focused implementation and final verification'
+    final_proof: 'Focused core/scanner tests, typecheck/validation, generated fixture sanity, README docs, and board validation pass without inspecting secrets or auth storage.'
+  intake:
+    original_request: 'Implement the prototype-surfaces slice for nav-map.'
+    interpreted_outcome: 'Workflow manifests can model prototype/design artifacts as reusable graph nodes, scanner capture avoids navigating them, UI summaries distinguish them from live routes, and docs/tests prove the behavior.'
+    input_shape: existing_plan
+    audience: 'nav-map users, workflow manifest authors, scanner users, and coding agents'
+    authority: approved
+    proof_type: test
+    completion_proof: 'Current implementation supports surfaces end to end and passes focused tests plus validation.'
+    likely_misfire: 'Treating prototype artifacts as live routes or hard-coding app-specific behavior into nav-map core.'
+    blind_spots_considered:
+      - 'Scanner screenshot capture could accidentally try to navigate synthetic prototype:// routes.'
+      - 'Route counts and health checks could regress by counting surfaces as live routes.'
+      - 'UI could hide useful prototype metadata from selected nodes.'
+      - 'Docs could imply unsafe auth-state inspection or unverified browser proof.'
+    existing_plan_facts:
+      - 'The model should be the smallest reusable manifest extension before editing.'
+      - 'Audited README, workflow manifest/types/conversion, screenshot handling, and UI rendering before implementation.'
+      - 'Existing route behavior must remain intact.'
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: none
+  local:
+    status: not_started
+    url: null
+    command: 'npx goalbuddy board docs/goals/nav-map-agentic-prototype-workflows'
+
+active_task: null
+
+acceptance_criteria:
+  - 'Workflow manifests expose a reusable surfaces model for prototype/design artifacts.'
+  - 'Supported surface types include screenshot, generated-image, html-mockup, video, keyframe, component, and concept-screen.'
+  - 'Manifest validation covers malformed surfaces and allows edges/flows to reference surface IDs.'
+  - 'Manifest conversion emits prototype surface graph nodes with stable prototype://<id> routes, metadata.kind prototype-surface, and metadata.surfaceType.'
+  - 'Existing live route conversion and screenshot behavior remain intact.'
+  - 'Scanner screenshot capture visits only live route nodes and not prototype surfaces.'
+  - 'UI details, export summaries, and route-health summaries distinguish surfaces from live routes.'
+  - 'README documents the surface model, scanner behavior, and example usage.'
+  - 'Demo workflow fixtures show prototype surfaces without app-specific core logic.'
+  - 'Focused core/scanner tests and final validation pass.'
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: 'Audit README, workflow manifest/types/conversion, screenshot handling, and UI rendering for the smallest reusable prototype-surface model.'
+    receipt:
+      result: done
+      summary: 'Chose a manifest-level surfaces array with typed prototype artifact kinds, optional screenshot/source hints/metadata, synthetic prototype:// routes after conversion, and normal edge/flow participation.'
+      evidence:
+        - 'README now documents surfaces and scanner capture behavior.'
+        - 'packages/core/src/workflowManifest.ts contains WorkflowManifestSurface validation/conversion.'
+        - 'packages/scanner/src/modes/workflow.ts includes safe surface summaries and keeps screenshot capture route-node-only.'
+      limitations:
+        - 'The initial proposal was conversational and is preserved here as the implemented smallest model rather than a separate design document.'
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Implement reusable prototype-surface manifest types, validation, conversion, and exports.'
+    allowed_files:
+      - 'packages/core/src/types.ts'
+      - 'packages/core/src/workflowManifest.ts'
+      - 'packages/core/src/workflow.ts'
+      - 'packages/core/src/index.ts'
+      - 'packages/core/src/workflowManifest.test.ts'
+    verify:
+      - 'pnpm --filter @neonwatty/nav-map test -- src/workflowManifest.test.ts'
+    stop_if:
+      - 'Need app-specific behavior in core.'
+      - 'Need to inspect secrets or auth storage.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/types.ts'
+        - 'packages/core/src/workflowManifest.ts'
+        - 'packages/core/src/workflow.ts'
+        - 'packages/core/src/index.ts'
+        - 'packages/core/src/workflowManifest.test.ts'
+      summary: 'Added WorkflowManifestSurface, surface type validation, conversion to prototype graph nodes, and public exports.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/workflowManifest.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/panels/ExportButton.test.tsx src/utils/routeHealth.test.ts'
+          status: pass
+          evidence: 'Core focused prototype-surface test sweep passed; 39 test files and 230 tests passed.'
+      evidence:
+        - 'Surface nodes convert with prototype:// routes, prototype-surface metadata, screenshot/source hints, and section/group support.'
+        - 'Edges and flows can reference surface IDs.'
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Preserve live route behavior while making scanner workflow output aware of prototype surfaces.'
+    allowed_files:
+      - 'packages/scanner/src/modes/workflow.ts'
+      - 'packages/scanner/src/__tests__/workflow.test.ts'
+    verify:
+      - 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+    stop_if:
+      - 'Scanner tries to navigate prototype:// routes.'
+      - 'Need to inspect or print auth storage contents.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/scanner/src/modes/workflow.ts'
+        - 'packages/scanner/src/__tests__/workflow.test.ts'
+      summary: 'Workflow scanner output includes safe surface summaries and graph nodes while screenshot capture remains limited to live route nodes.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+          status: pass
+          evidence: 'Scanner workflow focused test sweep passed; 21 test files passed, 1 skipped; 162 tests passed, 2 skipped.'
+      evidence:
+        - 'Focused scanner test verifies generated graph includes surfaces while capture receives only route nodes.'
+        - 'Inspect output includes surface summaries without auth paths.'
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Render and summarize prototype surfaces without counting them as live route health.'
+    allowed_files:
+      - 'packages/core/src/components/panels/ConnectionPanel.tsx'
+      - 'packages/core/src/components/panels/ConnectionPanel.test.tsx'
+      - 'packages/core/src/components/panels/ExportButton.tsx'
+      - 'packages/core/src/components/panels/ExportButton.test.tsx'
+      - 'packages/core/src/utils/routeHealth.ts'
+      - 'packages/core/src/utils/routeHealth.test.ts'
+    verify:
+      - 'pnpm --filter @neonwatty/nav-map test -- src/components/panels/ConnectionPanel.test.tsx src/components/panels/ExportButton.test.tsx src/utils/routeHealth.test.ts'
+    stop_if:
+      - 'Route-health compatibility cannot be preserved.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/components/panels/ConnectionPanel.tsx'
+        - 'packages/core/src/components/panels/ConnectionPanel.test.tsx'
+        - 'packages/core/src/components/panels/ExportButton.tsx'
+        - 'packages/core/src/components/panels/ExportButton.test.tsx'
+        - 'packages/core/src/utils/routeHealth.ts'
+        - 'packages/core/src/utils/routeHealth.test.ts'
+      summary: 'Selected prototype nodes render surface details, export summaries report live routes and surfaces separately, and route-health ignores prototype surfaces for route issue totals.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/workflowManifest.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/panels/ExportButton.test.tsx src/utils/routeHealth.test.ts'
+          status: pass
+          evidence: 'Core focused prototype-surface test sweep passed; 39 test files and 230 tests passed.'
+      evidence:
+        - 'Focused tests cover selected surface metadata rendering, export summary counts, and route-health surface exclusion.'
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: 'Document prototype surfaces and add demo fixture examples without app-specific core behavior.'
+    allowed_files:
+      - 'README.md'
+      - 'packages/demo/public/prcard.workflow.json'
+      - 'packages/demo/public/prcard.nav-map.json'
+    verify:
+      - 'node packages/scanner/dist/cli.js workflow packages/demo/public/prcard.workflow.json -o packages/demo/public/prcard.nav-map.json --no-screenshots'
+    stop_if:
+      - 'Demo behavior requires core PRcard branches.'
+    receipt:
+      result: done
+      changed_files:
+        - 'README.md'
+        - 'packages/demo/public/prcard.workflow.json'
+        - 'packages/demo/public/prcard.nav-map.json'
+      summary: 'README documents surfaces with examples and scanner behavior. PRcard demo manifest and generated graph include generated-image and component prototype surfaces as manifest data.'
+      commands:
+        - cmd: 'node packages/scanner/dist/cli.js workflow packages/demo/public/prcard.workflow.json -o packages/demo/public/prcard.nav-map.json --no-screenshots'
+          status: pass
+          evidence: 'Generated PRcard nav-map fixture includes prototype surface nodes; no screenshots captured.'
+      evidence:
+        - 'Generated fixture includes prototype://quick-setup-concept and prototype://creator-component-reference nodes.'
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Final audit for the prototype-surfaces workflow slice.'
+    inputs:
+      - 'Current implementation files'
+      - 'Focused core/scanner tests'
+      - 'README docs'
+      - 'Generated demo fixture'
+      - 'GoalBuddy board validation'
+    constraints:
+      - 'Do not inspect or print secrets, cookies, tokens, storage-state JSON, private keys, OAuth secrets, webhook secrets, service-role keys, env values, or .nav-map/auth contents.'
+      - 'Reject completion if scanner screenshot capture can navigate prototype surfaces, if live route behavior regresses, or if board validation fails.'
+    expected_output:
+      - 'complete | not_complete'
+      - 'full_outcome_complete: true | false'
+      - 'Known limitations'
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: 'Prototype surfaces are complete for this slice: manifests define reusable prototype artifacts, conversion emits stable graph nodes, scanner capture avoids synthetic prototype routes, UI/summary helpers distinguish surfaces from live routes, README documents the model, and the PRcard fixture demonstrates manifest-only app data.'
+      evidence:
+        - 'Core focused tests passed: workflowManifest, ConnectionPanel, ExportButton, and routeHealth; 39 test files and 230 tests passed.'
+        - 'Scanner focused workflow tests passed; 21 test files passed, 1 skipped; 162 tests passed, 2 skipped.'
+        - 'Generated PRcard nav-map fixture from packages/demo/public/prcard.workflow.json with --no-screenshots; output reported 16 nodes, 18 edges, 8 groups, and 0 screenshots.'
+        - 'Formatted packages/demo/public/prcard.nav-map.json after regeneration.'
+        - 'GoalBuddy checker passed for the active board state before final closure.'
+        - 'pnpm validate passed: lint warnings only, format check, typecheck, knip production check, core build, and demo Next build.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/workflowManifest.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/panels/ExportButton.test.tsx src/utils/routeHealth.test.ts'
+          status: pass
+          evidence: '39 test files and 230 tests passed.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+          status: pass
+          evidence: '21 test files passed, 1 skipped; 162 tests passed, 2 skipped.'
+        - cmd: 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agentic-prototype-workflows/state.yaml'
+          status: pass
+          evidence: 'Board checker passed while T999 was active.'
+        - cmd: 'node packages/scanner/dist/cli.js workflow packages/demo/public/prcard.workflow.json -o packages/demo/public/prcard.nav-map.json --no-screenshots'
+          status: pass
+          evidence: 'Wrote PRcard nav-map with 16 nodes, 18 edges, 8 groups, and 0 screenshots.'
+        - cmd: 'pnpm prettier --write packages/demo/public/prcard.nav-map.json'
+          status: pass
+          evidence: 'Generated fixture formatted.'
+        - cmd: 'pnpm validate'
+          status: pass
+          evidence: 'Lint warnings only; format, typecheck, knip, core build, and demo build passed.'
+      limitations:
+        - 'No local web service was started for this slice, so no localhost/browser handoff was required.'
+        - 'Prototype screenshots referenced by demo surfaces are manifest references; this slice does not generate new visual assets.'
+
+checks:
+  dirty_fingerprint: 'goal docs added after implementation commit 5e85fd7'
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - 'pnpm --filter @neonwatty/nav-map test -- src/workflowManifest.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/panels/ExportButton.test.tsx src/utils/routeHealth.test.ts'
+      - 'pnpm --filter @neonwatty/nav-map-scanner test -- src/__tests__/workflow.test.ts'
+      - 'node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agentic-prototype-workflows/state.yaml'
+      - 'node packages/scanner/dist/cli.js workflow packages/demo/public/prcard.workflow.json -o packages/demo/public/prcard.nav-map.json --no-screenshots'
+      - 'pnpm prettier --write packages/demo/public/prcard.nav-map.json'
+      - 'pnpm validate'

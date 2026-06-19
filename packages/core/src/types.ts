@@ -65,6 +65,15 @@ export interface CoverageData {
 
 export type NavMapHealthStatus = 'healthy' | 'warning' | 'failing' | 'unchecked' | 'unknown';
 
+export type NavMapPrototypeSurfaceType =
+  | 'screenshot'
+  | 'generated-image'
+  | 'html-mockup'
+  | 'video'
+  | 'keyframe'
+  | 'component'
+  | 'concept-screen';
+
 export interface NavMapExpectedRedirect {
   to: string;
   when?: string;
@@ -98,6 +107,8 @@ export interface NavMapWorkflowLayout {
 }
 
 export interface NavMapWorkflowMetadata extends Record<string, unknown> {
+  kind?: 'route' | 'prototype-surface';
+  surfaceType?: NavMapPrototypeSurfaceType;
   purpose?: string;
   section?: string;
   personas?: string[];

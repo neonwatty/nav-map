@@ -21,6 +21,7 @@ export interface RouteHealthSummary {
   score: number;
   totals: {
     routes: number;
+    surfaces: number;
     high: number;
     medium: number;
     low: number;
@@ -34,6 +35,7 @@ export function formatRouteHealthReport(graph: NavMapGraph): string {
     '',
     `Score: ${summary.score}/100`,
     `Routes: ${summary.totals.routes}`,
+    ...(summary.totals.surfaces > 0 ? [`Surfaces: ${summary.totals.surfaces}`] : []),
     `Issues: ${summary.issues.length} (${summary.totals.high} high, ${summary.totals.medium} medium, ${summary.totals.low} low)`,
   ];
 
@@ -52,14 +54,16 @@ export function formatRouteHealthReport(graph: NavMapGraph): string {
 }
 
 export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
-  const nodesById = new Map(graph.nodes.map(node => [node.id, node]));
+  const routeNodes = graph.nodes.filter(node => !isPrototypeSurfaceNode(node));
+  const surfaceCount = graph.nodes.length - routeNodes.length;
+  const nodesById = new Map(routeNodes.map(node => [node.id, node]));
   const incoming = new Map<string, number>();
   const outgoing = new Map<string, number>();
   const adjacency = new Map<string, string[]>();
   const issues: RouteHealthIssue[] = [];
-  const hasCoverageData = graph.nodes.some(node => node.coverage !== undefined);
+  const hasCoverageData = routeNodes.some(node => node.coverage !== undefined);
 
-  for (const node of graph.nodes) {
+  for (const node of routeNodes) {
     incoming.set(node.id, 0);
     outgoing.set(node.id, 0);
     adjacency.set(node.id, []);
@@ -72,10 +76,10 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
     adjacency.get(edge.source)?.push(edge.target);
   }
 
-  const roots = findRootNodes(graph.nodes);
+  const roots = findRootNodes(routeNodes);
   const reachable = findReachableNodes(roots, adjacency);
 
-  for (const node of graph.nodes) {
+  for (const node of routeNodes) {
     const isRoot = roots.some(root => root.id === node.id);
     const inCount = incoming.get(node.id) ?? 0;
     const outCount = outgoing.get(node.id) ?? 0;
@@ -121,7 +125,7 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
     }
   }
 
-  for (const duplicateGroup of findDuplicateRoutes(graph.nodes)) {
+  for (const duplicateGroup of findDuplicateRoutes(routeNodes)) {
     issues.push({
       type: 'duplicate-route',
       severity: 'medium',
@@ -131,7 +135,7 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
     });
   }
 
-  for (const loop of findRedirectLoops(graph)) {
+  for (const loop of findRedirectLoops(graph, nodesById)) {
     issues.push({
       type: 'redirect-loop',
       severity: 'high',
@@ -142,7 +146,8 @@ export function analyzeRouteHealth(graph: NavMapGraph): RouteHealthSummary {
   }
 
   const totals = {
-    routes: graph.nodes.length,
+    routes: routeNodes.length,
+    surfaces: surfaceCount,
     high: issues.filter(issue => issue.severity === 'high').length,
     medium: issues.filter(issue => issue.severity === 'medium').length,
     low: issues.filter(issue => issue.severity === 'low').length,
@@ -201,9 +206,10 @@ function findDuplicateRoutes(nodes: NavMapNode[]): NavMapNode[][] {
   return Array.from(byRoute.values()).filter(group => group.length > 1);
 }
 
-function findRedirectLoops(graph: NavMapGraph): string[][] {
+function findRedirectLoops(graph: NavMapGraph, nodesById: Map<string, NavMapNode>): string[][] {
   const redirectTargets = new Map<string, string>();
   for (const edge of graph.edges) {
+    if (!nodesById.has(edge.source) || !nodesById.has(edge.target)) continue;
     if (edge.type === 'redirect') redirectTargets.set(edge.source, edge.target);
   }
 
@@ -242,4 +248,8 @@ function routeDepth(route: string): number {
 function looksTerminal(node: NavMapNode): boolean {
   const value = `${node.route} ${node.label}`.toLowerCase();
   return value.includes('logout') || value.includes('thank') || value.includes('404');
+}
+
+function isPrototypeSurfaceNode(node: NavMapNode): boolean {
+  return node.metadata?.kind === 'prototype-surface' || node.route.startsWith('prototype://');
 }
