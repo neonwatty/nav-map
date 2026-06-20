@@ -138,6 +138,43 @@ describe('useGraphStyling', () => {
       // home→login: one endpoint in marketing, one not — opacity 0.15
       expect(result.current.styledEdges[0].style?.opacity).toBe(0.15);
     });
+
+    it('uses graph node ids for focused-group styling on flow occurrence edges', () => {
+      const flowNodes: Node[] = [
+        {
+          id: 'flow-0-step-0-home',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'home', group: 'marketing' },
+        },
+        {
+          id: 'flow-0-step-1-login',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'login', group: 'auth' },
+        },
+      ];
+      const flowEdges: Edge[] = [
+        {
+          id: 'flow-0-edge-0-home-login',
+          source: 'flow-0-step-0-home',
+          target: 'flow-0-step-1-login',
+          type: 'navEdge',
+          data: { sourceNodeId: 'home', targetNodeId: 'login' },
+        },
+      ];
+
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes: flowNodes,
+          edges: flowEdges,
+          zoomedNodes: flowNodes,
+          nodeGroupMap,
+          focusedGroupId: 'marketing',
+        })
+      );
+
+      expect(result.current.styledEdges[0].style?.opacity).toBe(0.15);
+    });
   });
 
   describe('no styling when no mode active', () => {
@@ -200,6 +237,54 @@ describe('useGraphStyling', () => {
       expect(login?.style?.opacity).toBe(0.25); // not connected
     });
 
+    it('keeps selected and connected flow occurrence nodes visible by graph node id', () => {
+      const flowNodes: Node[] = [
+        {
+          id: 'flow-0-step-0-home',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'home', group: 'marketing' },
+        },
+        {
+          id: 'flow-0-step-1-blog',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'blog', group: 'marketing' },
+        },
+        {
+          id: 'flow-0-step-2-login',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'login', group: 'auth' },
+        },
+      ];
+      const flowEdges: Edge[] = [
+        {
+          id: 'flow-0-edge-0-home-blog',
+          source: 'flow-0-step-0-home',
+          target: 'flow-0-step-1-blog',
+          type: 'navEdge',
+          data: { sourceNodeId: 'home', targetNodeId: 'blog', edgeType: 'link' },
+        },
+      ];
+
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes: flowNodes,
+          edges: flowEdges,
+          zoomedNodes: flowNodes,
+          selectedNodeId: 'home',
+          focusMode: true,
+        })
+      );
+
+      const home = result.current.styledNodes.find(n => n.id === 'flow-0-step-0-home');
+      const blog = result.current.styledNodes.find(n => n.id === 'flow-0-step-1-blog');
+      const login = result.current.styledNodes.find(n => n.id === 'flow-0-step-2-login');
+
+      expect(home?.style?.opacity).toBe(1);
+      expect(blog?.style?.opacity).toBe(1);
+      expect(login?.style?.opacity).toBe(0.25);
+    });
+
     it('does not dim any nodes when nothing is selected even with focusMode on', () => {
       const { result } = renderHook(() =>
         useGraphStyling({
@@ -214,6 +299,88 @@ describe('useGraphStyling', () => {
       result.current.styledNodes.forEach(node => {
         expect(node.style?.opacity).toBeUndefined();
       });
+    });
+  });
+
+  describe('workflow filter styling', () => {
+    it('uses the first step number for repeated graph nodes in map flow styling', () => {
+      const flowNodes: Node[] = [
+        {
+          id: 'billing',
+          position: { x: 0, y: 0 },
+          data: { group: 'settings' },
+        },
+        {
+          id: 'team',
+          position: { x: 0, y: 0 },
+          data: { group: 'settings' },
+        },
+      ];
+
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes: flowNodes,
+          edges: [],
+          zoomedNodes: flowNodes,
+          activeFlow: { name: 'Setup', steps: ['billing', 'team', 'billing'] },
+        })
+      );
+
+      const billing = result.current.styledNodes.find(node => node.id === 'billing');
+      const team = result.current.styledNodes.find(node => node.id === 'team');
+
+      expect(billing?.data.flowStepNumber).toBe(1);
+      expect(team?.data.flowStepNumber).toBe(2);
+    });
+
+    it('matches generated flow edges by original graph edge id', () => {
+      const flowNodes: Node[] = [
+        {
+          id: 'flow-0-step-0-docs',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'docs', group: 'content' },
+        },
+        {
+          id: 'flow-0-step-1-billing',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'billing', group: 'settings' },
+        },
+        {
+          id: 'flow-0-step-2-team',
+          position: { x: 0, y: 0 },
+          data: { nodeId: 'team', group: 'settings' },
+        },
+      ];
+      const flowEdges: Edge[] = [
+        {
+          id: 'flow-0-edge-0-docs-billing',
+          source: 'flow-0-step-0-docs',
+          target: 'flow-0-step-1-billing',
+          type: 'navEdge',
+          data: { edgeId: 'docs-billing', sourceNodeId: 'docs', targetNodeId: 'billing' },
+        },
+        {
+          id: 'flow-0-edge-1-billing-team',
+          source: 'flow-0-step-1-billing',
+          target: 'flow-0-step-2-team',
+          type: 'navEdge',
+          data: { edgeId: 'billing-team', sourceNodeId: 'billing', targetNodeId: 'team' },
+        },
+      ];
+
+      const { result } = renderHook(() =>
+        useGraphStyling({
+          ...baseDeps,
+          nodes: flowNodes,
+          edges: flowEdges,
+          zoomedNodes: flowNodes,
+          workflowFocusEdgeIds: new Set(['docs-billing']),
+        })
+      );
+
+      expect(result.current.styledEdges[0].style?.opacity).toBe(1);
+      expect(result.current.styledEdges[1].style?.opacity).toBe(0.08);
     });
   });
 

@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import type { NavMapPreviewMode } from '../../types';
 
 interface PreviewModeToggleProps {
@@ -11,27 +10,40 @@ export function PreviewModeToggle({ value, isDark, onChange }: PreviewModeToggle
   return (
     <div
       role="group"
-      aria-label="Preview mode"
+      aria-label="Preview render mode"
       style={{
         display: 'flex',
+        alignItems: 'center',
+        gap: 4,
         padding: 2,
         borderRadius: 7,
         background: isDark ? '#101018' : '#eef1f6',
         border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,
       }}
     >
+      <span
+        style={{
+          padding: '0 6px',
+          fontSize: 11,
+          fontWeight: 700,
+          color: isDark ? '#858ca0' : '#5a6475',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Render
+      </span>
       <PreviewButton
         label="Screenshots"
         active={value === 'screenshots'}
         isDark={isDark}
-        title="Use screenshot previews"
+        title="Render saved screenshots and static surface images"
         onClick={() => onChange('screenshots')}
       />
       <PreviewButton
         label="Live"
         active={value === 'live'}
         isDark={isDark}
-        title="Use live previews where available"
+        title="Render live app or mockup previews where available"
         onClick={() => onChange('live')}
       />
     </div>
@@ -51,16 +63,8 @@ function PreviewButton({
   title: string;
   onClick: () => void;
 }) {
-  const pointerActivatedRef = useRef(false);
-
   const activate = () => {
     if (!active) onClick();
-  };
-
-  const activateFromPointer = () => {
-    if (pointerActivatedRef.current) return;
-    pointerActivatedRef.current = true;
-    activate();
   };
 
   return (
@@ -69,18 +73,7 @@ function PreviewButton({
       aria-label={title}
       aria-pressed={active}
       title={title}
-      onPointerDown={activateFromPointer}
-      onMouseDown={event => {
-        if (event.button !== 0) return;
-        activateFromPointer();
-      }}
-      onClick={() => {
-        if (pointerActivatedRef.current) {
-          pointerActivatedRef.current = false;
-          return;
-        }
-        activate();
-      }}
+      onClick={activate}
       style={{
         border: 0,
         borderRadius: 5,

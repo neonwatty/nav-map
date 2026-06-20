@@ -3,6 +3,7 @@ import type { Node, Edge } from '@xyflow/react';
 import type { NavMapGraph } from '../types';
 import type { HistoryEntry } from './useUndoHistory';
 import { computeElkLayout } from '../layout/elkLayout';
+import { getGraphNodeId } from '../utils/graphHelpers';
 
 interface KeyboardNavDeps {
   ctx: { selectedNodeId: string | null; setSelectedNodeId: (id: string | null) => void };
@@ -100,7 +101,7 @@ export function useKeyboardNav(deps: KeyboardNavDeps) {
           const prevNode = walkthrough.path[walkthrough.path.length - 2];
           if (prevNode) {
             ctx.setSelectedNodeId(prevNode);
-            const node = nodes.find(n => n.id === prevNode);
+            const node = nodes.find(n => getGraphNodeId(n) === prevNode);
             if (node) {
               setCenter(node.position.x + 90, node.position.y + 70, { zoom: 0.8, duration: 300 });
             }

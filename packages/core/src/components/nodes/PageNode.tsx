@@ -8,16 +8,28 @@ import {
   getNodePreviewState,
   getPreviewStatusLabel,
 } from '../../utils/artifactPreview';
+import { getLiveReadinessAccent, getLiveReadinessLabel } from '../../hooks/useLiveReadiness';
 import { CoverageBadge, getCoverageBorderColor } from './CoverageBadge';
 import { GalleryBadge } from './GalleryBadge';
 
 function PageNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as RFNodeData;
+  const graphNodeId = nodeData.nodeId ?? id;
   const flowStepNumber = (data as Record<string, unknown>).flowStepNumber as number | undefined;
   const hasGallery = Boolean((data as Record<string, unknown>).hasGallery);
-  const { graph, isDark, getGroupColors, screenshotBasePath, showCoverage } = useNavMapContext();
+  const {
+    graph,
+    isDark,
+    getGroupColors,
+    screenshotBasePath,
+    showCoverage,
+    previewMode,
+    liveReadinessByNode = {},
+    liveBaseUrlOverride = '',
+    liveUrlOverrides = {},
+  } = useNavMapContext();
   const previewNode = {
-    id,
+    id: graphNodeId,
     route: nodeData.route,
     label: nodeData.label,
     group: nodeData.group,
@@ -26,7 +38,10 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
     ...(nodeData.metadata !== undefined ? { metadata: nodeData.metadata } : {}),
     ...(nodeData.coverage !== undefined ? { coverage: nodeData.coverage } : {}),
   } satisfies NavMapNode;
-  const previewState = getNodePreviewState(previewNode, graph ?? undefined);
+  const previewState = getNodePreviewState(previewNode, graph ?? undefined, {
+    appBaseUrl: liveBaseUrlOverride,
+    nodeLiveUrls: liveUrlOverrides,
+  });
   const colors = getGroupColors(nodeData.group);
   const screenshotSrc = nodeData.screenshot
     ? `${screenshotBasePath}/${nodeData.screenshot}`
@@ -34,6 +49,10 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
 
   const coverageStatus = showCoverage ? nodeData.coverage?.status : undefined;
   const coverageBorderColor = getCoverageBorderColor(coverageStatus);
+  const liveReadiness = previewMode === 'live' ? liveReadinessByNode[graphNodeId] : undefined;
+  const liveReadinessAccent = liveReadiness
+    ? getLiveReadinessAccent(liveReadiness.status)
+    : undefined;
   const metadata = nodeData.metadata;
   const healthStatus = metadata?.health?.status;
   const personas = Array.isArray(metadata?.personas) ? metadata.personas : [];
@@ -46,7 +65,10 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
         width: 180,
         borderRadius: 8,
         position: 'relative' as const,
-        border: `2px solid ${coverageBorderColor ?? (selected ? colors.border : isDark ? '#2a2a3a' : '#d0d0d8')}`,
+        border: `2px solid ${
+          coverageBorderColor ??
+          (selected ? colors.border : (liveReadinessAccent ?? (isDark ? '#2a2a3a' : '#d0d0d8')))
+        }`,
         background: isDark ? '#14141e' : '#fff',
         overflow: 'visible',
         cursor: 'pointer',
@@ -90,6 +112,12 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
       >
         <NodeTab label={getArtifactKindLabel(previewState.artifactKind)} />
         <NodeTab label={getPreviewStatusLabel(previewState)} />
+        {liveReadiness && (
+          <NodeTab
+            label={getLiveReadinessLabel(liveReadiness.status)}
+            accent={liveReadinessAccent}
+          />
+        )}
       </div>
 
       <div
@@ -207,7 +235,7 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
 
 export const PageNode = memo(PageNodeComponent);
 
-function NodeTab({ label }: { label: string }) {
+function NodeTab({ label, accent }: { label: string; accent?: string }) {
   return (
     <span
       style={{
@@ -216,9 +244,9 @@ function NodeTab({ label }: { label: string }) {
         fontWeight: 700,
         padding: '1px 6px',
         borderRadius: 4,
-        background: '#eef1f6',
-        color: '#4b5565',
-        border: '1px solid #dce1ea',
+        background: accent ? `${accent}1f` : '#eef1f6',
+        color: accent ?? '#4b5565',
+        border: `1px solid ${accent ? `${accent}66` : '#dce1ea'}`,
         whiteSpace: 'nowrap',
       }}
     >

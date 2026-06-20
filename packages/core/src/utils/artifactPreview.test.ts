@@ -37,6 +37,7 @@ describe('artifact preview helpers', () => {
     expect(state.artifactKind).toBe('app');
     expect(state.status).toBe('available');
     expect(state.liveUrl).toBe('http://localhost:3000/dashboard');
+    expect(state.liveUrlSource).toBe('graph-base');
     expect(getPreviewStatusLabel(state)).toBe('Live');
   });
 
@@ -280,6 +281,50 @@ describe('artifact preview helpers', () => {
 
     expect(state.artifactKind).toBe('app');
     expect(state.liveUrl).toBe('http://localhost:3000/dashboard');
+  });
+
+  it('uses a local app base URL override for app route previews', () => {
+    const state = getNodePreviewState(node({ route: '/dashboard' }), graph, {
+      appBaseUrl: ' http://localhost:3001/ ',
+    });
+
+    expect(state.status).toBe('available');
+    expect(state.liveUrl).toBe('http://localhost:3001/dashboard');
+    expect(state.liveUrlSource).toBe('local-base-override');
+  });
+
+  it('uses a local node live URL override before manifest URLs', () => {
+    const mockup = node({
+      id: 'checkout-mockup',
+      route: 'prototype://checkout-mockup',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'html-mockup',
+        preview: {
+          liveUrl: '/mockups/checkout.html',
+          liveStatus: 'available',
+        },
+      },
+    });
+
+    const state = getNodePreviewState(mockup, graph, {
+      nodeLiveUrls: { 'checkout-mockup': '/local/checkout.html' },
+    });
+
+    expect(state.artifactKind).toBe('mockup');
+    expect(state.status).toBe('available');
+    expect(state.liveUrl).toBe('/local/checkout.html');
+    expect(state.liveUrlSource).toBe('local-node-override');
+  });
+
+  it('ignores blank local live URL overrides', () => {
+    const state = getNodePreviewState(node({ route: '/dashboard' }), graph, {
+      appBaseUrl: '   ',
+      nodeLiveUrls: { home: '   ' },
+    });
+
+    expect(state.liveUrl).toBe('http://localhost:3000/dashboard');
+    expect(state.liveUrlSource).toBe('graph-base');
   });
 
   it('returns only string limitation entries', () => {

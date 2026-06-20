@@ -49,8 +49,8 @@ export function styleEdges({
 }
 
 function styleAuditEdge(edge: Edge, auditFocusNodeIds: Set<string>): Edge {
-  const sourceIn = auditFocusNodeIds.has(edge.source);
-  const targetIn = auditFocusNodeIds.has(edge.target);
+  const sourceIn = auditFocusNodeIds.has(getEdgeGraphNodeId(edge, 'source'));
+  const targetIn = auditFocusNodeIds.has(getEdgeGraphNodeId(edge, 'target'));
   const isFocused = sourceIn && targetIn;
   return {
     ...edge,
@@ -66,7 +66,8 @@ function styleAuditEdge(edge: Edge, auditFocusNodeIds: Set<string>): Edge {
 }
 
 function styleWorkflowEdge(edge: Edge, workflowFocusEdgeIds: Set<string>): Edge {
-  const isFocused = workflowFocusEdgeIds.has(edge.id);
+  const isFocused =
+    workflowFocusEdgeIds.has(edge.id) || workflowFocusEdgeIds.has(getEdgeGraphEdgeId(edge));
   return {
     ...edge,
     style: {
@@ -87,7 +88,9 @@ function styleFlowEdges(edges: Edge[], activeFlow: NavMapFlow): Edge[] {
   }
 
   return edges.map(edge => {
-    const isFlowEdge = flowEdgePairs.has(`${edge.source}->${edge.target}`);
+    const sourceNodeId = getEdgeGraphNodeId(edge, 'source');
+    const targetNodeId = getEdgeGraphNodeId(edge, 'target');
+    const isFlowEdge = flowEdgePairs.has(`${sourceNodeId}->${targetNodeId}`);
     return {
       ...edge,
       style: {
@@ -106,8 +109,8 @@ function styleFocusedGroupEdge(
   nodeGroupMap: Map<string, string>,
   focusedGroupId: string
 ): Edge {
-  const sourceGroup = nodeGroupMap.get(edge.source);
-  const targetGroup = nodeGroupMap.get(edge.target);
+  const sourceGroup = nodeGroupMap.get(getEdgeGraphNodeId(edge, 'source'));
+  const targetGroup = nodeGroupMap.get(getEdgeGraphNodeId(edge, 'target'));
   const sourceIn = sourceGroup === focusedGroupId;
   const targetIn = targetGroup === focusedGroupId;
   let opacity = 0;
@@ -125,7 +128,9 @@ function styleFocusedGroupEdge(
 }
 
 function styleSelectedEdge(edge: Edge, selectedNodeId: string, focusMode: boolean): Edge {
-  const isConnected = edge.source === selectedNodeId || edge.target === selectedNodeId;
+  const isConnected =
+    getEdgeGraphNodeId(edge, 'source') === selectedNodeId ||
+    getEdgeGraphNodeId(edge, 'target') === selectedNodeId;
   return {
     ...edge,
     style: {
@@ -137,4 +142,17 @@ function styleSelectedEdge(edge: Edge, selectedNodeId: string, focusMode: boolea
       transition: 'opacity 0.2s',
     },
   };
+}
+
+function getEdgeGraphNodeId(edge: Edge, endpoint: 'source' | 'target'): string {
+  const data = edge.data as Record<string, unknown> | undefined;
+  const key = endpoint === 'source' ? 'sourceNodeId' : 'targetNodeId';
+  const value = data?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : edge[endpoint];
+}
+
+function getEdgeGraphEdgeId(edge: Edge): string {
+  const data = edge.data as Record<string, unknown> | undefined;
+  const value = data?.edgeId;
+  return typeof value === 'string' && value.length > 0 ? value : edge.id;
 }

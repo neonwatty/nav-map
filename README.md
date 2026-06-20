@@ -260,8 +260,10 @@ existing visual evidence from the manifest.
 ### Preview Modes
 
 Artifact kind describes what a workflow node represents, such as an app route, HTML mockup,
-component reference, or generated concept. Preview mode describes how the map can show it during
-review.
+component reference, or generated concept. The global `Render: Screenshots | Live` control is a
+render-mode preference, not an app/mockup/prototype mode switch: it chooses whether the selected
+node panel prefers saved screenshots/static artifacts or live previews where the node supports
+them.
 
 - `App · Live`: a real app route that can render from the configured base URL.
 - `Mockup · Live`: a local or fixture-backed mockup, usually embedded in an iframe from
@@ -271,9 +273,31 @@ review.
 - `App · Blocked`: an app route that exists but cannot render live because auth, setup, service
   health, or other prerequisites are missing.
 
-Live mode is best-effort. Nodes without live rendering keep screenshot fallbacks so reviewers can
-still inspect prototype intent, blocked auth states, external-service gaps, and artifacts that are
-not safe or meaningful to execute inside the preview pane.
+Live render mode is best-effort. When Live is selected, nav-map runs a browser-side readiness
+preflight for the current flow, or for the whole graph when no flow is focused. The toolbar shows a
+compact summary, and each node keeps a small readiness label so reviewers can tell the difference
+between targets that are ready, still checking, offline, intentionally static, blocked, or missing a
+live target. Nodes without live rendering keep screenshot fallbacks and keep their own
+artifact/status labels visible, so reviewers can still inspect prototype intent, blocked auth
+states, external-service gaps, and artifacts that are not safe or meaningful to execute inside the
+preview pane.
+
+The selected-node details panel also exposes a local **Live Target** editor for dogfooding:
+
+- App nodes can override the graph app base URL, for example `http://localhost:3000`.
+- Mockup, prototype, and other surface nodes can override their direct live URL.
+- Overrides are stored in browser local storage per graph and are not written back to manifests.
+- The panel shows the resolved live URL and whether it came from the manifest, graph base URL, or a
+  local override.
+- When Live mode is active, nav-map probes scoped live targets from the browser and labels them
+  `Ready`, `Checking`, `Offline`, `Static`, `Blocked`, or `No Live`. Offline and unavailable
+  targets replace the iframe with a visible message telling the reviewer to start the local app
+  server or enter a reachable Live Target, while preserving the saved screenshot fallback.
+- App-route live iframes allow same-origin browser APIs so real app routes that use storage or
+  client-side routers can run; mockup and prototype iframes keep a stricter sandbox.
+- Browser-side readiness is practical reachability, not a full audit: cross-origin `no-cors`
+  checks cannot always prove the exact HTTP status or whether the route rendered meaningful app
+  content. Use scanner/probe receipts or manual browser walkthroughs when you need stronger proof.
 
 When dogfooding preview behavior, record receipts for commands run, local URLs checked, routes
 tested, screenshots captured, auth state id if one was used, failures, warnings, and known

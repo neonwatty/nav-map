@@ -30,6 +30,10 @@ export function FlowAnimationOverlay({
   const accent = isDark ? '#7aacff' : '#3355aa';
   const flow = selectedFlowIndex !== null ? graph?.flows?.[selectedFlowIndex] : undefined;
   const canRenderAnimator = Boolean(flow && layoutDone);
+  const animationSteps =
+    flow && selectedFlowIndex !== null
+      ? getAnimationStepIds(flow.steps, nodes, selectedFlowIndex)
+      : [];
 
   return (
     <>
@@ -47,7 +51,7 @@ export function FlowAnimationOverlay({
           }}
         >
           <FlowAnimator
-            flowSteps={flow.steps}
+            flowSteps={animationSteps}
             nodes={nodes}
             isAnimating={isAnimatingFlow}
             onAnimationEnd={onAnimationEnd}
@@ -94,4 +98,20 @@ export function FlowAnimationOverlay({
       </div>
     </>
   );
+}
+
+function getAnimationStepIds(flowSteps: string[], nodes: Node[], selectedFlowIndex: number) {
+  return flowSteps.map((stepId, index) => {
+    const occurrenceId = `flow-${selectedFlowIndex}-step-${index}-${stepId}`;
+    const occurrence = nodes.find(node => node.id === occurrenceId);
+    if (occurrence) return occurrence.id;
+
+    const matchingStepNode = nodes.find(node => {
+      const data = node.data as Record<string, unknown> | undefined;
+      return data?.nodeId === stepId && data?.flowStepNumber === index + 1;
+    });
+    if (matchingStepNode) return matchingStepNode.id;
+
+    return stepId;
+  });
 }

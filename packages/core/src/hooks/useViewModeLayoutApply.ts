@@ -7,6 +7,8 @@ interface LayoutApplyOptions {
   setNodes: (nodes: Node[] | ((prev: Node[]) => Node[])) => void;
   setEdges: (edges: Edge[] | ((prev: Edge[]) => Edge[])) => void;
   baseEdgesRef: RefObject<Edge[]>;
+  sharedNavEdgesRef?: RefObject<Edge[]>;
+  clearSharedNavEdges?: boolean;
   fitView: (options?: { padding?: number; duration?: number }) => void;
   fitViewPadding: number;
 }
@@ -19,11 +21,22 @@ interface MapLayoutApplyOptions extends LayoutApplyOptions {
 export function applyLayoutResult(
   nodes: Node[],
   edges: Edge[],
-  { setNodes, setEdges, baseEdgesRef, fitView, fitViewPadding }: LayoutApplyOptions
+  {
+    setNodes,
+    setEdges,
+    baseEdgesRef,
+    sharedNavEdgesRef,
+    clearSharedNavEdges,
+    fitView,
+    fitViewPadding,
+  }: LayoutApplyOptions
 ): void {
   setNodes(nodes);
   setEdges(edges);
   baseEdgesRef.current = edges;
+  if (clearSharedNavEdges) {
+    if (sharedNavEdgesRef) sharedNavEdgesRef.current = [];
+  }
   setTimeout(() => fitView({ padding: fitViewPadding, duration: 300 }), 50);
 }
 

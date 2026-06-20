@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { NavMapFlow } from '../types';
 import type { StyleNodesOptions } from './graphStyling';
+import { getGraphNodeId } from './graphHelpers';
 
 export function styleNodes({
   visibleNodes,
@@ -36,14 +37,14 @@ export function styleNodes({
     ...node,
     style: {
       ...node.style,
-      opacity: connectedNodeIds.has(node.id) ? 1 : 0.25,
+      opacity: connectedNodeIds.has(getGraphNodeId(node)) ? 1 : 0.25,
       transition: 'opacity 0.2s',
     },
   }));
 }
 
 function styleSearchNode(node: Node, searchMatchIds: Set<string>): Node {
-  const isMatch = searchMatchIds.has(node.id);
+  const isMatch = searchMatchIds.has(getGraphNodeId(node));
   return {
     ...node,
     style: {
@@ -58,7 +59,7 @@ function styleSearchNode(node: Node, searchMatchIds: Set<string>): Node {
 }
 
 function styleAuditNode(node: Node, auditFocusNodeIds: Set<string>): Node {
-  const isFocused = auditFocusNodeIds.has(node.id);
+  const isFocused = auditFocusNodeIds.has(getGraphNodeId(node));
   return {
     ...node,
     style: {
@@ -72,7 +73,7 @@ function styleAuditNode(node: Node, auditFocusNodeIds: Set<string>): Node {
 }
 
 function styleWorkflowNode(node: Node, workflowFocusNodeIds: Set<string>): Node {
-  const isFocused = workflowFocusNodeIds.has(node.id);
+  const isFocused = workflowFocusNodeIds.has(getGraphNodeId(node));
   return {
     ...node,
     style: {
@@ -87,12 +88,19 @@ function styleWorkflowNode(node: Node, workflowFocusNodeIds: Set<string>): Node 
 
 function styleFlowNodes(nodes: Node[], activeFlow: NavMapFlow): Node[] {
   const flowStepSet = new Set(activeFlow.steps);
-  const flowStepMap = new Map(activeFlow.steps.map((id, index) => [id, index + 1]));
+  const flowStepMap = new Map<string, number>();
+  activeFlow.steps.forEach((id, index) => {
+    if (!flowStepMap.has(id)) flowStepMap.set(id, index + 1);
+  });
   return nodes.map(node => {
-    const isFlowNode = flowStepSet.has(node.id);
+    const graphNodeId = getGraphNodeId(node);
+    const isFlowNode = flowStepSet.has(graphNodeId);
     return {
       ...node,
-      data: { ...node.data, ...(isFlowNode ? { flowStepNumber: flowStepMap.get(node.id) } : {}) },
+      data: {
+        ...node.data,
+        ...(isFlowNode ? { flowStepNumber: flowStepMap.get(graphNodeId) } : {}),
+      },
       style: { ...node.style, opacity: isFlowNode ? 1 : 0.2, transition: 'opacity 0.2s' },
     };
   });
@@ -127,8 +135,17 @@ function styleFocusedGroupNode(node: Node, focusedGroupId: string): Node {
 function getConnectedNodeIds(selectedNodeId: string, edges: Edge[]): Set<string> {
   const connectedNodeIds = new Set<string>([selectedNodeId]);
   for (const edge of edges) {
-    if (edge.source === selectedNodeId) connectedNodeIds.add(edge.target);
-    if (edge.target === selectedNodeId) connectedNodeIds.add(edge.source);
+    const sourceNodeId = getEdgeGraphNodeId(edge, 'source');
+    const targetNodeId = getEdgeGraphNodeId(edge, 'target');
+    if (sourceNodeId === selectedNodeId) connectedNodeIds.add(targetNodeId);
+    if (targetNodeId === selectedNodeId) connectedNodeIds.add(sourceNodeId);
   }
   return connectedNodeIds;
+}
+
+function getEdgeGraphNodeId(edge: Edge, endpoint: 'source' | 'target'): string {
+  const data = edge.data as Record<string, unknown> | undefined;
+  const key = endpoint === 'source' ? 'sourceNodeId' : 'targetNodeId';
+  const value = data?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : edge[endpoint];
 }

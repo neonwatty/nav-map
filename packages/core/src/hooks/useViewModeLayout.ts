@@ -59,6 +59,8 @@ export function useViewModeLayout({
           setNodes,
           setEdges,
           baseEdgesRef,
+          sharedNavEdgesRef,
+          clearSharedNavEdges: true,
           fitView,
           fitViewPadding: 0.2,
         });

@@ -10,6 +10,7 @@ import type {
 import type { GroupNodeData } from '../components/nodes/GroupNode';
 
 export interface RFNodeData {
+  nodeId?: string;
   label: string;
   route: string;
   group: string;
@@ -59,6 +60,7 @@ export function buildCompoundNodes(nodes: NavMapNode[], groups: NavMapGroup[]): 
       position: { x: 0, y: 0 },
       ...(hasGroup ? { parentId: `group-${n.group}` } : {}),
       data: {
+        nodeId: n.id,
         label: n.label,
         route: n.route,
         group: n.group,
@@ -80,6 +82,7 @@ export function toReactFlowNodes(nodes: NavMapNode[]): Node<RFNodeData>[] {
     type: n.screenshot ? 'pageNode' : 'compactNode',
     position: { x: 0, y: 0 },
     data: {
+      nodeId: n.id,
       label: n.label,
       route: n.route,
       group: n.group,
@@ -106,6 +109,13 @@ export function toReactFlowEdges(edges: NavMapEdge[]): Edge[] {
       metadata: e.metadata,
     },
   }));
+}
+
+export function getGraphNodeId(node: Pick<Node, 'id' | 'data'>): string {
+  const nodeData = node.data as Partial<RFNodeData> | undefined;
+  return typeof nodeData?.nodeId === 'string' && nodeData.nodeId.length > 0
+    ? nodeData.nodeId
+    : node.id;
 }
 
 export function getConnectedNodes(

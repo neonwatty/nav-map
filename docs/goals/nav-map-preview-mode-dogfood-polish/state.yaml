@@ -1,0 +1,555 @@
+version: 2
+
+goal:
+  title: 'Nav Map Preview Mode Dogfood Polish'
+  slug: 'nav-map-preview-mode-dogfood-polish'
+  kind: existing_plan
+  tranche: 'Fix duplicate repeated-node warnings and clarify screenshot/live preview UX.'
+  status: done
+  oracle:
+    signal: 'Fresh Codex Chrome dogfood pass proves named workflows render correctly with clear preview semantics and no console errors or warnings.'
+    cadence: 'after implementation, focused tests, local server restart, and fresh browser walkthrough'
+    final_proof: 'Focused tests pass, relevant build/check passes, and fresh Chrome receipts cover PRcard, Deckchecker, and Bleep workflows with clean console output.'
+  intake:
+    original_request: 'Map this out as a detailed GoalBuddy prep board with solid and measurable acceptance criteria.'
+    interpreted_outcome: 'Prepare a board to fix duplicate React key warnings and clarify preview-mode UX, with required Chrome dogfood workflows named before implementation.'
+    input_shape: existing_plan
+    audience: 'nav-map users, manifest authors, and future coding agents'
+    authority: approved
+    proof_type: demo_plus_test
+    completion_proof: 'The local app passes named Chrome dogfood workflows, focused tests, and relevant build/checks without secret inspection.'
+    likely_misfire: 'Treating Screenshots/Live as app/mockup/prototype modes, or fixing the React warning while leaving artifact-kind UX ambiguous.'
+    blind_spots_considered:
+      - 'A node can appear multiple times in a selected flow, so keys must be occurrence-safe without changing graph node identity.'
+      - 'Live mode can be globally active while a selected node is static or non-iframe-renderable.'
+      - 'Prior console logs can pollute proof, so final dogfood must use fresh tabs or a fresh browser session.'
+      - 'Tests can pass while the browser UX remains confusing, so Chrome walkthrough receipts are mandatory.'
+    existing_plan_facts:
+      - 'Current visible global control is Screenshots versus Live.'
+      - 'Per-node artifact labels currently include App, Mockup, Prototype and live/static states.'
+      - 'PRcard GitHub-connected creator contains the Quick Setup HTML Mockup live iframe path.'
+      - 'PRcard Protected-route redirects previously produced duplicate key warnings for quick-setup during dogfooding.'
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: running
+    url: 'http://goalbuddy.localhost:41737/nav-map-preview-mode-dogfood-polish/'
+    command: 'npx goalbuddy board docs/goals/nav-map-preview-mode-dogfood-polish'
+
+active_task: null
+
+acceptance_criteria:
+  - 'Current PRcard Protected-route redirects duplicate key warning is reproduced and documented before implementation.'
+  - 'Repeated node or route appearances render with occurrence-safe React keys without changing graph node ids.'
+  - 'Chrome console contains zero duplicate-key warnings after selecting PRcard Protected-route redirects.'
+  - 'Global preview control is clearly presented as render mode: Screenshots versus Live.'
+  - 'UI does not imply a global App/Mockup/Prototype mode switch.'
+  - 'Per-node labels clearly distinguish App / Live, Mockup / Live, Prototype / Static, and blocked/unavailable live states when present.'
+  - 'Static prototype selection explains that no live preview is available and renders no iframe.'
+  - 'PRcard Quick Setup HTML Mockup in Live mode renders exactly one iframe with /mockups/prcard-quick-setup.html.'
+  - 'PRcard Quick Setup HTML Mockup in Screenshots mode renders no live iframe.'
+  - 'App-route nodes remain visible and usable in Live mode; renderable App / Live nodes may show a live iframe, while static or blocked nodes do not show misleading iframe UI.'
+  - 'Focused tests cover repeated-node rendering, preview toggle behavior, live mockup iframe behavior, and static prototype messaging.'
+  - 'Docs or demo guidance explain global preview render mode versus per-node artifact kind.'
+  - 'Relevant package build/check passes.'
+  - 'Final receipt names all required Chrome dogfood workflows and records selected flow, preview toggle state, console status, iframe status, and limitations.'
+
+required_chrome_workflows:
+  - id: chrome-prcard-signed-out-activation
+    name: 'PRcard: Signed-out activation'
+    url: 'http://localhost:3001/?dataset=prcard'
+    steps:
+      - 'Select flow Signed-out activation.'
+      - 'Toggle Screenshots then Live.'
+      - 'Verify app nodes remain visible.'
+      - 'Verify renderable App / Live nodes can show a live iframe from the configured app base URL.'
+      - 'Verify console errors/warnings are empty.'
+    measurable_pass:
+      - 'Selected dataset text is PRcard workflow.'
+      - 'Selected flow text is Signed-out activation.'
+      - 'Live button aria-pressed is true after toggle.'
+      - 'selected App / Live node either renders the configured app live URL or clearly reports a blocked/unavailable live state.'
+      - 'console error/warning count is 0.'
+  - id: chrome-prcard-github-connected-creator
+    name: 'PRcard: GitHub-connected creator'
+    url: 'http://localhost:3001/?dataset=prcard'
+    steps:
+      - 'Select flow GitHub-connected creator.'
+      - 'Select Quick Setup Concept.'
+      - 'Verify static prototype language and no iframe.'
+      - 'Select Quick Setup HTML Mockup.'
+      - 'Verify Mockup / Live language and exactly one iframe for /mockups/prcard-quick-setup.html.'
+      - 'Verify iframe content renders.'
+      - 'Toggle Screenshots.'
+      - 'Verify live iframe is removed or replaced by static preview behavior.'
+      - 'Verify console errors/warnings are empty.'
+    measurable_pass:
+      - 'Quick Setup Concept details include Prototype and Static/no-live language.'
+      - 'Quick Setup Concept iframe count is 0.'
+      - 'Quick Setup HTML Mockup details include Mockup and Live language.'
+      - 'Quick Setup HTML Mockup iframe count is 1 in Live mode.'
+      - 'iframe src equals /mockups/prcard-quick-setup.html.'
+      - 'iframe body exposes the PRcard quick setup mockup main landmark or equivalent visible content.'
+      - 'Quick Setup HTML Mockup iframe count is 0 after toggling Screenshots.'
+      - 'console error/warning count is 0.'
+  - id: chrome-prcard-protected-route-redirects
+    name: 'PRcard: Protected-route redirects'
+    url: 'http://localhost:3001/?dataset=prcard'
+    steps:
+      - 'Select flow Protected-route redirects.'
+      - 'Verify repeated quick-setup appearances do not produce duplicate key warnings.'
+      - 'Verify flow remains visually usable.'
+      - 'Verify console errors/warnings are empty.'
+    measurable_pass:
+      - 'Selected flow text is Protected-route redirects.'
+      - 'Console contains no duplicate key warning for quick-setup.'
+      - 'Console error/warning count is 0.'
+      - 'Visible flow includes Quick Setup and related redirect nodes.'
+  - id: chrome-deckchecker-speaker
+    name: 'Deckchecker speaker'
+    url: 'http://localhost:3001/?dataset=deckchecker-speaker'
+    steps:
+      - 'Select Speaker sign-in and event list.'
+      - 'Select Speaker event review.'
+      - 'Select Speaker deck workflow.'
+      - 'Select Speaker auth boundaries.'
+      - 'Toggle Screenshots and Live.'
+      - 'Verify each selected flow renders.'
+      - 'Verify console errors/warnings are empty.'
+    measurable_pass:
+      - 'Selected dataset text is Deckchecker speaker.'
+      - 'Each named flow can be selected and observed as selected.'
+      - 'Preview toggle changes aria-pressed state for Screenshots and Live.'
+      - 'console error/warning count is 0 after flow and preview interactions.'
+  - id: chrome-bleep-app-scan
+    name: 'Bleep app scan'
+    url: 'http://localhost:3001/?dataset=bleep'
+    steps:
+      - 'Load Bleep app scan dataset.'
+      - 'Toggle Screenshots and Live.'
+      - 'Verify graph renders.'
+      - 'Verify preview labels remain coherent.'
+      - 'Verify console errors/warnings are empty.'
+    measurable_pass:
+      - 'Selected dataset text is Bleep app scan.'
+      - 'Graph or gallery surface contains Bleep nodes.'
+      - 'Preview toggle changes aria-pressed state for Screenshots and Live.'
+      - 'console error/warning count is 0.'
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: 'Reproduce and localize the duplicate key warning plus current preview-mode UX behavior before editing.'
+    inputs:
+      - 'Fresh local app instance'
+      - 'Codex Chrome-controlled PRcard workflow'
+      - 'Current tests and component structure'
+    allowed_files:
+      - 'packages/core/src/**'
+      - 'packages/demo/app/**'
+      - 'packages/demo/public/prcard*.json'
+      - 'README.md'
+      - 'docs/**'
+    verify:
+      - 'Open fresh Chrome tab at http://localhost:3001/?dataset=prcard.'
+      - 'Select Protected-route redirects and record duplicate-key reproduction status.'
+      - 'Select GitHub-connected creator and record current live mockup/static prototype behavior.'
+    stop_if:
+      - 'Need to inspect secrets, cookies, tokens, env values, OAuth secrets, private keys, service-role keys, or Playwright auth storage.'
+    expected_output:
+      - 'Suspected files/functions for repeated-node keying.'
+      - 'Current UX gaps for preview mode and artifact-kind labels.'
+      - 'Recommended Worker slice with allowed files and focused tests.'
+    receipt:
+      result: done
+      summary: 'Reproduced the duplicate key warning by loading PRcard, selecting Protected-route redirects, and observing repeated React console errors for key quick-setup. Localized likely source to flow layout rendering because buildFlowLayoutInput emits React Flow nodes with id equal to the graph step id even when a flow revisits the same node.'
+      evidence:
+        - 'Fresh Chrome tab at http://localhost:3001/?dataset=prcard returned NavMap Demo and selected PRcard workflow.'
+        - 'Selecting Protected-route redirects produced repeated console errors: duplicate key quick-setup.'
+        - 'The PRcard manifest flow steps are quick-setup, signup, creator, quick-setup.'
+        - 'packages/core/src/hooks/useViewModeLayoutBuilders.ts currently maps flow steps to React Flow nodes with id: stepId.'
+        - 'GitHub-connected creator currently shows per-node Prototype/Static and Mockup/Live labels; Live iframe appears for Quick Setup HTML Mockup.'
+      limitations:
+        - 'The preview concept click was noisy because prior selected-node state persisted during the Scout pass; final dogfood must use fresh tabs after the fix.'
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Convert Scout findings into the smallest safe Worker implementation slice.'
+    inputs:
+      - 'T001 receipt'
+      - 'Acceptance criteria'
+      - 'Required Chrome workflows'
+    constraints:
+      - 'Reject app-specific core branching.'
+      - 'Reject implementation plans that skip browser dogfood proof.'
+    expected_output:
+      - 'Worker allowed_files list.'
+      - 'Focused tests to add or update.'
+      - 'Stop conditions and verification commands.'
+    receipt:
+      result: done
+      decision: 'Proceed with a core-only reusable fix.'
+      summary: 'Use occurrence-safe React Flow ids in flow view while preserving original graph node ids in node data for selection, details, gallery, and styling. Then clarify preview render-mode wording without introducing app-specific logic.'
+      worker_allowed_files:
+        - 'packages/core/src/utils/graphHelpers.ts'
+        - 'packages/core/src/hooks/useViewModeLayoutBuilders.ts'
+        - 'packages/core/src/hooks/useViewModeLayoutBuilders.test.ts'
+        - 'packages/core/src/hooks/useNavMapNavigation.ts'
+        - 'packages/core/src/hooks/useNavMapNavigation.test.ts'
+        - 'packages/core/src/hooks/useNavMapGallery.ts'
+        - 'packages/core/src/hooks/useNavMapDerivedGraph.ts'
+        - 'packages/core/src/components/NavMap.tsx'
+        - 'packages/core/src/components/nodes/PageNode.tsx'
+        - 'packages/core/src/components/nodes/PageNode.test.tsx'
+        - 'packages/core/src/components/panels/PreviewModeToggle.tsx'
+        - 'packages/core/src/components/panels/PreviewModeToggle.test.tsx'
+        - 'packages/core/src/components/panels/ConnectionPanel.tsx'
+        - 'packages/core/src/components/panels/ConnectionPanel.test.tsx'
+        - 'packages/core/src/utils/graphNodeStyling.ts'
+        - 'packages/core/src/utils/graphEdgeStyling.ts'
+        - 'README.md'
+      verify:
+        - 'pnpm --filter @neonwatty/nav-map test -- src/hooks/useViewModeLayoutBuilders.test.ts src/hooks/useNavMapNavigation.test.ts src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx'
+        - 'pnpm --filter @neonwatty/nav-map typecheck'
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Fix repeated-node keying and add focused regression coverage.'
+    allowed_files:
+      - 'packages/core/src/utils/graphHelpers.ts'
+      - 'packages/core/src/hooks/useViewModeLayoutBuilders.ts'
+      - 'packages/core/src/hooks/useViewModeLayoutBuilders.test.ts'
+      - 'packages/core/src/hooks/useNavMapNavigation.ts'
+      - 'packages/core/src/hooks/useNavMapNavigation.test.ts'
+      - 'packages/core/src/hooks/useNavMapDerivedGraph.ts'
+      - 'packages/core/src/components/NavMap.tsx'
+      - 'packages/core/src/components/nodes/PageNode.tsx'
+      - 'packages/core/src/components/nodes/PageNode.test.tsx'
+      - 'packages/core/src/utils/graphNodeStyling.ts'
+      - 'packages/core/src/utils/graphEdgeStyling.ts'
+    verify:
+      - 'Focused test proves repeated flow nodes do not create duplicate keys or unstable rendered lists.'
+      - 'Relevant package test command passes.'
+    stop_if:
+      - 'Fix requires changing public graph node ids.'
+      - 'Fix requires app-specific PRcard logic.'
+      - 'Need to inspect secrets or auth storage.'
+    expected_output:
+      - 'Code changes for occurrence-safe rendering keys.'
+      - 'Regression test receipt.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/utils/graphHelpers.ts'
+        - 'packages/core/src/hooks/useViewModeLayoutBuilders.ts'
+        - 'packages/core/src/hooks/useViewModeLayoutBuilders.test.ts'
+        - 'packages/core/src/hooks/useNavMapNavigation.ts'
+        - 'packages/core/src/hooks/useNavMapNavigation.test.ts'
+        - 'packages/core/src/hooks/useNavMapDerivedGraph.ts'
+        - 'packages/core/src/components/NavMap.tsx'
+        - 'packages/core/src/components/nodes/PageNode.tsx'
+        - 'packages/core/src/components/nodes/PageNode.test.tsx'
+        - 'packages/core/src/utils/graphNodeStyling.ts'
+        - 'packages/core/src/utils/graphEdgeStyling.ts'
+      summary: 'Flow view now renders each step occurrence with a unique React Flow id while preserving the original graph node id in data.nodeId. Selection, navigation, gallery flags, preview classification, and graph styling translate occurrence ids back to graph node ids.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/hooks/useViewModeLayoutBuilders.test.ts src/hooks/useNavMapNavigation.test.ts src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx'
+          status: pass
+          evidence: '42 test files passed; 273 tests passed.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/hooks/useGraphStyling.test.ts src/hooks/useNavMapDerivedGraph.test.ts'
+          status: pass
+          evidence: '42 test files passed; 273 tests passed.'
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: 'Clarify preview-mode UX without introducing a global app/mockup/prototype mode.'
+    allowed_files:
+      - 'packages/core/src/components/panels/PreviewModeToggle.tsx'
+      - 'packages/core/src/components/panels/PreviewModeToggle.test.tsx'
+      - 'packages/core/src/components/panels/ConnectionPanel.tsx'
+      - 'packages/core/src/components/panels/ConnectionPanel.test.tsx'
+      - 'packages/core/src/components/NavMap.test.tsx'
+    verify:
+      - 'Focused component tests cover global Screenshots/Live toggle semantics.'
+      - 'Focused component tests cover Mockup / Live and Prototype / Static details.'
+      - 'Screenshot mode suppresses live iframe for the mockup node.'
+    stop_if:
+      - 'UX copy implies App/Mockup/Prototype is a global mode switch.'
+      - 'Live mode renders iframe UI for static prototype nodes.'
+      - 'Need app-specific core logic.'
+    expected_output:
+      - 'Clear labels/details for global render mode and per-node artifact kind.'
+      - 'Updated focused tests.'
+    receipt:
+      result: done
+      changed_files:
+        - 'packages/core/src/components/panels/PreviewModeToggle.tsx'
+        - 'packages/core/src/components/panels/PreviewModeToggle.test.tsx'
+        - 'packages/core/src/components/panels/ConnectionPanel.tsx'
+        - 'packages/core/src/components/panels/ConnectionPanel.test.tsx'
+        - 'packages/core/src/components/NavMap.test.tsx'
+      summary: 'The global control is labeled Preview render mode with visible Render text. Selected-node details now preserve the compact App/Mockup/Prototype plus status label and add explicit Render Mode, Artifact, and Live Status rows.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/hooks/useViewModeLayoutBuilders.test.ts src/hooks/useNavMapNavigation.test.ts src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx'
+          status: pass
+          evidence: 'Focused preview-mode, connection-panel, app-live, and toolbar stacking tests passed in the core test run.'
+      follow_up_fix:
+        summary: 'Chrome dogfood found the live mockup details/walkthrough chrome covered the toolbar, so Screenshots could not be clicked after selecting an iframe preview. Raising the toolbar z-index to 60 keeps it above workflow chrome while leaving search/help/gallery overlays above it.'
+        changed_files:
+          - 'packages/core/src/components/panels/NavMapToolbar.tsx'
+          - 'packages/core/src/components/NavMap.test.tsx'
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: 'Update docs or demo guidance for preview render mode versus artifact kind.'
+    allowed_files:
+      - 'README.md'
+      - 'docs/**'
+      - 'packages/demo/public/*.workflow.json'
+    verify:
+      - 'Docs state that Screenshots/Live is global render mode.'
+      - 'Docs state that App/Mockup/Prototype is per-node artifact kind.'
+      - 'Docs do not mention or expose secrets/auth storage contents.'
+    stop_if:
+      - 'Docs require app-specific behavior in core.'
+    receipt:
+      result: done
+      changed_files:
+        - 'README.md'
+      summary: 'README Preview Modes section now states that Render: Screenshots | Live is a global render-mode preference, not an app/mockup/prototype switch, and that artifact kind remains per-node.'
+      commands:
+        - cmd: 'rg -n "Render: Screenshots \\| Live|Artifact kind describes|not an app/mockup/prototype mode switch" README.md'
+          status: pass
+          evidence: 'README contains the global render-mode and per-node artifact-kind distinction.'
+      evidence:
+        - 'README explains app/mockup/prototype artifact kinds separately from global render mode.'
+        - 'Goal docs clarify that renderable App / Live nodes may show live app iframes, while static or blocked nodes must not show misleading iframe UI.'
+        - 'README does not expose secrets, auth storage, cookies, tokens, or env values.'
+
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Review implementation, tests, and docs before browser dogfood.'
+    inputs:
+      - 'T003 receipt'
+      - 'T004 receipt'
+      - 'T005 receipt'
+    expected_output:
+      - 'pass | needs_changes'
+      - 'List of required fixes before browser walkthrough.'
+      - 'Approved local server command for final verification.'
+    constraints:
+      - 'Do not approve final dogfood until focused tests and relevant build/check pass.'
+    receipt:
+      result: done
+      decision: pass
+      summary: 'Implementation is ready for mandatory browser dogfood. Focused tests, graph styling tests, formatting, and core typecheck passed.'
+      commands:
+        - cmd: 'pnpm prettier --write README.md docs/goals/nav-map-preview-mode-dogfood-polish/goal.md docs/goals/nav-map-preview-mode-dogfood-polish/state.yaml packages/core/src/utils/graphHelpers.ts packages/core/src/hooks/useViewModeLayoutBuilders.ts packages/core/src/hooks/useViewModeLayoutBuilders.test.ts packages/core/src/hooks/useNavMapNavigation.ts packages/core/src/hooks/useNavMapNavigation.test.ts packages/core/src/hooks/useNavMapDerivedGraph.ts packages/core/src/components/NavMap.tsx packages/core/src/components/NavMap.test.tsx packages/core/src/components/nodes/PageNode.tsx packages/core/src/components/nodes/PageNode.test.tsx packages/core/src/components/panels/PreviewModeToggle.tsx packages/core/src/components/panels/PreviewModeToggle.test.tsx packages/core/src/components/panels/ConnectionPanel.tsx packages/core/src/components/panels/ConnectionPanel.test.tsx packages/core/src/utils/graphNodeStyling.ts packages/core/src/utils/graphEdgeStyling.ts'
+          status: pass
+        - cmd: 'pnpm --filter @neonwatty/nav-map typecheck'
+          status: pass
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: 'Run mandatory fresh Codex Chrome dogfood pass across required workflows.'
+    inputs:
+      - 'required_chrome_workflows from this state.yaml'
+      - 'Fresh local dev server'
+      - 'Codex Chrome extension automation'
+    allowed_files:
+      - 'docs/goals/nav-map-preview-mode-dogfood-polish/state.yaml'
+    verify:
+      - 'HTTP 200 check for every local URL before browser handoff.'
+      - 'Fresh Chrome tab/session for final walkthrough.'
+      - 'Each required workflow records selected dataset, selected flow, preview mode state, iframe count/src where relevant, and console error/warning count.'
+    stop_if:
+      - 'Any required workflow cannot be selected.'
+      - 'Any console error/warning appears.'
+      - 'Any localhost URL fails HTTP or browser render.'
+      - 'Any framework/runtime error appears.'
+      - 'Need to inspect cookies, local storage, session storage, auth state, secrets, or env values.'
+    expected_output:
+      - 'Per-workflow pass/fail receipt.'
+      - 'Exact URL left open for user review if all checks pass.'
+    receipt:
+      result: done
+      changed_files:
+        - 'docs/goals/nav-map-preview-mode-dogfood-polish/state.yaml'
+      summary: 'Fresh Codex Chrome dogfood passed the required PRcard, Deckchecker, and Bleep workflows after a clean server restart. The pass also caught and verified the toolbar stacking fix for live mockup previews.'
+      commands:
+        - cmd: 'curl -I http://localhost:3001/?dataset=prcard'
+          status: pass
+        - cmd: 'curl -I http://localhost:3001/?dataset=deckchecker-speaker'
+          status: pass
+        - cmd: 'curl -I http://localhost:3001/?dataset=bleep'
+          status: pass
+        - cmd: 'curl -I http://localhost:3001/mockups/prcard-quick-setup.html'
+          status: pass
+        - cmd: 'Codex Chrome dogfood across PRcard, Deckchecker, and Bleep required workflows'
+          status: pass
+      server:
+        command: 'pnpm --dir packages/demo exec next dev -p 3001'
+        url: 'http://localhost:3001'
+        state: running
+      http_checks:
+        - url: 'http://localhost:3001/?dataset=prcard'
+          http_status: 200
+        - url: 'http://localhost:3001/?dataset=deckchecker-speaker'
+          http_status: 200
+        - url: 'http://localhost:3001/?dataset=bleep'
+          http_status: 200
+        - url: 'http://localhost:3001/mockups/prcard-quick-setup.html'
+          http_status: 200
+        - url: 'http://localhost:3000/home'
+          http_status: offline
+          note: 'External PRcard app base URL from the fixture manifest was not running locally during this pass.'
+      chrome_receipts:
+        - workflow: 'PRcard: Signed-out activation'
+          selected_flow: 'Signed-out activation'
+          screenshots_pressed: true
+          live_pressed: true
+          selected_node: 'flow-0-step-0-home'
+          iframe_count_in_live: 1
+          console_warning_error_count: 0
+          duplicate_key_warning_count: 0
+          result_status: pass
+          limitation: 'The PRcard app iframe route was verified as configured from the manifest, but the external app target at localhost:3000 was offline, so live app content was not validated.'
+        - workflow: 'PRcard: GitHub-connected creator'
+          selected_flow: 'GitHub-connected creator'
+          concept_node: 'Quick Setup Concept'
+          concept_result: 'Prototype / Static, no live iframe, no-live language visible.'
+          mockup_node: 'Quick Setup HTML Mockup'
+          mockup_result: 'Mockup / Live, exactly one iframe with /mockups/prcard-quick-setup.html, fixture iframe body rendered, toggling Screenshots removed the iframe.'
+          toolbar_hit_target: 'Screenshots button was top hit target after mockup selection.'
+          console_warning_error_count: 0
+          duplicate_key_warning_count: 0
+          result_status: pass
+        - workflow: 'PRcard: Protected-route redirects'
+          selected_flow: 'Protected-route redirects'
+          visible_quick_setup_count: 2
+          node_count: 4
+          console_warning_error_count: 0
+          duplicate_key_warning_count: 0
+          result_status: pass
+        - workflow: 'Deckchecker speaker'
+          selected_flows:
+            - 'Speaker sign-in and event list'
+            - 'Speaker event review'
+            - 'Speaker deck workflow'
+            - 'Speaker auth boundaries'
+          node_count_each_flow: 15
+          screenshots_pressed: true
+          live_pressed: true
+          console_warning_error_count: 0
+          duplicate_key_warning_count: 0
+          result_status: pass
+        - workflow: 'Deckchecker animation smoke'
+          selected_flow: 'Speaker deck workflow'
+          result: 'Flow mode Animate button changed to Animating...'
+          console_warning_error_count: 0
+          result_status: pass
+        - workflow: 'Bleep app scan'
+          dataset: 'Bleep app scan'
+          node_count: 25
+          screenshots_pressed: true
+          live_pressed: true
+          console_warning_error_count: 0
+          duplicate_key_warning_count: 0
+          result_status: pass
+      all_required_workflows_passed: true
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: medium
+    objective: 'Final completion audit against every acceptance criterion.'
+    inputs:
+      - 'All task receipts'
+      - 'Focused test results'
+      - 'Relevant build/check result'
+      - 'Mandatory Chrome dogfood receipt'
+    constraints:
+      - 'Reject completion if any acceptance criterion is unproven.'
+      - 'Reject completion if final proof uses stale browser logs or stale server state.'
+      - 'Reject completion if any secret/auth storage content was inspected or printed.'
+    expected_output:
+      - 'complete | not_complete'
+      - 'Acceptance matrix with pass/fail per criterion.'
+      - 'Known limitations and follow-up recommendations.'
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: 'All acceptance criteria are either proven by focused tests/build or recorded in the fresh Chrome dogfood receipt. No secrets, cookies, tokens, env values, OAuth secrets, private keys, service-role keys, or auth storage were inspected or printed.'
+      commands:
+        - cmd: 'pnpm --filter @neonwatty/nav-map test -- src/hooks/useViewModeLayoutBuilders.test.ts src/hooks/useNavMapNavigation.test.ts src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx'
+          status: pass
+          evidence: '42 test files passed; 273 tests passed.'
+        - cmd: 'pnpm --filter @neonwatty/nav-map typecheck'
+          status: pass
+        - cmd: 'pnpm --filter @neonwatty/nav-map build'
+          status: pass
+        - cmd: 'pnpm prettier --write README.md docs/goals/nav-map-preview-mode-dogfood-polish/goal.md docs/goals/nav-map-preview-mode-dogfood-polish/state.yaml packages/core/src/components/NavMap.test.tsx packages/core/src/components/panels/NavMapToolbar.tsx packages/core/src/components/panels/ConnectionPanel.test.tsx'
+          status: pass
+      acceptance_matrix:
+        repeated_flow_keys: pass
+        duplicate_key_console_warning_removed: pass
+        render_mode_ux_clear: pass
+        app_mockup_prototype_not_global_switch: pass
+        per_node_artifact_and_live_status_labels: pass
+        static_prototype_no_iframe: pass
+        live_mockup_iframe_and_screenshot_fallback: pass
+        app_live_route_semantics: pass
+        focused_tests_and_docs: pass
+        build_check: pass
+        fresh_chrome_dogfood: pass
+      limitations:
+        - 'The PRcard fixture app base URL http://localhost:3000 was offline, so Chrome verified nav-map live app iframe routing and clean UI state but not external app content.'

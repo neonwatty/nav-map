@@ -34,27 +34,42 @@ export function buildFlowLayoutInput(
   for (let i = 0; i < flow.steps.length - 1; i++) {
     const src = flow.steps[i];
     const tgt = flow.steps[i + 1];
+    const sourceId = buildFlowStepOccurrenceId(selectedFlowIndex, i, src);
+    const targetId = buildFlowStepOccurrenceId(selectedFlowIndex, i + 1, tgt);
     const existingEdge = graph.edges.find(e => e.source === src && e.target === tgt);
     edges.push({
-      id: existingEdge?.id ?? `flow-${src}-${tgt}`,
-      source: src,
-      target: tgt,
+      id: `flow-${selectedFlowIndex}-edge-${i}-${existingEdge?.id ?? `${src}-${tgt}`}`,
+      source: sourceId,
+      target: targetId,
       type: 'navEdge',
-      data: buildEdgeData(existingEdge),
+      data: buildEdgeData(existingEdge, {
+        edgeId: existingEdge?.id,
+        sourceNodeId: src,
+        targetNodeId: tgt,
+      }),
     });
   }
 
   const nodes: Node[] = flow.steps.map((stepId, index) => {
     const graphNode = graph.nodes.find(n => n.id === stepId);
+    const occurrenceId = buildFlowStepOccurrenceId(selectedFlowIndex, index, stepId);
     return {
-      id: stepId,
+      id: occurrenceId,
       type: graphNode?.screenshot ? 'pageNode' : 'compactNode',
       position: { x: 0, y: 0 },
-      data: buildNodeData(graphNode, stepId, { flowStepNumber: index + 1 }),
+      data: buildNodeData(graphNode, stepId, {
+        nodeId: stepId,
+        flowStepNumber: index + 1,
+        flowOccurrenceId: occurrenceId,
+      }),
     };
   });
 
   return { nodes, edges };
+}
+
+function buildFlowStepOccurrenceId(flowIndex: number, stepIndex: number, stepId: string): string {
+  return `flow-${flowIndex}-step-${stepIndex}-${stepId}`;
 }
 
 export function buildTreeLayoutInput(graph: NavMapGraph, treeRootId: string): TreeLayoutInput {
@@ -225,6 +240,7 @@ function buildNodeData(
 ): Record<string, unknown> {
   return {
     label: node?.label ?? fallbackId ?? '',
+    nodeId: node?.id ?? fallbackId,
     route: node?.route ?? '',
     group: node?.group ?? '',
     screenshot: node?.screenshot,
@@ -235,7 +251,10 @@ function buildNodeData(
   };
 }
 
-function buildEdgeData(edge?: NavMapEdge): Record<string, unknown> {
+function buildEdgeData(
+  edge?: NavMapEdge,
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     label: edge?.label ?? '',
     edgeType: edge?.type ?? 'link',
@@ -243,6 +262,7 @@ function buildEdgeData(edge?: NavMapEdge): Record<string, unknown> {
     personas: edge?.personas,
     discovery: edge?.discovery,
     metadata: edge?.metadata,
+    ...extra,
   };
 }
 

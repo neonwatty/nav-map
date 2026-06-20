@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme, NavMapPreviewMode } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';
+import { getGraphNodeId } from '../utils/graphHelpers';
 import type { AnalyticsAdapter } from '../analytics/types';
 import type { WorkflowFilter } from '../workflowFilters';
 import { matchWorkflowFilter } from '../workflowFilters';
@@ -35,9 +36,12 @@ import { useNavMapInsights } from '../hooks/useNavMapInsights';
 import { useNavMapLayoutEffects } from '../hooks/useNavMapLayoutEffects';
 import { useNavMapNavigation } from '../hooks/useNavMapNavigation';
 import { useFlowAutoSelection } from '../hooks/useFlowAutoSelection';
+import { useLiveReadiness } from '../hooks/useLiveReadiness';
 import { NavMapErrorBoundary } from './NavMapErrorBoundary';
 import { ContainerWarning } from './ContainerWarning';
 import { NavMapShell } from './NavMapShell';
+
+const EMPTY_LIVE_URL_OVERRIDES: Record<string, string> = {};
 
 export interface NavMapProps {
   /** Graph data object (pass this OR graphUrl) */
@@ -116,6 +120,48 @@ function NavMapInner({
   const [previewMode, setPreviewMode] = usePersistentState<NavMapPreviewMode>(
     'nav-map:preview-mode',
     'screenshots'
+  );
+  const liveTargetScopeKey = useMemo(() => getLiveTargetScopeKey(graph), [graph]);
+  const [liveBaseUrlOverrides, setLiveBaseUrlOverrides] = usePersistentState<
+    Record<string, string>
+  >('nav-map:live-base-url-overrides', {});
+  const [liveUrlOverridesByGraph, setLiveUrlOverridesByGraph] = usePersistentState<
+    Record<string, Record<string, string>>
+  >('nav-map:live-url-overrides', {});
+  const liveBaseUrlOverride = liveBaseUrlOverrides[liveTargetScopeKey] ?? '';
+  const liveUrlOverrides = liveUrlOverridesByGraph[liveTargetScopeKey] ?? EMPTY_LIVE_URL_OVERRIDES;
+  const setLiveBaseUrlOverride = useCallback(
+    (url: string) => {
+      setLiveBaseUrlOverrides(prev => {
+        const next = { ...prev };
+        const normalized = url.trim();
+        if (normalized) next[liveTargetScopeKey] = normalized;
+        else delete next[liveTargetScopeKey];
+        return next;
+      });
+    },
+    [liveTargetScopeKey, setLiveBaseUrlOverrides]
+  );
+  const setLiveUrlOverride = useCallback(
+    (nodeId: string, url: string) => {
+      setLiveUrlOverridesByGraph(prev => {
+        const current = prev[liveTargetScopeKey] ?? {};
+        const nextForGraph = { ...current };
+        const normalized = url.trim();
+        if (normalized) nextForGraph[nodeId] = normalized;
+        else delete nextForGraph[nodeId];
+
+        const next = { ...prev };
+        if (Object.keys(nextForGraph).length > 0) next[liveTargetScopeKey] = nextForGraph;
+        else delete next[liveTargetScopeKey];
+        return next;
+      });
+    },
+    [liveTargetScopeKey, setLiveUrlOverridesByGraph]
+  );
+  const clearLiveUrlOverride = useCallback(
+    (nodeId: string) => setLiveUrlOverride(nodeId, ''),
+    [setLiveUrlOverride]
   );
   const [isAnimatingFlow, setIsAnimatingFlow] = useState(false);
   const [showHelp, setShowHelp] = useState(defaultShowHelp && !hideHelp);
@@ -228,6 +274,15 @@ function NavMapInner({
     galleryNodeIds,
     selectedFlowIndex,
   });
+  const { liveReadinessByNode, liveReadinessSummary } = useLiveReadiness({
+    graph,
+    previewMode,
+    viewMode,
+    selectedFlowIndex,
+    selectedNodeId: ctx.selectedNodeId,
+    liveBaseUrlOverride,
+    liveUrlOverrides,
+  });
 
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
@@ -325,7 +380,7 @@ function NavMapInner({
           return;
         }
       }
-      openGalleryForNode(node.id);
+      openGalleryForNode(getGraphNodeId(node));
     },
     [viewMode, pushSnapshot, setHierarchyExpandedGroups, openGalleryForNode]
   );
@@ -342,6 +397,8 @@ function NavMapInner({
     focusedGroupId, setFocusedGroupId, edgeMode, setEdgeMode, showSharedNav, setShowSharedNav,
     showRedirects, setShowRedirects, focusMode, setFocusMode, isAnimatingFlow, setIsAnimatingFlow,
     previewMode, setPreviewMode, searchQuery, showAnalytics, setShowAnalytics, showRouteHealth, setShowRouteHealth, showCoverage,
+    liveReadinessByNode, liveReadinessSummary,
+    liveBaseUrlOverride, setLiveBaseUrlOverride, liveUrlOverrides, setLiveUrlOverride, clearLiveUrlOverride,
     setShowCoverage, hasCoverageData, auditFocusLabel: auditFocus?.label ?? null,
     workflowFilter, setWorkflowFilter: handleWorkflowFilterChange,
     clearAuditFocus: () => setAuditFocus(null), walkthrough, layoutDone, nodes, styledNodes,
@@ -383,4 +440,9 @@ export function NavMap(props: NavMapProps) {
       </ContainerWarning>
     </NavMapErrorBoundary>
   );
+}
+
+function getLiveTargetScopeKey(graph: NavMapGraph | null): string {
+  if (!graph) return 'no-graph';
+  return [graph.meta.name, graph.meta.baseUrl, graph.meta.generatedBy].filter(Boolean).join('|');
 }

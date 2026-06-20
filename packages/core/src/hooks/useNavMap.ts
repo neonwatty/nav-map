@@ -1,5 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { NavMapGraph, GroupColors, EdgeMode, NavMapTheme, NavMapPreviewMode } from '../types';
+import type {
+  NavMapGraph,
+  GroupColors,
+  EdgeMode,
+  NavMapTheme,
+  NavMapPreviewMode,
+  NavMapLiveReadinessByNode,
+  NavMapLiveReadinessSummary,
+} from '../types';
 import { getGroupColors as getColors } from '../utils/colors';
 
 export interface NavMapContextValue {
@@ -13,6 +21,13 @@ export interface NavMapContextValue {
   edgeMode: EdgeMode;
   showCoverage: boolean;
   previewMode: NavMapPreviewMode;
+  liveReadinessByNode?: NavMapLiveReadinessByNode;
+  liveReadinessSummary?: NavMapLiveReadinessSummary;
+  liveBaseUrlOverride?: string;
+  setLiveBaseUrlOverride?: (url: string) => void;
+  liveUrlOverrides?: Record<string, string>;
+  setLiveUrlOverride?: (nodeId: string, url: string) => void;
+  clearLiveUrlOverride?: (nodeId: string) => void;
 }
 
 const defaultContext: NavMapContextValue = {
@@ -26,6 +41,22 @@ const defaultContext: NavMapContextValue = {
   edgeMode: 'smooth',
   showCoverage: false,
   previewMode: 'screenshots',
+  liveReadinessByNode: {},
+  liveReadinessSummary: {
+    scope: 'graph',
+    total: 0,
+    checking: 0,
+    reachable: 0,
+    offline: 0,
+    static: 0,
+    blocked: 0,
+    unavailable: 0,
+  },
+  liveBaseUrlOverride: '',
+  setLiveBaseUrlOverride: () => {},
+  liveUrlOverrides: {},
+  setLiveUrlOverride: () => {},
+  clearLiveUrlOverride: () => {},
 };
 
 export const NavMapContext = createContext<NavMapContextValue>(defaultContext);
@@ -38,7 +69,18 @@ export function useNavMapState(
   graph: NavMapGraph | null,
   screenshotBasePath: string,
   theme?: NavMapTheme
-): Omit<NavMapContextValue, 'focusedGroupId' | 'edgeMode' | 'showCoverage' | 'previewMode'> {
+): Omit<
+  NavMapContextValue,
+  | 'focusedGroupId'
+  | 'edgeMode'
+  | 'showCoverage'
+  | 'previewMode'
+  | 'liveBaseUrlOverride'
+  | 'setLiveBaseUrlOverride'
+  | 'liveUrlOverrides'
+  | 'setLiveUrlOverride'
+  | 'clearLiveUrlOverride'
+> {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;

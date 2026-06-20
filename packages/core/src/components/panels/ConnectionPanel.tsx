@@ -1,7 +1,14 @@
 import { useMemo } from 'react';
-import type { ReactNode } from 'react';
-import type { NavMapNode, NavMapEdge, NavMapWorkflowMetadata } from '../../types';
+import type { CSSProperties, ChangeEvent, ReactNode } from 'react';
+import type {
+  NavMapNode,
+  NavMapEdge,
+  NavMapWorkflowMetadata,
+  NavMapPreviewMode,
+  NavMapLiveReadinessStatus,
+} from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
+import { getLiveReadinessLabel } from '../../hooks/useLiveReadiness';
 import {
   getArtifactKindLabel,
   getNodePreviewState,
@@ -26,7 +33,19 @@ export function ConnectionPanel({
   onNavigate,
   isNarrow = false,
 }: ConnectionPanelProps) {
-  const { isDark, getGroupColors, screenshotBasePath, graph, previewMode } = useNavMapContext();
+  const {
+    isDark,
+    getGroupColors,
+    screenshotBasePath,
+    graph,
+    previewMode,
+    liveReadinessByNode = {},
+    liveBaseUrlOverride = '',
+    setLiveBaseUrlOverride,
+    liveUrlOverrides = {},
+    setLiveUrlOverride,
+    clearLiveUrlOverride,
+  } = useNavMapContext();
   const colors = getGroupColors(node.group);
 
   const { incoming, outgoing } = useMemo(() => {
@@ -44,12 +63,29 @@ export function ConnectionPanel({
   }, [node.id, edges, nodes]);
 
   const screenshotSrc = node.screenshot ? `${screenshotBasePath}/${node.screenshot}` : undefined;
-  const previewState = getNodePreviewState(node, graph ?? undefined);
+  const previewState = getNodePreviewState(node, graph ?? undefined, {
+    appBaseUrl: liveBaseUrlOverride,
+    nodeLiveUrls: liveUrlOverrides,
+  });
   const showLiveIframe =
     previewMode === 'live' &&
     previewState.status === 'available' &&
     previewState.liveMode === 'iframe' &&
     Boolean(previewState.liveUrl);
+  const liveReadiness = previewMode === 'live' ? liveReadinessByNode[node.id] : undefined;
+  const liveReadinessMatchesTarget =
+    Boolean(previewState.liveUrl) && liveReadiness?.liveUrl === previewState.liveUrl;
+  const liveTargetStatus: NavMapLiveReadinessStatus = liveReadinessMatchesTarget
+    ? (liveReadiness?.status ?? 'idle')
+    : showLiveIframe
+      ? 'checking'
+      : (liveReadiness?.status ?? 'idle');
+  const renderLiveIframe = showLiveIframe && liveTargetStatus === 'reachable';
+  const showLiveUnavailableState =
+    showLiveIframe &&
+    (liveTargetStatus === 'checking' ||
+      liveTargetStatus === 'offline' ||
+      liveTargetStatus === 'unavailable');
   const workflowMetadata = node.metadata;
   const detailsLabel =
     workflowMetadata?.kind === 'prototype-surface' ? 'Surface Details' : 'Page Details';
@@ -129,11 +165,11 @@ export function ConnectionPanel({
           overflow: 'hidden',
         }}
       >
-        {showLiveIframe ? (
+        {renderLiveIframe ? (
           <iframe
             title={`Live preview: ${node.label}`}
             src={previewState.liveUrl}
-            sandbox="allow-scripts allow-forms"
+            sandbox={getLiveIframeSandbox(previewState)}
             referrerPolicy="no-referrer"
             allow=""
             style={{
@@ -142,6 +178,15 @@ export function ConnectionPanel({
               border: 0,
               background: isDark ? '#101018' : '#fff',
             }}
+          />
+        ) : showLiveUnavailableState ? (
+          <LiveTargetOfflineState
+            label={node.label}
+            liveUrl={previewState.liveUrl}
+            screenshotSrc={screenshotSrc}
+            status={liveTargetStatus}
+            message={liveReadinessMatchesTarget ? liveReadiness?.message : undefined}
+            isDark={isDark}
           />
         ) : screenshotSrc ? (
           <img
@@ -167,9 +212,22 @@ export function ConnectionPanel({
         }}
       >
         <WorkflowMetadataSection
+          node={node}
           metadata={workflowMetadata}
           previewState={previewState}
+          previewMode={previewMode}
+          liveTargetStatus={liveTargetStatus}
           isDark={isDark}
+          graphBaseUrl={graph?.meta.baseUrl}
+          liveBaseUrlOverride={liveBaseUrlOverride}
+          nodeLiveUrlOverride={liveUrlOverrides[node.id] ?? ''}
+          onLiveBaseUrlChange={setLiveBaseUrlOverride}
+          onNodeLiveUrlChange={
+            setLiveUrlOverride ? url => setLiveUrlOverride(node.id, url) : undefined
+          }
+          onClearNodeLiveUrl={
+            clearLiveUrlOverride ? () => clearLiveUrlOverride(node.id) : undefined
+          }
         />
 
         <ConnectionListSection
@@ -192,18 +250,53 @@ export function ConnectionPanel({
 }
 
 function WorkflowMetadataSection({
+  node,
   metadata,
   previewState,
+  previewMode,
+  liveTargetStatus,
   isDark,
+  graphBaseUrl,
+  liveBaseUrlOverride,
+  nodeLiveUrlOverride,
+  onLiveBaseUrlChange,
+  onNodeLiveUrlChange,
+  onClearNodeLiveUrl,
 }: {
+  node: NavMapNode;
   metadata?: NavMapWorkflowMetadata;
   previewState: NavMapNodePreviewState;
+  previewMode: NavMapPreviewMode;
+  liveTargetStatus: NavMapLiveReadinessStatus;
   isDark: boolean;
+  graphBaseUrl?: string;
+  liveBaseUrlOverride: string;
+  nodeLiveUrlOverride: string;
+  onLiveBaseUrlChange?: (url: string) => void;
+  onNodeLiveUrlChange?: (url: string) => void;
+  onClearNodeLiveUrl?: () => void;
 }) {
   if (!metadata || !hasWorkflowMetadata(metadata)) {
     return (
       <div style={{ marginBottom: 16 }}>
-        <PreviewStatusBlock previewState={previewState} isDark={isDark} />
+        <PreviewStatusBlock
+          previewState={previewState}
+          previewMode={previewMode}
+          liveTargetStatus={liveTargetStatus}
+          isDark={isDark}
+        />
+        <LiveTargetEditor
+          node={node}
+          previewState={previewState}
+          liveTargetStatus={liveTargetStatus}
+          isDark={isDark}
+          graphBaseUrl={graphBaseUrl}
+          liveBaseUrlOverride={liveBaseUrlOverride}
+          nodeLiveUrlOverride={nodeLiveUrlOverride}
+          onLiveBaseUrlChange={onLiveBaseUrlChange}
+          onNodeLiveUrlChange={onNodeLiveUrlChange}
+          onClearNodeLiveUrl={onClearNodeLiveUrl}
+        />
       </div>
     );
   }
@@ -215,7 +308,24 @@ function WorkflowMetadataSection({
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <PreviewStatusBlock previewState={previewState} isDark={isDark} />
+      <PreviewStatusBlock
+        previewState={previewState}
+        previewMode={previewMode}
+        liveTargetStatus={liveTargetStatus}
+        isDark={isDark}
+      />
+      <LiveTargetEditor
+        node={node}
+        previewState={previewState}
+        liveTargetStatus={liveTargetStatus}
+        isDark={isDark}
+        graphBaseUrl={graphBaseUrl}
+        liveBaseUrlOverride={liveBaseUrlOverride}
+        nodeLiveUrlOverride={nodeLiveUrlOverride}
+        onLiveBaseUrlChange={onLiveBaseUrlChange}
+        onNodeLiveUrlChange={onNodeLiveUrlChange}
+        onClearNodeLiveUrl={onClearNodeLiveUrl}
+      />
 
       {metadata.purpose && (
         <PanelBlock label="Purpose" isDark={isDark}>
@@ -300,28 +410,285 @@ function WorkflowMetadataSection({
   );
 }
 
+function LiveTargetOfflineState({
+  label,
+  liveUrl,
+  screenshotSrc,
+  status,
+  message,
+  isDark,
+}: {
+  label: string;
+  liveUrl?: string;
+  screenshotSrc?: string;
+  status: NavMapLiveReadinessStatus;
+  message?: string;
+  isDark: boolean;
+}) {
+  const fallbackMessage =
+    status === 'checking'
+      ? 'Checking the live target before opening the inline preview.'
+      : `Start the local app server for ${label} or enter a reachable Live Target.`;
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        position: 'relative',
+        color: isDark ? '#fca5a5' : '#991b1b',
+        background: isDark ? '#180f12' : '#fff1f2',
+        textAlign: 'center',
+      }}
+    >
+      {screenshotSrc && (
+        <img
+          src={screenshotSrc}
+          alt={label}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.24,
+            filter: 'grayscale(0.3)',
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: screenshotSrc ? 'absolute' : 'relative',
+          inset: screenshotSrc ? 0 : undefined,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: 8,
+          padding: 18,
+          background: screenshotSrc
+            ? isDark
+              ? 'rgba(24,15,18,0.86)'
+              : 'rgba(255,241,242,0.9)'
+            : undefined,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 800 }}>
+          {status === 'checking' ? 'Checking live target' : 'Live target unavailable'}
+        </div>
+        <div style={{ fontSize: 12, lineHeight: 1.4 }}>{message ?? fallbackMessage}</div>
+        {liveUrl && <CodeLine value={liveUrl} isDark={isDark} />}
+      </div>
+    </div>
+  );
+}
+
+function getLiveIframeSandbox(previewState: NavMapNodePreviewState): string {
+  if (previewState.artifactKind === 'app') return 'allow-scripts allow-forms allow-same-origin';
+  return 'allow-scripts allow-forms';
+}
+
 function PreviewStatusBlock({
   previewState,
+  previewMode,
+  liveTargetStatus,
   isDark,
 }: {
   previewState: NavMapNodePreviewState;
+  previewMode: NavMapPreviewMode;
+  liveTargetStatus: NavMapLiveReadinessStatus;
   isDark: boolean;
 }) {
   const previewLimitations = previewState.limitations;
+  const artifactKind = getArtifactKindLabel(previewState.artifactKind);
+  const liveStatus = getPreviewStatusLabel(previewState);
 
   return (
     <PanelBlock label="Preview Status" isDark={isDark}>
       <div style={{ display: 'grid', gap: 6 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#d0d4e0' : '#2f3748' }}>
-          {getArtifactKindLabel(previewState.artifactKind)} / {getPreviewStatusLabel(previewState)}
+          {artifactKind} / {liveStatus}
+        </div>
+        <div style={{ display: 'grid', gap: 4 }}>
+          <MetadataRow label="Render Mode" value={formatPreviewMode(previewMode)} isDark={isDark} />
+          <MetadataRow label="Artifact" value={artifactKind} isDark={isDark} />
+          <MetadataRow label="Live Status" value={liveStatus} isDark={isDark} />
+          {liveTargetStatus !== 'idle' && (
+            <MetadataRow
+              label="Target Health"
+              value={formatLiveTargetStatus(liveTargetStatus)}
+              isDark={isDark}
+              accent={getLiveTargetAccent(liveTargetStatus)}
+            />
+          )}
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#cbd1df' : '#354052' }}>
-          {getPreviewStatusMessage(previewState)}
+          {liveTargetStatus === 'offline' || liveTargetStatus === 'unavailable'
+            ? 'Live target is unavailable. Start the local app server or set a different Live Target.'
+            : liveTargetStatus === 'checking'
+              ? 'Checking the live target before opening the inline preview.'
+              : getPreviewStatusMessage(previewState)}
         </div>
         {previewLimitations.length > 0 && <BadgeList values={previewLimitations} isDark={isDark} />}
       </div>
     </PanelBlock>
   );
+}
+
+function LiveTargetEditor({
+  node,
+  previewState,
+  liveTargetStatus,
+  isDark,
+  graphBaseUrl,
+  liveBaseUrlOverride,
+  nodeLiveUrlOverride,
+  onLiveBaseUrlChange,
+  onNodeLiveUrlChange,
+  onClearNodeLiveUrl,
+}: {
+  node: NavMapNode;
+  previewState: NavMapNodePreviewState;
+  liveTargetStatus: NavMapLiveReadinessStatus;
+  isDark: boolean;
+  graphBaseUrl?: string;
+  liveBaseUrlOverride: string;
+  nodeLiveUrlOverride: string;
+  onLiveBaseUrlChange?: (url: string) => void;
+  onNodeLiveUrlChange?: (url: string) => void;
+  onClearNodeLiveUrl?: () => void;
+}) {
+  const isApp = previewState.artifactKind === 'app';
+  const inputLabel = isApp ? 'App base URL' : 'Node live URL';
+  const inputValue = isApp ? liveBaseUrlOverride : nodeLiveUrlOverride;
+  const placeholder = isApp
+    ? (graphBaseUrl ?? 'http://localhost:3000')
+    : (previewState.liveUrl ?? '');
+  const onChange = isApp ? onLiveBaseUrlChange : onNodeLiveUrlChange;
+  const canClear = isApp ? Boolean(liveBaseUrlOverride) : Boolean(nodeLiveUrlOverride);
+  const sourceLabel = formatLiveUrlSource(previewState.liveUrlSource);
+  const resolvedTarget = previewState.liveUrl ?? 'No live target';
+
+  return (
+    <PanelBlock label="Live Target" isDark={isDark}>
+      <div style={{ display: 'grid', gap: 8 }}>
+        <label style={{ display: 'grid', gap: 5 }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: isDark ? '#7f8798' : '#687386',
+              fontWeight: 600,
+            }}
+          >
+            {inputLabel}
+          </span>
+          <input
+            value={inputValue}
+            placeholder={placeholder}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value)}
+            disabled={!onChange}
+            spellCheck={false}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              border: `1px solid ${isDark ? '#2a2f3d' : '#d8dee9'}`,
+              borderRadius: 6,
+              background: isDark ? '#0c0f18' : '#fff',
+              color: isDark ? '#d0d4e0' : '#2f3748',
+              fontFamily: "'SF Mono', Monaco, monospace",
+              fontSize: 12,
+              padding: '7px 9px',
+              outline: 'none',
+            }}
+          />
+        </label>
+
+        <MetadataRow label="Source" value={sourceLabel} isDark={isDark} />
+        {liveTargetStatus !== 'idle' && (
+          <MetadataRow
+            label="Target Health"
+            value={formatLiveTargetStatus(liveTargetStatus)}
+            isDark={isDark}
+            accent={getLiveTargetAccent(liveTargetStatus)}
+          />
+        )}
+        {(liveTargetStatus === 'offline' || liveTargetStatus === 'unavailable') && (
+          <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#fca5a5' : '#b91c1c' }}>
+            Local target is not reachable. Start the app server for this URL or enter a reachable
+            live target.
+          </div>
+        )}
+        <div style={{ display: 'grid', gap: 5 }}>
+          <span style={{ fontSize: 11, color: isDark ? '#7f8798' : '#687386', fontWeight: 600 }}>
+            Resolved URL
+          </span>
+          <CodeLine value={resolvedTarget} isDark={isDark} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          {canClear && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isApp) onLiveBaseUrlChange?.('');
+                else onClearNodeLiveUrl?.();
+              }}
+              style={smallActionButtonStyle(isDark)}
+            >
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              previewState.liveUrl &&
+              window.open(previewState.liveUrl, '_blank', 'noopener,noreferrer')
+            }
+            disabled={!previewState.liveUrl}
+            style={smallActionButtonStyle(isDark, !previewState.liveUrl)}
+            title={`Open live target for ${node.label}`}
+          >
+            Open
+          </button>
+        </div>
+      </div>
+    </PanelBlock>
+  );
+}
+
+function formatLiveUrlSource(source: NavMapNodePreviewState['liveUrlSource']): string {
+  if (source === 'local-node-override') return 'Local node override';
+  if (source === 'local-base-override') return 'Local app base override';
+  if (source === 'manifest') return 'Manifest live URL';
+  if (source === 'graph-base') return 'Graph base URL';
+  return 'Unavailable';
+}
+
+function formatLiveTargetStatus(status: NavMapLiveReadinessStatus): string {
+  return getLiveReadinessLabel(status);
+}
+
+function getLiveTargetAccent(status: NavMapLiveReadinessStatus): string | undefined {
+  if (status === 'offline') return '#ef4444';
+  if (status === 'unavailable') return '#a855f7';
+  if (status === 'blocked') return '#f97316';
+  if (status === 'reachable') return '#22c55e';
+  return undefined;
+}
+
+function smallActionButtonStyle(isDark: boolean, disabled = false): CSSProperties {
+  return {
+    border: `1px solid ${isDark ? '#2a2f3d' : '#d8dee9'}`,
+    borderRadius: 6,
+    background: disabled ? 'transparent' : isDark ? '#151a25' : '#f6f8fb',
+    color: disabled ? (isDark ? '#555c6b' : '#9aa3b1') : isDark ? '#d0d4e0' : '#2f3748',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    fontSize: 12,
+    fontWeight: 600,
+    padding: '5px 9px',
+  };
+}
+
+function formatPreviewMode(mode: NavMapPreviewMode): string {
+  return mode === 'live' ? 'Live render mode' : 'Screenshot render mode';
 }
 
 function PanelBlock({

@@ -80,6 +80,39 @@ export type NavMapPreviewMode = 'screenshots' | 'live';
 
 export type NavMapLivePreviewStatus = 'available' | 'static' | 'blocked';
 
+export type NavMapLiveReadinessStatus =
+  | 'idle'
+  | 'checking'
+  | 'reachable'
+  | 'offline'
+  | 'static'
+  | 'blocked'
+  | 'unavailable';
+
+export type NavMapLiveReadinessScope = 'current-flow' | 'graph';
+
+export interface NavMapLiveReadiness {
+  nodeId: string;
+  status: NavMapLiveReadinessStatus;
+  artifactKind: NavMapArtifactKind;
+  liveUrl?: string;
+  liveUrlSource?: 'manifest' | 'graph-base' | 'local-base-override' | 'local-node-override';
+  message: string;
+}
+
+export type NavMapLiveReadinessByNode = Record<string, NavMapLiveReadiness>;
+
+export interface NavMapLiveReadinessSummary {
+  scope: NavMapLiveReadinessScope;
+  total: number;
+  checking: number;
+  reachable: number;
+  offline: number;
+  static: number;
+  blocked: number;
+  unavailable: number;
+}
+
 export type NavMapLivePreviewBlockedReason =
   | 'missing-url'
   | 'not-embeddable'

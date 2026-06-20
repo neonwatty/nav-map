@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NavMap } from './NavMap';
 import type { NavMapGraph } from '../types';
@@ -79,6 +79,10 @@ const workflowGraph: NavMapGraph = {
 };
 
 describe('NavMap props', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(() => {
     window.localStorage.clear();
 
@@ -252,18 +256,83 @@ describe('NavMap props', () => {
   it('renders a global preview mode toggle', async () => {
     render(<NavMap graph={minimalGraph} />);
 
-    expect(await screen.findByRole('button', { name: 'Use screenshot previews' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Use live previews where available' })).toBeTruthy();
+    expect(await screen.findByRole('group', { name: 'Preview render mode' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
+    ).toBeTruthy();
+  });
+
+  it('keeps the preview mode toolbar above workflow chrome', async () => {
+    const { container } = render(<NavMap graph={flowGraph} defaultViewMode="flow" />);
+
+    const previewModeGroup = await screen.findByRole('group', { name: 'Preview render mode' });
+    const flowBanner = Array.from(container.querySelectorAll('div')).find(
+      element => element.textContent === 'Flow: Primary Signup'
+    );
+    if (!flowBanner) throw new Error('Expected flow status banner to render');
+
+    const toolbar = previewModeGroup.parentElement;
+
+    expect(toolbar?.style.zIndex).toBe('60');
+    expect(flowBanner.style.zIndex).toBe('20');
+    expect(Number(toolbar?.style.zIndex)).toBeGreaterThan(Number(flowBanner.style.zIndex));
   });
 
   it('persists the live preview mode preference', async () => {
     render(<NavMap graph={minimalGraph} />);
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Use live previews where available' })
+      await screen.findByRole('button', {
+        name: 'Render live app or mockup previews where available',
+      })
     );
 
     expect(window.localStorage.getItem('nav-map:preview-mode')).toBe('"live"');
+  });
+
+  it('runs a scoped live readiness preflight from the Live toggle', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response(null, { status: 200 })))
+    );
+
+    render(
+      <NavMap
+        graph={{
+          ...minimalGraph,
+          meta: {
+            ...minimalGraph.meta,
+            baseUrl: 'http://localhost:3000',
+          },
+          nodes: [
+            { id: 'n1', route: '/', label: 'Home', group: 'main' },
+            {
+              id: 'concept',
+              route: 'prototype://concept',
+              label: 'Concept',
+              group: 'main',
+              metadata: { kind: 'prototype-surface', surfaceType: 'generated-image' },
+            },
+          ],
+        }}
+      />
+    );
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Render live app or mockup previews where available',
+      })
+    );
+
+    const summary = await screen.findByLabelText('Live readiness summary');
+
+    await waitFor(() => {
+      expect(summary.textContent).toContain('1 ready');
+      expect(summary.textContent).toContain('1 static');
+    });
   });
 
   it('loads the persisted live preview mode preference', async () => {
@@ -275,7 +344,9 @@ describe('NavMap props', () => {
 
     expect(
       (
-        await screen.findByRole('button', { name: 'Use live previews where available' })
+        await screen.findByRole('button', {
+          name: 'Render live app or mockup previews where available',
+        })
       ).getAttribute('aria-pressed')
     ).toBe('true');
   });
