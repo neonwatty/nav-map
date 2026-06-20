@@ -78,6 +78,14 @@ const workflowGraph: NavMapGraph = {
   edges: [{ id: 'home-dashboard', source: 'home', target: 'dashboard', type: 'link' }],
 };
 
+const secondWorkflowGraph: NavMapGraph = {
+  ...workflowGraph,
+  meta: {
+    ...workflowGraph.meta,
+    name: 'Second Workflow App',
+  },
+};
+
 describe('NavMap props', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -173,6 +181,21 @@ describe('NavMap props', () => {
     expect(screen.getByDisplayValue('Primary Signup')).toBeTruthy();
   });
 
+  it('starts and stops the selected flow animation from the toolbar', async () => {
+    render(<NavMap graph={flowGraph} defaultViewMode="flow" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Animate' }));
+
+    expect(await screen.findByText('Animating: Primary Signup')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Animating: Primary Signup')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: 'Animate' })).toBeTruthy();
+  });
+
   it('uses workflow layout default view mode when no prop is provided', async () => {
     render(
       <NavMap
@@ -256,19 +279,19 @@ describe('NavMap props', () => {
   it('renders a global preview mode toggle', async () => {
     render(<NavMap graph={minimalGraph} />);
 
-    expect(await screen.findByRole('group', { name: 'Preview render mode' })).toBeTruthy();
+    expect(await screen.findByRole('group', { name: 'Preview source' })).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+      screen.getByRole('button', { name: 'Show saved screenshots and static surface images' })
     ).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
+      screen.getByRole('button', { name: 'Try live app or mockup targets where available' })
     ).toBeTruthy();
   });
 
   it('keeps the preview mode toolbar above workflow chrome', async () => {
     const { container } = render(<NavMap graph={flowGraph} defaultViewMode="flow" />);
 
-    const previewModeGroup = await screen.findByRole('group', { name: 'Preview render mode' });
+    const previewModeGroup = await screen.findByRole('group', { name: 'Preview source' });
     const flowBanner = Array.from(container.querySelectorAll('div')).find(
       element => element.textContent === 'Flow: Primary Signup'
     );
@@ -277,23 +300,25 @@ describe('NavMap props', () => {
     const toolbar = previewModeGroup.parentElement;
 
     expect(toolbar?.style.zIndex).toBe('60');
+    expect(toolbar?.style.flexWrap).toBe('wrap');
+    expect(toolbar?.style.maxWidth).toBe('calc(100% - 24px)');
     expect(flowBanner.style.zIndex).toBe('20');
     expect(Number(toolbar?.style.zIndex)).toBeGreaterThan(Number(flowBanner.style.zIndex));
   });
 
-  it('persists the live preview mode preference', async () => {
+  it('persists the target preview mode preference per graph', async () => {
     render(<NavMap graph={minimalGraph} />);
 
     fireEvent.click(
       await screen.findByRole('button', {
-        name: 'Render live app or mockup previews where available',
+        name: 'Try live app or mockup targets where available',
       })
     );
 
-    expect(window.localStorage.getItem('nav-map:preview-mode')).toBe('"live"');
+    expect(window.localStorage.getItem('nav-map:graph|Test|manual:preview-mode')).toBe('"live"');
   });
 
-  it('runs a scoped live readiness preflight from the Live toggle', async () => {
+  it('runs a scoped target preflight from the Target toggle', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(new Response(null, { status: 200 })))
@@ -323,11 +348,11 @@ describe('NavMap props', () => {
 
     fireEvent.click(
       await screen.findByRole('button', {
-        name: 'Render live app or mockup previews where available',
+        name: 'Try live app or mockup targets where available',
       })
     );
 
-    const summary = await screen.findByLabelText('Live readiness summary');
+    const summary = await screen.findByLabelText('Target preflight summary');
 
     await waitFor(() => {
       expect(summary.textContent).toContain('1 ready');
@@ -335,8 +360,8 @@ describe('NavMap props', () => {
     });
   });
 
-  it('loads the persisted live preview mode preference', async () => {
-    window.localStorage.setItem('nav-map:preview-mode', '"live"');
+  it('loads the persisted target preview mode preference for the matching graph only', async () => {
+    window.localStorage.setItem('nav-map:graph|Test|manual:preview-mode', '"live"');
 
     const { unmount } = render(<NavMap graph={minimalGraph} />);
     unmount();
@@ -345,9 +370,56 @@ describe('NavMap props', () => {
     expect(
       (
         await screen.findByRole('button', {
-          name: 'Render live app or mockup previews where available',
+          name: 'Try live app or mockup targets where available',
         })
       ).getAttribute('aria-pressed')
     ).toBe('true');
+  });
+
+  it('does not carry preview mode preference across graph identities', async () => {
+    const { rerender } = render(<NavMap graph={minimalGraph} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Try live app or mockup targets where available',
+      })
+    );
+    expect(
+      screen
+        .getByRole('button', {
+          name: 'Try live app or mockup targets where available',
+        })
+        .getAttribute('aria-pressed')
+    ).toBe('true');
+
+    rerender(<NavMap graph={secondWorkflowGraph} />);
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('button', { name: 'Show saved screenshots and static surface images' })
+          .getAttribute('aria-pressed')
+      ).toBe('true');
+    });
+  });
+
+  it('clears transient search and workflow filter state when the graph identity changes', async () => {
+    const { rerender } = render(<NavMap graph={workflowGraph} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter workflow by auth: Speaker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.change(screen.getByPlaceholderText('Search pages...'), {
+      target: { value: 'dashboard' },
+    });
+
+    expect(screen.getByText('Workflow filter: Auth: Speaker')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Search pages...')).toBeTruthy();
+
+    rerender(<NavMap graph={secondWorkflowGraph} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Workflow filter: Auth: Speaker')).toBeNull();
+      expect(screen.queryByPlaceholderText('Search pages...')).toBeNull();
+    });
   });
 });

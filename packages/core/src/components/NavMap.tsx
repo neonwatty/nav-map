@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, CSSProperties, ErrorInfo, MouseEvent } from 'react';
 import {
   ReactFlowProvider,
@@ -96,6 +96,7 @@ function NavMapInner({
   onHelpClose,
 }: NavMapProps) {
   const graph = useNavMapGraphSource({ graph: graphProp, graphUrl, onValidationError });
+  const graphStateScopeKey = useMemo(() => getGraphStateScopeKey(graph), [graph]);
   const workflowLayout = graph?.meta.workflow?.layout;
   const initialViewMode = defaultViewMode ?? workflowLayout?.defaultViewMode ?? 'hierarchy';
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -105,7 +106,7 @@ function NavMapInner({
   const [focusMode, setFocusMode] = usePersistentState('nav-map:focus-mode', false);
   const [showRedirects, setShowRedirects] = usePersistentState('nav-map:show-redirects', false);
   const [viewMode, setViewMode] = usePersistentState<ViewMode>(
-    'nav-map:view-mode',
+    `nav-map:${graphStateScopeKey}:view-mode`,
     initialViewMode
   );
   const [selectedFlowIndex, setSelectedFlowIndex] = useState<number | null>(null);
@@ -114,11 +115,11 @@ function NavMapInner({
   const resolvedTreeRootId =
     treeRootId ?? resolveDefaultTreeRootId(graph, workflowLayout?.defaultTreeRootId);
   const [edgeMode, setEdgeMode] = usePersistentState<EdgeMode>(
-    'nav-map:edge-mode',
+    `nav-map:${graphStateScopeKey}:edge-mode`,
     defaultEdgeMode
   );
   const [previewMode, setPreviewMode] = usePersistentState<NavMapPreviewMode>(
-    'nav-map:preview-mode',
+    `nav-map:${graphStateScopeKey}:preview-mode`,
     'screenshots'
   );
   const liveTargetScopeKey = useMemo(() => getLiveTargetScopeKey(graph), [graph]);
@@ -169,7 +170,7 @@ function NavMapInner({
   const [searchQuery, setSearchQuery] = useState('');
   const { contextMenu, onNodeContextMenu, closeContextMenu } = useNavMapContextMenu();
   const [showRouteHealth, setShowRouteHealth] = usePersistentState(
-    'nav-map:show-route-health',
+    `nav-map:${graphStateScopeKey}:show-route-health`,
     false
   );
   const {
@@ -345,6 +346,18 @@ function NavMapInner({
     [graph, workflowFilter]
   );
 
+  useEffect(() => {
+    ctx.setSelectedNodeId(null);
+    setWorkflowFilter(null);
+    setTreeRootId(null);
+    setAuditFocus(null);
+    guardedSetShowSearch(false);
+    setSearchQuery('');
+    walkthrough.clear();
+    closeGallery();
+    setIsAnimatingFlow(false);
+  }, [graphStateScopeKey]);
+
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
     edges,
@@ -445,4 +458,11 @@ export function NavMap(props: NavMapProps) {
 function getLiveTargetScopeKey(graph: NavMapGraph | null): string {
   if (!graph) return 'no-graph';
   return [graph.meta.name, graph.meta.baseUrl, graph.meta.generatedBy].filter(Boolean).join('|');
+}
+
+function getGraphStateScopeKey(graph: NavMapGraph | null): string {
+  if (!graph) return 'no-graph';
+  return ['graph', graph.meta.name, graph.meta.baseUrl, graph.meta.generatedBy]
+    .filter(Boolean)
+    .join('|');
 }

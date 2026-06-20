@@ -65,6 +65,17 @@ describe('RouteHealthPanel', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('sits below the wrapped toolbar clearance so header controls stay clickable', () => {
+    const { container } = render(
+      <RouteHealthPanel graph={graph} isDark={false} onClose={vi.fn()} onNavigate={vi.fn()} />
+    );
+
+    const panel = container.querySelector('aside');
+
+    expect(panel?.style.top).toBe('104px');
+    expect(panel?.style.maxHeight).toBe('calc(100vh - 128px)');
+  });
+
   it('copies the route health report', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });

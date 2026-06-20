@@ -9,7 +9,7 @@ describe('PreviewModeToggle', () => {
     render(<PreviewModeToggle value="screenshots" isDark={false} onChange={onChange} />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
+      screen.getByRole('button', { name: 'Try live app or mockup targets where available' })
     );
 
     expect(onChange).toHaveBeenCalledWith('live');
@@ -21,7 +21,7 @@ describe('PreviewModeToggle', () => {
     render(<PreviewModeToggle value="live" isDark={false} onChange={onChange} />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+      screen.getByRole('button', { name: 'Show saved screenshots and static surface images' })
     );
 
     expect(onChange).toHaveBeenCalledWith('screenshots');
@@ -33,19 +33,19 @@ describe('PreviewModeToggle', () => {
     render(<PreviewModeToggle value="live" isDark={false} onChange={onChange} />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
+      screen.getByRole('button', { name: 'Try live app or mockup targets where available' })
     );
 
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('labels the control as a preview render mode selector', () => {
+  it('labels the control as a preview source selector', () => {
     render(<PreviewModeToggle value="screenshots" isDark={false} onChange={() => {}} />);
 
-    expect(screen.getByRole('group', { name: 'Preview render mode' })).toBeTruthy();
-    expect(screen.getByText('Render')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Preview source' })).toBeTruthy();
+    expect(screen.getByText('Preview')).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+      screen.getByRole('button', { name: 'Show saved screenshots and static surface images' })
     ).toBeTruthy();
   });
 });

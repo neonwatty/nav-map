@@ -87,20 +87,20 @@ export function getArtifactKindLabel(kind: NavMapArtifactKind): string {
 }
 
 export function getPreviewStatusLabel(state: Pick<NavMapNodePreviewState, 'status'>): string {
-  if (state.status === 'available') return 'Live';
-  if (state.status === 'blocked') return 'Blocked';
-  return 'Static';
+  if (state.status === 'available') return 'Target Configured';
+  if (state.status === 'blocked') return 'Target Blocked';
+  return 'Static Reference';
 }
 
 export function getPreviewStatusMessage(state: NavMapNodePreviewState): string {
   if (state.status === 'available' && state.artifactKind === 'app') {
-    return 'Live app route preview is available.';
+    return 'A live app route target is configured. Saved screenshots remain the current preview until Target mode verifies the iframe.';
   }
   if (state.status === 'available' && state.artifactKind === 'mockup') {
-    return 'Live mockup preview is available.';
+    return 'A live mockup target is configured. Saved screenshots remain the current preview until Target mode verifies the iframe.';
   }
   if (state.status === 'available' && state.artifactKind === 'prototype') {
-    return 'Live prototype preview is available.';
+    return 'A live prototype target is configured. Saved screenshots remain the current preview until Target mode verifies the iframe.';
   }
   if (state.status === 'static' && state.artifactKind === 'prototype') {
     return 'Static reference surface. This prototype has no live preview.';
@@ -108,7 +108,7 @@ export function getPreviewStatusMessage(state: NavMapNodePreviewState): string {
   if (state.status === 'static') {
     return 'Static screenshot preview only.';
   }
-  return `Live preview blocked because ${formatBlockedReason(state.blockedReason)}.`;
+  return `Live target blocked because ${formatBlockedReason(state.blockedReason)}.`;
 }
 
 function deriveAppLiveUrl(

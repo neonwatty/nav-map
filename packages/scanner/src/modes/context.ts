@@ -48,6 +48,22 @@ export interface WorkflowContextNode {
   sourceHints?: readonly string[];
 }
 
+export interface WorkflowContextSurface {
+  id: string;
+  label: string;
+  type: string;
+  section?: string;
+  purpose?: string;
+  screenshot?: string;
+  sourceHints?: readonly string[];
+  preview?: {
+    liveUrl?: string;
+    liveMode?: string;
+    liveStatus?: string;
+    limitations?: readonly string[];
+  };
+}
+
 export interface WorkflowContextFlow {
   name: string;
   steps: readonly string[];
@@ -58,6 +74,7 @@ export interface WorkflowContextManifest {
   name: string;
   baseUrl?: string;
   nodes: readonly WorkflowContextNode[];
+  surfaces?: readonly WorkflowContextSurface[];
   flows?: readonly WorkflowContextFlow[];
 }
 
@@ -76,11 +93,30 @@ interface ContextRoute {
   sourceHints: string[];
 }
 
+interface ContextSurface {
+  id: string;
+  label: string;
+  surfaceType: string;
+  artifactKind: 'prototype' | 'mockup';
+  section?: string;
+  purpose?: string;
+  screenshot?: string;
+  sourceHints: string[];
+  livePreview?: {
+    liveUrl?: string;
+    liveMode?: string;
+    liveStatus?: string;
+    limitations: string[];
+  };
+  evidence: string[];
+}
+
 interface ContextPayload {
   name: string;
   authState?: string;
   baseUrl?: string;
   routes: ContextRoute[];
+  surfaces: ContextSurface[];
   flows: WorkflowContextFlow[];
 }
 
@@ -141,6 +177,7 @@ export function renderWorkflowContextContract(
       app: payload.name,
       authState: payload.authState ?? null,
       routeCount: payload.routes.length,
+      surfaceCount: payload.surfaces.length,
       flowCount: payload.flows.length,
       focus: options.focus,
       ...(Object.keys(filters).length ? { filters } : {}),
@@ -167,6 +204,14 @@ export function buildWorkflowContextPayload(
     return focusMatches && matchesContextFilters(node, filters);
   });
   const focusedIds = new Set(focusedNodes.map(node => getNodeId(node)));
+  const focusedSurfaces = (manifest.surfaces ?? []).filter(surface => {
+    const focusMatches =
+      options.focus.length === 0 ||
+      options.focus.includes(surface.section ?? '') ||
+      options.focus.includes(surface.id);
+    return focusMatches && matchesSurfaceContextFilters(surface, filters);
+  });
+  for (const surface of focusedSurfaces) focusedIds.add(surface.id);
   const focusedFlows = (manifest.flows ?? [])
     .map(flow => ({
       ...flow,
@@ -191,6 +236,27 @@ export function buildWorkflowContextPayload(
       evidence: getEvidenceKinds(node),
       sourceHints: node.sourceHints ?? [],
     })),
+    surfaces: focusedSurfaces.map(surface => ({
+      id: surface.id,
+      label: surface.label,
+      surfaceType: surface.type,
+      artifactKind: surface.type === 'html-mockup' ? 'mockup' : 'prototype',
+      section: surface.section,
+      purpose: surface.purpose,
+      screenshot: surface.screenshot,
+      sourceHints: surface.sourceHints ?? [],
+      ...(surface.preview
+        ? {
+            livePreview: {
+              liveUrl: surface.preview.liveUrl,
+              liveMode: surface.preview.liveMode,
+              liveStatus: surface.preview.liveStatus,
+              limitations: [...(surface.preview.limitations ?? [])],
+            },
+          }
+        : {}),
+      evidence: getSurfaceEvidenceKinds(surface),
+    })),
     flows: focusedFlows,
   }) as ContextPayload;
 
@@ -206,6 +272,9 @@ function renderWorkflowContextMarkdown(payload: ContextPayload, lineBudget: numb
     '',
     '## Routes',
     ...payload.routes.flatMap(route => routeLines(route)),
+    '',
+    '## Surfaces',
+    ...payload.surfaces.flatMap(surface => surfaceLines(surface)),
     '',
     '## Flows',
     ...payload.flows.map(flow => `- ${flow.name}: ${flow.steps.join(' -> ')}`),
@@ -258,6 +327,29 @@ function routeLines(route: ContextRoute): string[] {
   ];
 }
 
+function surfaceLines(surface: ContextSurface): string[] {
+  return [
+    '',
+    `### ${surface.id}`,
+    `- Label: ${surface.label}`,
+    `- Artifact: ${surface.artifactKind}`,
+    `- Surface type: ${surface.surfaceType}`,
+    `- Section: ${surface.section ?? 'uncategorized'}`,
+    `- Purpose: ${surface.purpose ?? 'No purpose recorded'}`,
+    ...(surface.screenshot ? [`- Screenshot: ${surface.screenshot}`] : []),
+    ...(surface.livePreview?.liveUrl ? [`- Live target: ${surface.livePreview.liveUrl}`] : []),
+    ...(surface.livePreview?.liveMode ? [`- Live mode: ${surface.livePreview.liveMode}`] : []),
+    ...(surface.livePreview?.liveStatus
+      ? [`- Live status: ${surface.livePreview.liveStatus}`]
+      : []),
+    ...(surface.livePreview?.limitations.length
+      ? [`- Limitations: ${surface.livePreview.limitations.join('; ')}`]
+      : []),
+    `- Evidence: ${surface.evidence.join(', ') || 'none'}`,
+    ...(surface.sourceHints.length ? [`- Source hints: ${surface.sourceHints.join(', ')}`] : []),
+  ];
+}
+
 function getNodeId(node: WorkflowContextNode): string {
   return node.id ?? routeToId(node.route);
 }
@@ -294,6 +386,19 @@ function matchesContextFilters(
   );
 }
 
+function matchesSurfaceContextFilters(
+  surface: WorkflowContextSurface,
+  filters: Record<ContextFilterKey, string[]>
+): boolean {
+  if (filters.persona.length > 0 || filters.auth.length > 0 || filters.health.length > 0) {
+    return false;
+  }
+  return (
+    matchesAny(filters.section, [surface.section]) &&
+    matchesAny(filters.evidence, getSurfaceEvidenceKinds(surface))
+  );
+}
+
 function matchesAny(filters: string[], values: readonly (string | undefined)[]): boolean {
   if (filters.length === 0) return true;
   const valueSet = new Set(values.filter((value): value is string => Boolean(value)));
@@ -311,6 +416,14 @@ function getEvidenceKinds(node: WorkflowContextNode): string[] {
     ...(Object.prototype.hasOwnProperty.call(node, 'inspect') ? ['inspect'] : []),
     ...(node.sourceHints?.length ? ['source-hint'] : []),
     ...(node.expectedRedirects?.length ? ['redirect'] : []),
+  ];
+}
+
+function getSurfaceEvidenceKinds(surface: WorkflowContextSurface): string[] {
+  return [
+    ...(surface.screenshot ? ['screenshot'] : []),
+    ...(surface.preview?.liveUrl ? ['inspect'] : []),
+    ...(surface.sourceHints?.length ? ['source-hint'] : []),
   ];
 }
 
@@ -356,13 +469,14 @@ function contextNextActions(
     {
       label: 'Probe focused routes',
       command: `nav-map probe ${shellArg(manifestPath)} --base-url ${shellArg(baseUrl)}${auth}${focus}`,
-      reason: 'Collect expected-vs-observed route evidence for this context slice.',
+      reason:
+        'Collect expected-vs-observed route evidence for this context slice. Prototype/mockup surfaces remain context artifacts unless they have live targets.',
       safety: 'writes-local-files',
     },
     {
       label: 'Generate screenshot-backed graph',
       command: `nav-map workflow ${shellArg(manifestPath)} --base-url ${shellArg(baseUrl)}${auth} -o public/nav-map.json`,
-      reason: 'Refresh the visual workflow graph after validating context.',
+      reason: 'Refresh the visual workflow graph after validating route and surface context.',
       safety: 'writes-local-files',
     },
   ];

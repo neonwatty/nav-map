@@ -1,7 +1,11 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NavMapGraph } from '../types';
-import { buildLiveReadinessPlan, useLiveReadiness } from './useLiveReadiness';
+import {
+  buildLiveReadinessPlan,
+  getLiveReadinessLabel,
+  useLiveReadiness,
+} from './useLiveReadiness';
 
 const graph: NavMapGraph = {
   version: '1.0',
@@ -117,6 +121,7 @@ describe('useLiveReadiness', () => {
     expect(result.current.liveReadinessSummary).toMatchObject({
       total: 5,
       reachable: 2,
+      unverified: 0,
       offline: 1,
       static: 1,
       blocked: 1,
@@ -148,7 +153,7 @@ describe('useLiveReadiness', () => {
     );
   });
 
-  it('keeps non-iframe live targets ready without probing them', () => {
+  it('marks non-iframe live targets as unverified without probing them', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     const browserGraph: NavMapGraph = {
@@ -183,12 +188,40 @@ describe('useLiveReadiness', () => {
     });
 
     expect(plan.byNode['external-mockup']).toMatchObject({
-      status: 'reachable',
+      status: 'unverified',
       liveUrl: 'https://example.test/mockup',
-      message: 'Live target opens outside the inline preview.',
+      message:
+        'Live target opens outside the inline preview or returned an external response; iframe rendering is not verified.',
     });
     expect(plan.probes).toEqual([]);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('marks opaque no-cors responses as unverified external instead of ready', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ type: 'opaque', ok: false } as Response))
+    );
+
+    const { result } = renderHook(() =>
+      useLiveReadiness({
+        graph,
+        previewMode: 'live',
+        viewMode: 'flow',
+        selectedFlowIndex: 0,
+        selectedNodeId: null,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.liveReadinessByNode.home.status).toBe('unverified');
+    });
+    expect(getLiveReadinessLabel(result.current.liveReadinessByNode.home.status)).toBe(
+      'Unverified External'
+    );
+    expect(result.current.liveReadinessByNode.home.message).toBe(
+      'Live target responded as an opaque external request; iframe rendering is not verified.'
+    );
   });
 
   it('does not re-probe graph scope when selection changes', async () => {

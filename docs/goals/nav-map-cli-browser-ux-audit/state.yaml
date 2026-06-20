@@ -1,0 +1,180 @@
+version: 2
+goal:
+  title: "Nav Map CLI And Browser UX Audit"
+  slug: "nav-map-cli-browser-ux-audit"
+  kind: audit
+  tranche: "Run three independent audits of nav-map CLI/browser/manual-QA UX, synthesize the highest-confidence cleanup slice, and verify it with CLI plus Codex Chrome proof."
+  status: active
+  oracle:
+    signal: "Three independent audit receipts plus a fresh Codex Chrome walkthrough and CLI receipts prove agents and humans can understand and run screenshot, mockup, and app manual-QA workflows."
+    cadence: "after the three Scout audits, after any Worker slice, and at final audit"
+    final_proof: "Ranked synthesis, implemented or explicitly blocked top findings, passing relevant tests/validation, and browser proof covering PRcard, Deckchecker, and Bleep preview/live/search/audit/manual-QA workflows."
+  intake:
+    original_request: "Create a GoalBuddy prep board for three independent agents to audit current CLI UX and browser UX for screenshot, mockup, and app workflows."
+    interpreted_outcome: "Independent CLI/browser UX audit, synthesis, then bounded implementation of approved simplifications with durable proof."
+    input_shape: audit
+    audience: "Agents and humans performing manual QA with nav-map."
+    authority: requested
+    proof_type: review
+    completion_proof: "Three independent audit receipts, ranked synthesis, bounded implemented improvements or blocked decisions, and fresh CLI plus Codex Chrome verification across screenshot, mockup, and app workflows."
+    likely_misfire: "Generic UX commentary or code churn that does not prove the QA loop is simpler and usable across all three workflow modes."
+    blind_spots_considered:
+      - "CLI improvements for agents may differ from browser affordances humans need."
+      - "Mode labels can become clearer without making the UI noisier."
+      - "Live iframe behavior may be limited by server availability, auth, or embedding headers."
+      - "An audit tranche should not mutate product files before independent evidence is gathered."
+    existing_plan_facts:
+      - "The user explicitly wants three independent agents."
+      - "Each audit should include Codex Chrome usage and codebase review where relevant."
+      - "The audit should cover screenshot, mockup, and app versions."
+      - "The outcome should simplify manual QA for agents and humans."
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-cli-browser-ux-audit/"
+    command: "npx goalbuddy board docs/goals/nav-map-cli-browser-ux-audit"
+active_task: T001
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: active
+    objective: "Audit the CLI UX from an agent-first perspective across screenshot, mockup, and app workflows."
+    inputs:
+      - "README and scanner CLI docs/help output."
+      - "Scanner command implementation and tests."
+      - "Current workflow manifests and context outputs."
+    constraints:
+      - "Read-only audit."
+      - "Do not inspect or print secrets, environment values, auth storage, browser storage, cookies, or tokens."
+      - "Focus on commands agents need for inspect, context, auth-state verification by id, probe/diff, workflow generation, and receipts."
+    expected_output:
+      - "Findings ranked by severity and friction."
+      - "Specific CLI commands inspected or run."
+      - "Gaps in agent-readable output, help text, receipts, error states, or docs."
+      - "Recommended changes with affected files and verification ideas."
+    receipt: null
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: queued
+    objective: "Audit the browser UX with Codex Chrome across representative screenshot, mockup, and app datasets."
+    inputs:
+      - "Local demo app."
+      - "Codex Chrome walkthrough of PRcard, Deckchecker, and Bleep datasets."
+      - "Current preview controls, live availability UX, node details, search, audit focus, and animation controls."
+    constraints:
+      - "Read-only audit."
+      - "Use a fresh local demo session and Codex Chrome, not only code inspection."
+      - "Do not inspect browser storage, auth storage, cookies, tokens, or secrets."
+      - "Record routes/datasets tested and visible UX state, not sensitive storage."
+    expected_output:
+      - "Workflow-by-workflow browser observations."
+      - "Confusing or broken states for screenshot, mockup, and app modes."
+      - "Whether preview/live controls are discoverable, truthful, and actionable."
+      - "Manual-QA acceptance checklist improvements."
+    receipt: null
+  - id: T003
+    type: scout
+    assignee: Scout
+    status: queued
+    objective: "Audit the UX architecture and code organization for simplification opportunities."
+    inputs:
+      - "Core UI rendering components."
+      - "Workflow manifest/types/conversion boundaries."
+      - "Screenshot, surface, readiness, and live-preview handling."
+      - "Tests and docs that define current behavior."
+    constraints:
+      - "Read-only audit."
+      - "Do not inspect or print secrets, auth storage, browser storage, cookies, or tokens."
+      - "Prefer reusable primitives over app-specific hard-coding."
+    expected_output:
+      - "Simplification opportunities ranked by impact, risk, and blast radius."
+      - "Places where mode-specific UX should be clearer or less duplicated."
+      - "Recommendations for files, tests, and docs if implementation is approved."
+    receipt: null
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: queued
+    objective: "Synthesize the three audits into one implementation plan with measurable acceptance criteria."
+    inputs:
+      - "T001 CLI audit receipt."
+      - "T002 browser UX audit receipt."
+      - "T003 architecture simplification receipt."
+      - "Current dirty diff and test status."
+    constraints:
+      - "Read-only decision."
+      - "Prefer the smallest reusable model and lowest-risk UX cleanup that improves manual QA."
+      - "Reject recommendations that require secrets, external production state, or hard-coded app behavior."
+    expected_output:
+      - "Decision: approved implementation slice, defer, or blocked."
+      - "Ranked findings with severity."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "Codex Chrome workflow checklist."
+      - "stop_if conditions."
+    receipt: null
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: queued
+    objective: "Implement the approved highest-confidence CLI/browser UX cleanup slice selected by T004."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "Need files outside T004 allowed_files."
+      - "Implementation would require inspecting or printing secrets, auth storage, browser storage, cookies, or tokens."
+      - "Change would hard-code app-specific behavior into nav-map core."
+      - "Acceptance criteria are ambiguous or conflict with existing route behavior."
+      - "Verification fails twice for the same reason."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Codex Chrome workflow receipt."
+      - "Known limitations or follow-up tasks."
+    receipt: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    objective: "Audit whether the CLI/browser UX audit tranche is complete."
+    inputs:
+      - "All completed task receipts."
+      - "Final verification commands."
+      - "Final Codex Chrome walkthrough receipt."
+      - "Current dirty diff."
+    constraints:
+      - "Read-only final audit."
+      - "Do not claim completion if any required Worker task remains queued, active, or unverified."
+    expected_output:
+      - "complete | not_complete."
+      - "full_outcome_complete: true | false."
+      - "Missing evidence."
+      - "Next task if not complete."
+    receipt: null

@@ -99,12 +99,11 @@ describe('ConnectionPanel workflow metadata', () => {
     );
 
     expect(screen.getByText('Surface Details')).toBeTruthy();
-    expect(screen.getByText('Preview Status')).toBeTruthy();
-    expect(screen.getByText('Prototype / Static')).toBeTruthy();
-    expect(screen.getByText('Render Mode')).toBeTruthy();
-    expect(screen.getByText('Screenshot render mode')).toBeTruthy();
+    expect(screen.getByText('Preview')).toBeTruthy();
+    expect(screen.getByText('Prototype - Static Reference')).toBeTruthy();
     expect(screen.getByText('Artifact')).toBeTruthy();
-    expect(screen.getByText('Live Status')).toBeTruthy();
+    expect(screen.getByText('Current Preview')).toBeTruthy();
+    expect(screen.getAllByText('Live Target').length).toBeGreaterThanOrEqual(2);
     expect(
       screen.getByText('Static reference surface. This prototype has no live preview.')
     ).toBeTruthy();
@@ -161,11 +160,12 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
     expect(iframe.getAttribute('referrerpolicy')).toBe('no-referrer');
     expect(iframe.getAttribute('allow')).toBe('');
-    expect(screen.getByText('Mockup / Live')).toBeTruthy();
-    expect(screen.getByText('Live render mode')).toBeTruthy();
+    expect(screen.getByText('Mockup - Live Iframe')).toBeTruthy();
     expect(screen.getByText('Artifact')).toBeTruthy();
     expect(screen.getByText('Mockup')).toBeTruthy();
-    expect(screen.getByText('Live Status')).toBeTruthy();
+    expect(screen.getAllByText('Live Target').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Target Configured')).toBeTruthy();
+    expect(screen.getAllByText('Target Preflight').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Fixture Data')).toBeTruthy();
     expect(screen.getByText('No Real Auth')).toBeTruthy();
   });
@@ -216,8 +216,12 @@ describe('ConnectionPanel workflow metadata', () => {
 
     expect(iframe.getAttribute('src')).toBe('http://localhost:3001/home');
     expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-same-origin');
-    expect(screen.getByText('App / Live')).toBeTruthy();
-    expect(screen.getByText('Live app route preview is available.')).toBeTruthy();
+    expect(screen.getByText('App - Live Iframe')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Target preflight passed and the live iframe is shown as the current preview.'
+      )
+    ).toBeTruthy();
   });
 
   it('uses shared readiness to mark live app targets offline', () => {
@@ -269,6 +273,62 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(
       screen.getByText(
         'Live target is unavailable. Start the local app server or set a different Live Target.'
+      )
+    ).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Home' }).getAttribute('src')).toContain('home.png');
+    expect(screen.queryByTitle('Live preview: Home')).toBeNull();
+  });
+
+  it('keeps saved preview visible when target preflight is unverified external', () => {
+    const appNode: NavMapNode = {
+      id: 'home',
+      route: '/home',
+      label: 'Home',
+      group: 'public',
+      screenshot: 'home.png',
+      metadata: { artifactKind: 'app' },
+    };
+
+    render(
+      <NavMapContext.Provider
+        value={{
+          ...context,
+          previewMode: 'live',
+          liveReadinessByNode: {
+            home: {
+              nodeId: 'home',
+              status: 'unverified',
+              artifactKind: 'app',
+              liveUrl: 'https://example.test/home',
+              liveUrlSource: 'graph-base',
+              message:
+                'Live target responded as an opaque external request; iframe rendering is not verified.',
+            },
+          },
+          graph: {
+            version: '1.0',
+            meta: {
+              name: 'External App Preview',
+              generatedAt: '2026-01-01',
+              generatedBy: 'manual',
+              baseUrl: 'https://example.test',
+            },
+            nodes: [appNode],
+            edges: [],
+            groups: [{ id: 'public', label: 'Public' }],
+          },
+        }}
+      >
+        <ConnectionPanel node={appNode} nodes={[appNode]} edges={[]} onNavigate={() => {}} />
+      </NavMapContext.Provider>
+    );
+
+    expect(screen.getByText('App - Saved Fallback')).toBeTruthy();
+    expect(screen.getAllByText('Unverified External').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Live target unverified')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Target preflight reached the URL, but iframe rendering is not verified. The saved preview remains visible.'
       )
     ).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Home' }).getAttribute('src')).toContain('home.png');

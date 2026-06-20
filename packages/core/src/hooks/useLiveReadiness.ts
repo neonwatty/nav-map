@@ -102,11 +102,22 @@ export function useLiveReadiness({
       })
         .then(response => {
           if (!active) return;
-          if (!isReachableResponse(response)) {
+          const probeResult = classifyProbeResponse(response);
+          if (probeResult === 'offline') {
             setLiveReadinessByNode(prev =>
               updateReadiness(prev, target.nodeId, {
                 status: 'offline',
                 message: 'Live target returned an error response.',
+              })
+            );
+            return;
+          }
+          if (probeResult === 'unverified') {
+            setLiveReadinessByNode(prev =>
+              updateReadiness(prev, target.nodeId, {
+                status: 'unverified',
+                message:
+                  'Live target responded as an opaque external request; iframe rendering is not verified.',
               })
             );
             return;
@@ -204,6 +215,7 @@ export function summarizeLiveReadiness(
     total: 0,
     checking: 0,
     reachable: 0,
+    unverified: 0,
     offline: 0,
     static: 0,
     blocked: 0,
@@ -214,6 +226,7 @@ export function summarizeLiveReadiness(
     summary.total += 1;
     if (readiness.status === 'checking') summary.checking += 1;
     if (readiness.status === 'reachable') summary.reachable += 1;
+    if (readiness.status === 'unverified') summary.unverified = (summary.unverified ?? 0) + 1;
     if (readiness.status === 'offline') summary.offline += 1;
     if (readiness.status === 'static') summary.static += 1;
     if (readiness.status === 'blocked') summary.blocked += 1;
@@ -226,16 +239,18 @@ export function summarizeLiveReadiness(
 export function getLiveReadinessLabel(status: NavMapLiveReadinessStatus): string {
   if (status === 'checking') return 'Checking';
   if (status === 'reachable') return 'Ready';
+  if (status === 'unverified') return 'Unverified External';
   if (status === 'offline') return 'Offline';
-  if (status === 'static') return 'Static';
+  if (status === 'static') return 'Static Reference';
   if (status === 'blocked') return 'Blocked';
-  if (status === 'unavailable') return 'No Live';
+  if (status === 'unavailable') return 'No Target';
   return 'Not Checked';
 }
 
 export function getLiveReadinessAccent(status: NavMapLiveReadinessStatus): string | undefined {
   if (status === 'reachable') return '#22c55e';
   if (status === 'checking') return '#3b82f6';
+  if (status === 'unverified') return '#eab308';
   if (status === 'offline') return '#ef4444';
   if (status === 'blocked') return '#f97316';
   if (status === 'static') return '#64748b';
@@ -281,7 +296,7 @@ function getInitialReadinessStatus(
   canProbe: boolean
 ): NavMapLiveReadinessStatus {
   if (canProbe) return 'checking';
-  if (previewState.status === 'available' && previewState.liveUrl) return 'reachable';
+  if (previewState.status === 'available' && previewState.liveUrl) return 'unverified';
   if (previewState.status === 'static') return 'static';
   if (previewState.status === 'blocked') return 'blocked';
   return 'unavailable';
@@ -289,9 +304,12 @@ function getInitialReadinessStatus(
 
 function getInitialReadinessMessage(status: NavMapLiveReadinessStatus): string {
   if (status === 'checking') return 'Checking live target before opening iframe.';
-  if (status === 'reachable') return 'Live target opens outside the inline preview.';
+  if (status === 'reachable') return 'Live target is verified for inline preview.';
+  if (status === 'unverified') {
+    return 'Live target opens outside the inline preview or returned an external response; iframe rendering is not verified.';
+  }
   if (status === 'static') return 'Static reference surface. No live target is expected.';
-  if (status === 'blocked') return 'Live preview is blocked for this node.';
+  if (status === 'blocked') return 'Live target is blocked for this node.';
   if (status === 'unavailable') return 'No iframe-capable live target is configured.';
   return 'Live target has not been checked.';
 }
@@ -322,7 +340,7 @@ function markProbeTargets(
   return next;
 }
 
-function isReachableResponse(response: Response): boolean {
-  if (response.type === 'opaque') return true;
-  return response.ok;
+function classifyProbeResponse(response: Response): 'reachable' | 'unverified' | 'offline' {
+  if (response.type === 'opaque') return 'unverified';
+  return response.ok ? 'reachable' : 'offline';
 }

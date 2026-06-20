@@ -18,8 +18,31 @@ import { createWorkflowCommand } from './commands/workflow.js';
 export function createProgram(program = new Command()): Command {
   program
     .name('nav-map')
-    .description('Generate nav-map.json from a Next.js app or URL')
-    .version('0.1.0');
+    .description(
+      [
+        'Generate nav-map.json from a Next.js app or URL.',
+        'Agent QA loop: workflow inspect -> context -> auth-state verify -> probe -> diff -> workflow generate.',
+        'Start with: nav-map workflow <manifest> --inspect --contract.',
+        'UI Target preflight is a lightweight browser reachability check; use probe/diff receipts for route/workflow audit evidence.',
+      ].join('\n')
+    )
+    .version('0.1.0')
+    .addHelpText(
+      'afterAll',
+      `
+Agent QA loop:
+  nav-map workflow <manifest> --inspect --contract
+  nav-map context <manifest> --format json --contract
+  nav-map auth-state verify <manifest> --state <id> --base-url <url> --contract
+  nav-map probe <manifest> --base-url <url> [--auth-state <id>] --contract
+  nav-map diff <manifest> --probe .nav-map/probe-runs/latest.json
+  nav-map workflow <manifest> --base-url <url> --screenshot-dir <dir> -o public/nav-map.json
+
+Preview note:
+  UI Target preflight is a lightweight browser reachability check. Use probe/diff receipts
+  for route/workflow audit evidence, and use context/workflow inspect to include surfaces.
+`
+    );
 
   program.addCommand(createScanCommand());
   program.addCommand(createCrawlCommand());

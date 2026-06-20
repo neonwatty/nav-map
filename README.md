@@ -260,27 +260,25 @@ existing visual evidence from the manifest.
 ### Preview Modes
 
 Artifact kind describes what a workflow node represents, such as an app route, HTML mockup,
-component reference, or generated concept. The global `Render: Screenshots | Live` control is a
-render-mode preference, not an app/mockup/prototype mode switch: it chooses whether the selected
-node panel prefers saved screenshots/static artifacts or live previews where the node supports
-them.
+component reference, or generated concept. The global `Preview: Saved | Target` control is a
+preview-source preference, not an app/mockup/prototype mode switch. It separates four concepts that
+matter during manual QA:
 
-- `App · Live`: a real app route that can render from the configured base URL.
-- `Mockup · Live`: a local or fixture-backed mockup, usually embedded in an iframe from
-  `metadata.preview.liveUrl`.
-- `Prototype · Static`: a concept, component reference, video, or static artifact that keeps its
-  screenshot fallback.
-- `App · Blocked`: an app route that exists but cannot render live because auth, setup, service
-  health, or other prerequisites are missing.
+- `Artifact`: the node's source type, such as App, Mockup, or Prototype.
+- `Current Preview`: what the card or details panel is showing now, such as Saved Screenshot,
+  Static Reference, Live Iframe, Checking Target, or Saved Fallback.
+- `Live Target`: whether a URL is configured, blocked, or intentionally static.
+- `Target Preflight`: a lightweight browser check for the configured URL, separate from route or
+  workflow audit health.
 
-Live render mode is best-effort. When Live is selected, nav-map runs a browser-side readiness
+Target preview mode is best-effort. When `Target` is selected, nav-map runs a browser-side
 preflight for the current flow, or for the whole graph when no flow is focused. The toolbar shows a
-compact summary, and each node keeps a small readiness label so reviewers can tell the difference
-between targets that are ready, still checking, offline, intentionally static, blocked, or missing a
-live target. Nodes without live rendering keep screenshot fallbacks and keep their own
-artifact/status labels visible, so reviewers can still inspect prototype intent, blocked auth
-states, external-service gaps, and artifacts that are not safe or meaningful to execute inside the
-preview pane.
+compact target summary, and each node keeps a small preflight label so reviewers can tell the
+difference between targets that are ready, unverified external, still checking, offline,
+intentionally static, blocked, or missing a target. Nodes without verified live rendering keep
+saved screenshot/static fallbacks visible, so reviewers can still inspect prototype intent, blocked
+auth states, external-service gaps, and artifacts that are not safe or meaningful to execute inside
+the preview pane.
 
 The selected-node details panel also exposes a local **Live Target** editor for dogfooding:
 
@@ -289,10 +287,11 @@ The selected-node details panel also exposes a local **Live Target** editor for 
 - Overrides are stored in browser local storage per graph and are not written back to manifests.
 - The panel shows the resolved live URL and whether it came from the manifest, graph base URL, or a
   local override.
-- When Live mode is active, nav-map probes scoped live targets from the browser and labels them
-  `Ready`, `Checking`, `Offline`, `Static`, `Blocked`, or `No Live`. Offline and unavailable
-  targets replace the iframe with a visible message telling the reviewer to start the local app
-  server or enter a reachable Live Target, while preserving the saved screenshot fallback.
+- When Target mode is active, nav-map probes scoped live targets from the browser and labels them
+  `Ready`, `Unverified External`, `Checking`, `Offline`, `Static Reference`, `Blocked`, or
+  `No Target`. Offline, unavailable, and unverified targets replace the iframe with a visible
+  message telling the reviewer what to fix or verify, while preserving the saved screenshot
+  fallback.
 - App-route live iframes allow same-origin browser APIs so real app routes that use storage or
   client-side routers can run; mockup and prototype iframes keep a stricter sandbox.
 - Browser-side readiness is practical reachability, not a full audit: cross-origin `no-cors`
@@ -303,6 +302,29 @@ When dogfooding preview behavior, record receipts for commands run, local URLs c
 tested, screenshots captured, auth state id if one was used, failures, warnings, and known
 limitations. Do not inspect or print Playwright auth storage, cookies, tokens, environment values,
 or secrets.
+
+### Demo Smoke
+
+The demo smoke is the local browser receipt for manual-QA regressions across the bundled PRcard,
+Deckchecker, and Bleep datasets:
+
+```bash
+pnpm dev
+pnpm smoke:demo
+```
+
+By default the smoke looks for the demo on `http://localhost:3000` and then
+`http://localhost:3001`. Set `DEMO_SMOKE_URL=http://localhost:<port>` or pass
+`--url http://localhost:<port>` when a different local server is under review.
+
+The smoke uses an 858px viewport and verifies that all dataset URLs render, the `Saved`/`Target`
+preview controls are usable, PRcard app/prototype/mockup node details remain distinct,
+Deckchecker and Bleep app nodes expose non-ready target states without requiring external service
+availability, Search can select a node, Audit can focus an issue, PRcard flow animation starts and
+stops, and invalid dataset keys show an explicit warning. It prints a JSON receipt with routes,
+checks, warnings, and failures. Keep it local-only: if external app targets are offline,
+unavailable, or unverified, the smoke should assert those labels instead of depending on live
+third-party services.
 
 You can also convert manifests in code without the React component entry:
 
@@ -392,6 +414,25 @@ When both `graph` and `graphUrl` are provided, `graph` takes priority.
 ```bash
 npx @neonwatty/nav-map-scanner <command> [options]
 ```
+
+Agent-oriented screenshot/mockup/app QA loop:
+
+```bash
+node packages/scanner/bin/nav-map.js workflow packages/demo/public/prcard.workflow.json --inspect --contract
+node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract
+node packages/scanner/bin/nav-map.js auth-state verify packages/demo/public/prcard.workflow.json --state signed-in --base-url http://localhost:3000 --contract
+node packages/scanner/bin/nav-map.js probe packages/demo/public/prcard.workflow.json --base-url http://localhost:3000 --contract
+node packages/scanner/bin/nav-map.js diff packages/demo/public/prcard.workflow.json --probe .nav-map/probe-runs/latest.json
+node packages/scanner/bin/nav-map.js workflow packages/demo/public/prcard.workflow.json --base-url http://localhost:3000 --screenshot-dir public/screenshots/workflow -o public/nav-map.json
+```
+
+Use `workflow --inspect` and `context --contract` first so agents see app routes and
+prototype/mockup surfaces before touching a browser. The UI `Target` preview is a lightweight
+reachability preflight; use `probe` and `diff` receipts for route/workflow audit evidence.
+Workflow screenshot generation navigates app route nodes only. Prototype, mockup, component, and
+concept surfaces stay as manifest artifacts and are reported as skipped live captures in the
+generation receipt. Auth state is referenced by id only; do not inspect or print storage-state
+contents.
 
 ### Commands
 

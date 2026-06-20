@@ -25,6 +25,22 @@ export interface WorkflowCommandResult {
   edgeCount: number;
   groupCount: number;
   screenshotCount: number;
+  receipt: WorkflowGenerationReceipt;
+}
+
+export interface WorkflowGenerationReceipt {
+  manifestPath: string;
+  outputPath: string;
+  baseUrl?: string;
+  authStateId: string | null;
+  routeVariablesApplied: string[];
+  screenshotCapture: {
+    requested: boolean;
+    routeCount: number;
+    capturedNodeIds: string[];
+    skippedSurfaceIds: string[];
+    screenshotDir?: string;
+  };
 }
 
 export interface WorkflowInspectResult {
@@ -88,16 +104,17 @@ export async function runWorkflowManifest(
   const manifest = readWorkflowManifest(resolvedManifestPath);
   const outputPath = path.resolve(options.output ?? 'nav-map.json');
   const shouldCaptureScreenshots = options.screenshots !== false && Boolean(options.baseUrl);
+  const screenshotDir = path.resolve(options.screenshotDir ?? 'nav-screenshots');
+  const captureTargets = manifest.nodes.map(node => ({
+    id: node.id ?? routeToId(node.route),
+    route: resolveOptionalRouteTemplate(node.route, manifest.routeVariables ?? {}),
+  }));
   let screenshotOverrides: Record<string, string> = {};
 
   if (shouldCaptureScreenshots && options.baseUrl) {
-    const screenshotDir = path.resolve(options.screenshotDir ?? 'nav-screenshots');
     const storageState = resolveWorkflowScreenshotStorageState(manifest, options.authState);
     const captured = await captureScreenshots(
-      manifest.nodes.map(node => ({
-        id: node.id ?? routeToId(node.route),
-        route: resolveOptionalRouteTemplate(node.route, manifest.routeVariables ?? {}),
-      })),
+      captureTargets,
       options.baseUrl,
       screenshotDir,
       storageState ? { storageState } : {}
@@ -124,6 +141,20 @@ export async function runWorkflowManifest(
     edgeCount: graph.edges.length,
     groupCount: graph.groups.length,
     screenshotCount: Object.keys(screenshotOverrides).length,
+    receipt: {
+      manifestPath: resolvedManifestPath,
+      outputPath,
+      ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+      authStateId: options.authState ?? null,
+      routeVariablesApplied: Object.keys(manifest.routeVariables ?? {}),
+      screenshotCapture: {
+        requested: shouldCaptureScreenshots,
+        routeCount: captureTargets.length,
+        capturedNodeIds: Object.keys(screenshotOverrides),
+        skippedSurfaceIds: (manifest.surfaces ?? []).map(surface => surface.id),
+        ...(shouldCaptureScreenshots ? { screenshotDir } : {}),
+      },
+    },
   };
 }
 

@@ -27,7 +27,8 @@ describe('scanner command registration', () => {
     const program = createProgram();
 
     expect(program.name()).toBe('nav-map');
-    expect(program.description()).toBe('Generate nav-map.json from a Next.js app or URL');
+    expect(program.description()).toContain('Generate nav-map.json from a Next.js app or URL');
+    expect(program.description()).toContain('Agent QA loop: workflow inspect');
     expect(program.version()).toBe('0.1.0');
     expect(program.commands.map(command => command.name())).toEqual([
       'scan',
@@ -75,6 +76,9 @@ describe('scanner command registration', () => {
     expect(help).toContain('-V, --version');
     expect(help).toContain('-h, --help');
     expect(help).toContain('Commands:');
+    expect(help).toContain('Agent QA loop:');
+    expect(help).toContain('nav-map workflow <manifest> --inspect --contract');
+    expect(help).toContain('UI Target preflight is a lightweight browser reachability check');
 
     for (const commandName of commandNames) {
       expect(commandHelpLine(help, commandName)).not.toBe('');
@@ -180,9 +184,13 @@ describe('scanner command registration', () => {
 
   it('registers workflow command options', () => {
     const command = createWorkflowCommand();
+    const help = command.helpInformation();
 
     expect(command.name()).toBe('workflow');
-    expect(command.description()).toBe('Generate nav-map.json from a project workflow manifest');
+    expect(command.description()).toContain(
+      'Generate nav-map.json from a project workflow manifest'
+    );
+    expect(command.description()).toContain('Screenshot capture navigates manifest nodes only');
     expect(command.registeredArguments.map(argument => argument.name())).toEqual(['manifest']);
     expect(optionFlags(command)).toEqual([
       '-o, --output <path>',
@@ -196,6 +204,8 @@ describe('scanner command registration', () => {
     ]);
     expect(command.getOptionValue('output')).toBe('nav-map.json');
     expect(command.getOptionValue('screenshotDir')).toBe('nav-screenshots');
+    expect(help).toContain('Screenshot capture navigates manifest nodes only');
+    expect(help).toContain('Auth state is referenced by id only in command output');
   });
 
   it('registers context command options', () => {

@@ -9,7 +9,6 @@ import {
 } from '@neonwatty/nav-map';
 
 const HELP_DISMISSED_KEY = 'nav-map:demo-help-dismissed';
-const VIEW_MODE_KEY = 'nav-map:view-mode';
 type DemoDataset = 'prcard' | 'deckchecker-speaker' | 'bleep';
 
 const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default: mod.NavMap })), {
@@ -20,7 +19,13 @@ const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default
 export default function HomePage() {
   const [graph, setGraph] = useState<NavMapGraph | null>(null);
   const [showInitialHelp, setShowInitialHelp] = useState(false);
-  const [dataset, setDataset] = useState<DemoDataset>(() => readInitialDataset());
+  const [initialSelection] = useState(() => readInitialDatasetSelection());
+  const [dataset, setDataset] = useState<DemoDataset>(initialSelection.dataset);
+  const [datasetWarning, setDatasetWarning] = useState<string | null>(
+    initialSelection.invalidDataset
+      ? `Unknown dataset "${initialSelection.invalidDataset}". Showing PRcard workflow instead.`
+      : null
+  );
 
   useEffect(() => {
     setShowInitialHelp(window.localStorage.getItem(HELP_DISMISSED_KEY) !== 'true');
@@ -33,7 +38,6 @@ export default function HomePage() {
     loadDemoGraph(dataset)
       .then(nextGraph => {
         if (!cancelled) {
-          persistDefaultViewMode(nextGraph);
           setGraph(nextGraph);
         }
       })
@@ -92,6 +96,7 @@ export default function HomePage() {
             const url = new URL(window.location.href);
             url.searchParams.set('dataset', nextDataset);
             window.history.replaceState(null, '', url);
+            setDatasetWarning(null);
             setDataset(nextDataset);
           }}
           style={{
@@ -108,6 +113,28 @@ export default function HomePage() {
           <option value="bleep">Bleep app scan</option>
         </select>
       </label>
+      {datasetWarning && (
+        <div
+          role="status"
+          style={{
+            position: 'absolute',
+            left: 14,
+            bottom: 14,
+            zIndex: 20,
+            maxWidth: 'min(420px, calc(100vw - 28px))',
+            color: '#f8d58a',
+            background: 'rgba(42, 31, 12, 0.92)',
+            border: '1px solid rgba(248, 213, 138, 0.36)',
+            borderRadius: 8,
+            padding: '8px 10px',
+            fontSize: 12,
+            lineHeight: 1.35,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          {datasetWarning}
+        </div>
+      )}
       <NavMap
         key={dataset}
         graph={graph}
@@ -127,10 +154,12 @@ export default function HomePage() {
   );
 }
 
-function readInitialDataset(): DemoDataset {
-  if (typeof window === 'undefined') return 'prcard';
+function readInitialDatasetSelection(): { dataset: DemoDataset; invalidDataset: string | null } {
+  if (typeof window === 'undefined') return { dataset: 'prcard', invalidDataset: null };
   const dataset = new URLSearchParams(window.location.search).get('dataset');
-  return isDemoDataset(dataset) ? dataset : 'prcard';
+  if (!dataset) return { dataset: 'prcard', invalidDataset: null };
+  if (isDemoDataset(dataset)) return { dataset, invalidDataset: null };
+  return { dataset: 'prcard', invalidDataset: dataset };
 }
 
 function isDemoDataset(value: string | null): value is DemoDataset {
@@ -142,10 +171,6 @@ type DemoViewMode = 'hierarchy' | 'map' | 'flow' | 'tree';
 function defaultViewModeForGraph(graph: NavMapGraph): DemoViewMode {
   const viewMode = graph.meta.workflow?.layout?.defaultViewMode;
   return isDemoViewMode(viewMode) ? viewMode : 'hierarchy';
-}
-
-function persistDefaultViewMode(graph: NavMapGraph): void {
-  window.localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(defaultViewModeForGraph(graph)));
 }
 
 function isDemoViewMode(value: unknown): value is DemoViewMode {

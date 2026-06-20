@@ -38,7 +38,7 @@ describe('artifact preview helpers', () => {
     expect(state.status).toBe('available');
     expect(state.liveUrl).toBe('http://localhost:3000/dashboard');
     expect(state.liveUrlSource).toBe('graph-base');
-    expect(getPreviewStatusLabel(state)).toBe('Live');
+    expect(getPreviewStatusLabel(state)).toBe('Target Configured');
   });
 
   it('defaults prototype surface nodes to static prototype artifacts', () => {
@@ -151,7 +151,9 @@ describe('artifact preview helpers', () => {
 
     expect(state.artifactKind).toBe('prototype');
     expect(state.status).toBe('available');
-    expect(getPreviewStatusMessage(state)).toBe('Live prototype preview is available.');
+    expect(getPreviewStatusMessage(state)).toBe(
+      'A live prototype target is configured. Saved screenshots remain the current preview until Target mode verifies the iframe.'
+    );
   });
 
   it('maps html mockup surfaces to mockup artifacts with declared iframe URLs', () => {
@@ -362,9 +364,9 @@ describe('artifact preview helpers', () => {
     const state = getNodePreviewState(blocked, graph);
 
     expect(state.status).toBe('blocked');
-    expect(getPreviewStatusLabel(state)).toBe('Blocked');
+    expect(getPreviewStatusLabel(state)).toBe('Target Blocked');
     expect(getPreviewStatusMessage(state)).toBe(
-      'Live preview blocked because authentication is required.'
+      'Live target blocked because authentication is required.'
     );
   });
 

@@ -124,6 +124,18 @@ describe('runWorkflowManifest', () => {
     });
 
     expect(result.screenshotCount).toBe(1);
+    expect(result.receipt).toMatchObject({
+      authStateId: 'speaker',
+      routeVariablesApplied: ['eventId', 'sessionId'],
+      screenshotCapture: {
+        requested: true,
+        routeCount: 1,
+        capturedNodeIds: ['speaker-upload'],
+        skippedSurfaceIds: [],
+      },
+    });
+    expect(JSON.stringify(result.receipt)).not.toContain('speaker.storage.json');
+    expect(JSON.stringify(result.receipt)).not.toContain('.nav-map/auth');
     expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
       [
         {
@@ -179,6 +191,7 @@ describe('runWorkflowManifest', () => {
       edgeCount: 1,
       screenshotCount: 1,
     });
+    expect(result.receipt.screenshotCapture.skippedSurfaceIds).toEqual(['dashboard-concept']);
     expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
       [{ id: 'dashboard', route: '/dashboard' }],
       'https://example.test',

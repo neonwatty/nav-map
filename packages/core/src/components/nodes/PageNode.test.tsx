@@ -96,7 +96,7 @@ function renderLivePageNode(data: Record<string, unknown>, liveStatus: 'reachabl
 }
 
 describe('PageNode preview tabs', () => {
-  it('shows App and Live for an app node', () => {
+  it('shows App and Saved Preview for an app node in screenshots mode', () => {
     renderPageNode({
       id: 'dashboard',
       label: 'Dashboard',
@@ -106,10 +106,11 @@ describe('PageNode preview tabs', () => {
     });
 
     expect(screen.getByText('App')).toBeTruthy();
-    expect(screen.getByText('Live')).toBeTruthy();
+    expect(screen.getByText('Saved Preview')).toBeTruthy();
+    expect(screen.queryByText('Live')).toBeNull();
   });
 
-  it('shows Prototype and Static for a generated-image prototype node', () => {
+  it('shows Prototype and Static Reference for a generated-image prototype node', () => {
     renderPageNode({
       id: 'prototype-dashboard',
       label: 'Dashboard Prototype',
@@ -123,7 +124,8 @@ describe('PageNode preview tabs', () => {
     });
 
     expect(screen.getByText('Prototype')).toBeTruthy();
-    expect(screen.getByText('Static')).toBeTruthy();
+    expect(screen.getByText('Static Reference')).toBeTruthy();
+    expect(screen.queryByText('Static')).toBeNull();
   });
 
   it('uses the original graph node id for preview status on flow occurrence nodes', () => {
@@ -141,10 +143,10 @@ describe('PageNode preview tabs', () => {
     });
 
     expect(screen.getByText('Prototype')).toBeTruthy();
-    expect(screen.getByText('Static')).toBeTruthy();
+    expect(screen.getByText('Static Reference')).toBeTruthy();
   });
 
-  it('shows App and Blocked for a blocked app node', () => {
+  it('keeps blocked target capability out of the primary screenshot badge', () => {
     renderPageNode({
       id: 'auth-dashboard',
       label: 'Dashboard',
@@ -160,7 +162,8 @@ describe('PageNode preview tabs', () => {
     });
 
     expect(screen.getByText('App')).toBeTruthy();
-    expect(screen.getByText('Blocked')).toBeTruthy();
+    expect(screen.getByText('Saved Preview')).toBeTruthy();
+    expect(screen.queryByText('Blocked')).toBeNull();
   });
 
   it('renders the screenshot image when a screenshot is present', () => {
@@ -203,7 +206,7 @@ describe('PageNode preview tabs', () => {
     );
 
     expect(screen.getByText('App')).toBeTruthy();
-    expect(screen.getByText('Live')).toBeTruthy();
     expect(screen.getByText('Offline')).toBeTruthy();
+    expect(screen.queryByText('Live')).toBeNull();
   });
 });

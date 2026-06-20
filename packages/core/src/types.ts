@@ -84,6 +84,7 @@ export type NavMapLiveReadinessStatus =
   | 'idle'
   | 'checking'
   | 'reachable'
+  | 'unverified'
   | 'offline'
   | 'static'
   | 'blocked'
@@ -107,6 +108,7 @@ export interface NavMapLiveReadinessSummary {
   total: number;
   checking: number;
   reachable: number;
+  unverified?: number;
   offline: number;
   static: number;
   blocked: number;

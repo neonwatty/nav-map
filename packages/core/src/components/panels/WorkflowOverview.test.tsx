@@ -137,6 +137,60 @@ describe('WorkflowOverview', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('labels evidence-only raw scans as scans instead of empty workflow atlases', () => {
+    const rawScanGraph: NavMapGraph = {
+      version: '1.0',
+      meta: { name: 'Raw Scan', generatedAt: '2026-01-01', generatedBy: 'url-crawl' },
+      groups: [{ id: 'main', label: 'Main' }],
+      nodes: [
+        {
+          id: 'home',
+          route: '/',
+          label: 'Home',
+          group: 'main',
+          screenshot: 'screenshots/home.png',
+          metadata: { health: { status: 'healthy' } },
+        },
+        {
+          id: 'settings',
+          route: '/settings',
+          label: 'Settings',
+          group: 'main',
+          metadata: { inspect: { selector: 'main' } },
+        },
+      ],
+      edges: [{ id: 'redirect', source: 'home', target: 'settings', type: 'redirect' }],
+    };
+
+    render(
+      <WorkflowOverview
+        graph={rawScanGraph}
+        isDark={false}
+        viewMode="map"
+        selectedFlowIndex={null}
+        activeFilter={null}
+        onFilterChange={() => {}}
+      />
+    );
+
+    const overview = screen.getByTestId('workflow-overview');
+    expect(within(overview).getByText('Scan')).toBeTruthy();
+    expect(within(overview).getByText('Routes')).toBeTruthy();
+    expect(within(overview).getByText('Screens')).toBeTruthy();
+    expect(within(overview).getByText('Hints')).toBeTruthy();
+    expect(within(overview).queryByText('Sections')).toBeNull();
+    expect(within(overview).queryByText('Personas')).toBeNull();
+    expect(within(overview).queryByText('Auth')).toBeNull();
+
+    const summary = buildWorkflowOverviewSummary(rawScanGraph, null);
+    expect(summary.overviewKind).toBe('scan');
+    expect(summary.routeCount).toBe(2);
+    expect(summary.redirectCount).toBe(1);
+    expect(summary.sectionItems).toHaveLength(0);
+    expect(summary.personaItems).toHaveLength(0);
+    expect(summary.authItems).toHaveLength(0);
+  });
+
   it('renders chips as toggle buttons and clears the active chip when clicked again', () => {
     const onFilterChange = vi.fn();
     const activeFilter: WorkflowFilter = { kind: 'auth', value: 'speaker' };
