@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Node } from '@xyflow/react';
 import type { NavMapGraph } from '../types';
 import type { ZoomTier } from './useSemanticZoom';
+import { getGraphNodeId } from '../utils/graphHelpers';
 
 interface UseNavMapDerivedGraphOptions {
   graph: NavMapGraph | null;
@@ -13,7 +14,7 @@ interface UseNavMapDerivedGraphOptions {
 
 function addGalleryFlag(node: Node, galleryNodeIds: Set<string>): Node {
   if (node.type === 'groupNode') return node;
-  const hasGallery = galleryNodeIds.has(node.id);
+  const hasGallery = galleryNodeIds.has(getGraphNodeId(node));
   if (!hasGallery) return node;
   return { ...node, data: { ...node.data, hasGallery: true } };
 }

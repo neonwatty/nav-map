@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { Node, OnSelectionChangeParams } from '@xyflow/react';
 import type { ViewMode } from '../types';
 import type { WalkthroughState } from './useWalkthrough';
+import { getGraphNodeId } from '../utils/graphHelpers';
 
 interface NavMapSelectionState {
   setSelectedNodeId: (id: string | null) => void;
@@ -28,7 +29,9 @@ function centerOnNode(
   duration: number,
   setCenter: (x: number, y: number, options: CenterOptions) => void
 ): void {
-  const node = nodes.find(candidate => candidate.id === nodeId);
+  const node = nodes.find(
+    candidate => candidate.id === nodeId || getGraphNodeId(candidate) === nodeId
+  );
   if (node) {
     setCenter(node.position.x + 90, node.position.y + 70, { zoom, duration });
   }
@@ -55,10 +58,11 @@ export function useNavMapNavigation({
     ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
       const selected = selectedNodes[0];
       if (selected) {
-        ctxRef.current.setSelectedNodeId(selected.id);
-        walkthroughRef.current.push(selected.id);
+        const graphNodeId = getGraphNodeId(selected);
+        ctxRef.current.setSelectedNodeId(graphNodeId);
+        walkthroughRef.current.push(graphNodeId);
         if (viewModeRef.current === 'tree') {
-          setTreeRootId(selected.id);
+          setTreeRootId(graphNodeId);
         }
       }
     },

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { Node } from '@xyflow/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { NavMapGraph } from '../../types';
 import { FlowAnimationOverlay } from './FlowAnimationOverlay';
@@ -52,6 +53,36 @@ describe('FlowAnimationOverlay', () => {
 
     expect(screen.getByRole('status').textContent).toContain('Preparing flow animation...');
     expect(screen.queryByTestId('flow-animator')).toBeNull();
+  });
+
+  it('passes rendered occurrence ids to the animator for repeated flow nodes', () => {
+    const loopingGraph: NavMapGraph = {
+      ...graph,
+      flows: [{ name: 'Looping Journey', steps: ['home', 'signup', 'home'] }],
+    };
+    const nodes: Node[] = [
+      {
+        id: 'flow-0-step-0-home',
+        position: { x: 0, y: 0 },
+        data: { nodeId: 'home', flowStepNumber: 1 },
+      },
+      {
+        id: 'flow-0-step-1-signup',
+        position: { x: 100, y: 0 },
+        data: { nodeId: 'signup', flowStepNumber: 2 },
+      },
+      {
+        id: 'flow-0-step-2-home',
+        position: { x: 200, y: 0 },
+        data: { nodeId: 'home', flowStepNumber: 3 },
+      },
+    ];
+
+    renderOverlay({ graph: loopingGraph, nodes });
+
+    expect(screen.getByTestId('flow-animator').textContent).toBe(
+      'flow-0-step-0-home → flow-0-step-1-signup → flow-0-step-2-home'
+    );
   });
 
   it('lets users stop the animation', () => {

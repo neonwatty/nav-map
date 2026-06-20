@@ -1,0 +1,431 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Nav Map Live Readiness Preflight"
+  slug: "nav-map-live-readiness-preflight"
+  kind: specific
+  tranche: "Complete the first reusable Live readiness UX slice: preflight, summary, per-node state, fallback rendering, tests, docs, and Chrome dogfood."
+  status: done
+  oracle:
+    signal: "Fresh Codex Chrome walkthrough of http://localhost:3001/?dataset=prcard proves Live readiness preflight, global summary, per-node statuses, reachable app/mockup live views, offline fallback, screenshot fallback, and no fresh browser warning/error logs."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing focused tests/typecheck/build plus recorded Chrome workflows against reachable and intentionally offline targets."
+  intake:
+    original_request: "Plan with GoalBuddy prep how to improve Live option UX with preflight checks and global/per-node unavailable notices."
+    interpreted_outcome: "Users can switch to Live mode and immediately understand which nodes are ready, offline, blocked, static-only, or still checking before broken live previews appear."
+    input_shape: specific
+    audience: "nav-map users reviewing workflow atlases across app routes, mockups, and prototype surfaces"
+    authority: requested
+    proof_type: test
+    completion_proof: "Focused automated tests plus Chrome dogfood workflows proving the Live readiness UX end to end."
+    likely_misfire: "Treating Live as successful when only the selected iframe URL exists, while offline app targets, static prototypes, blocked auth states, or crashed iframes remain unclear."
+    blind_spots_considered:
+      - "Browser probes can reliably detect network refusal but cannot always prove cross-origin HTTP status or route render correctness."
+      - "App routes may require looser iframe sandboxing than mockups."
+      - "Preflight should avoid making Live mode feel slow or noisy on large graphs."
+      - "The current screenshots fallback must remain useful, not replaced by blank live failures."
+    existing_plan_facts:
+      - "When the user clicks Live, nav-map should check the desired app URL and node targets before showing live views."
+      - "The UX should show global unavailability and individual node unavailability."
+      - "Preflight should support app routes, mockups, static prototypes, blocked states, and offline targets."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-live-readiness-preflight/"
+    command: "npx goalbuddy board docs/goals/nav-map-live-readiness-preflight"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map the current Live-mode data flow, selected-node probe behavior, preview toggle state, node rendering, and tests without editing implementation files."
+    inputs:
+      - "README.md"
+      - "packages/core/src/components/NavMap.tsx"
+      - "packages/core/src/components/panels/PreviewModeToggle.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.tsx"
+      - "packages/core/src/components/nodes/PageNode.tsx"
+      - "packages/core/src/utils/artifactPreview.ts"
+      - "packages/core/src/hooks/useNavMap.ts"
+      - "packages/core/src/hooks/useNavMapDerivedGraph.ts"
+      - "packages/core/src/hooks/useViewModeLayoutBuilders.ts"
+      - "packages/demo/public/prcard.workflow.json"
+      - "Existing focused tests for preview mode, nodes, and ConnectionPanel"
+    constraints:
+      - "Read-only."
+      - "Do not inspect secrets, env files, auth storage, cookies, localStorage, or session storage."
+      - "Do not edit implementation files."
+      - "Preserve existing route behavior and app-specific data boundaries."
+    expected_output:
+      - "Current Live-mode flow map"
+      - "Where selected-node-only probing lives today"
+      - "Existing tests to extend"
+      - "Smallest reusable readiness model proposal"
+      - "Implementation risks and verification commands"
+    receipt:
+      result: done
+      summary: "Live mode is currently global state, but target probing is selected-node-only in ConnectionPanel; node cards and toolbar know availability labels but not target health. The smallest reusable model is graph-scoped live readiness derived from getNodePreviewState plus per-node probe status, exposed through context to toolbar, PageNode, and ConnectionPanel."
+      evidence:
+        - "packages/core/src/components/NavMap.tsx: previewMode, liveBaseUrlOverride, liveUrlOverrides are persisted and passed through NavMapShell context."
+        - "packages/core/src/components/panels/PreviewModeToggle.tsx: Live click only changes previewMode; it does not preflight targets."
+        - "packages/core/src/components/panels/ConnectionPanel.tsx: useLiveTargetProbe currently checks only previewState.liveUrl for the selected panel node."
+        - "packages/core/src/components/nodes/PageNode.tsx: node tabs show artifact kind and declared Live/Static/Blocked state, but no reachable/offline/checking target health."
+        - "packages/core/src/utils/artifactPreview.ts: getNodePreviewState already centralizes app/mockup/prototype classification, URL source, static, blocked, and live availability."
+        - "packages/core/src/hooks/useViewModeLayoutBuilders.ts: flow occurrence nodes preserve graph node ids through nodeId, so readiness can key by graph node id and work across repeated flow nodes."
+        - "packages/core/src/components/NavMap.test.tsx, ConnectionPanel.test.tsx, PageNode.test.tsx, artifactPreview.test.ts: existing focused tests cover preview toggle persistence, selected panel live/offline behavior, node tabs, and preview-state derivation."
+      proposal:
+        model:
+          - "NavMapLiveReadinessStatus: idle | checking | reachable | offline | static | blocked | unavailable"
+          - "NavMapLiveReadinessByNode: node id -> { status, artifactKind, liveUrl, liveUrlSource, message }"
+          - "NavMapLiveReadinessSummary: total, checking, reachable, offline, static, blocked, unavailable"
+          - "Probe scope defaults to the current flow when in flow mode with a selected flow, otherwise all graph nodes."
+        implementation_points:
+          - "Move browser target probing into a reusable hook near NavMap state, not ConnectionPanel."
+          - "Use getNodePreviewState for every scoped node, then probe only available iframe targets with liveUrl."
+          - "Expose readiness map and summary through NavMapContext."
+          - "Toolbar renders compact Live readiness summary near the Live toggle."
+          - "PageNode renders target-health tab in Live mode."
+          - "ConnectionPanel consumes readiness instead of running its own selected-node probe."
+      risks:
+        - "Browser fetch with no-cors proves network reachability but not cross-origin HTTP status or full render correctness."
+        - "Probing every graph node on very large maps may be noisy; scope should prefer current flow and use bounded concurrency or simple effect cancellation."
+        - "Static/prototype and blocked/auth states should not be treated as failures."
+      verify:
+        - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+        - "pnpm --filter @neonwatty/nav-map typecheck"
+        - "pnpm --filter @neonwatty/nav-map build"
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the smallest reusable Live readiness model and the first safe Worker package."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Prefer one coherent vertical slice over tiny helper-only tasks."
+      - "Keep PRcard-specific assumptions out of nav-map core."
+      - "Account for cross-origin probe limitations honestly."
+    expected_output:
+      - "Decision"
+      - "Readiness model fields and status vocabulary"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify commands"
+      - "stop_if conditions"
+      - "Deferred follow-up candidates"
+    receipt:
+      result: done
+      decision: "Proceed with one reusable, flow-scoped Live readiness preflight slice. The model should live in nav-map core, derive node capability from the existing artifact preview helpers, probe only iframe-capable live URLs, and expose readiness through context so toolbar, nodes, and selected-panel UX all agree."
+      approved_model:
+        statuses:
+          - "idle: Live mode is not active or no check has started."
+          - "checking: an iframe-capable live URL is being probed."
+          - "reachable: the browser can reach the live URL well enough to attempt an iframe."
+          - "offline: the browser probe failed or timed out."
+          - "static: the node is intentionally screenshot/prototype/static-only."
+          - "blocked: the node declares auth, permissions, or another reason Live cannot be used."
+          - "unavailable: no live URL or iframe-capable target is available."
+        readiness_record:
+          - "nodeId"
+          - "status"
+          - "artifactKind"
+          - "liveUrl, when safe and available"
+          - "liveUrlSource, when known"
+          - "message for compact UX copy"
+        summary_record:
+          - "scope: current-flow or graph"
+          - "total, checking, reachable, offline, static, blocked, unavailable"
+        scope_rule: "When the user is in flow view with a selected flow, preflight unique graph nodes in that flow plus the selected node if it is outside the flow. Otherwise preflight all graph nodes."
+      worker_package:
+        objective: "Ship the first user-visible Live readiness slice: reusable readiness model/hook, global Live summary, per-node readiness tab, selected-panel readiness/fallback behavior, focused tests, and no PRcard-specific core logic."
+        acceptance_criteria:
+          - "Switching to Live starts a preflight for the current flow or graph without requiring the user to click each node."
+          - "The toolbar shows a compact global readiness summary while checking and after results settle."
+          - "Each node in Live mode shows a border/tab status indicating reachable, offline, static, blocked, checking, or unavailable."
+          - "The selected-node panel uses the same readiness state as the node and toolbar, with no separate selected-only probe."
+          - "Reachable app URLs and reachable mockup URLs still render in iframes with the existing app/mockup sandbox behavior."
+          - "Offline or unavailable live targets do not show a broken blank iframe; screenshots remain usable with a clear Live-unavailable notice."
+          - "Prototype/static and blocked nodes are described as intentional non-live states, not as failures."
+          - "The implementation does not hard-code PRcard, Deckchecker, localhost ports, or app-specific workflow behavior into nav-map core."
+          - "Focused tests cover preview state derivation, toolbar/Live summary, selected-panel offline fallback, and node readiness labels."
+      deferred:
+        - "Backend or service-worker grade route checks that can prove HTTP status and page render correctness across origins."
+        - "Large-graph probe concurrency controls beyond simple cancellation and current-flow scoping."
+        - "Auth-aware Live sessions or credentialed checks."
+        - "Per-node manual retry controls, unless they become necessary during dogfood."
+      limitations:
+        - "Browser no-cors fetch can establish practical reachability, but it cannot always prove exact cross-origin HTTP status."
+        - "Iframe reachability is separate from whether the app page itself renders meaningful content."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the first user-visible Live readiness slice selected by Judge: reusable readiness model/hook, global summary, per-node status, selected-panel fallback, and focused tests."
+    allowed_files:
+      - "packages/core/src/types.ts"
+      - "packages/core/src/hooks/useNavMap.ts"
+      - "packages/core/src/hooks/useLiveReadiness.ts"
+      - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+      - "packages/core/src/utils/artifactPreview.ts"
+      - "packages/core/src/utils/artifactPreview.test.ts"
+      - "packages/core/src/components/NavMap.tsx"
+      - "packages/core/src/components/NavMapShell.tsx"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "packages/core/src/components/panels/NavMapToolbar.tsx"
+      - "packages/core/src/components/panels/PreviewModeToggle.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+      - "packages/core/src/components/nodes/PageNode.tsx"
+      - "packages/core/src/components/nodes/PageNode.test.tsx"
+    expected_output:
+      - "Reusable Live readiness status/model exposed through nav-map context."
+      - "Live-mode preflight runs for current flow or graph and includes selected node."
+      - "Toolbar summary and per-node status tabs reflect the same readiness map."
+      - "Selected panel renders reachable live iframe or screenshot-backed unavailable notice according to readiness."
+      - "Focused tests prove reachable, offline, static, blocked, and unavailable paths."
+    acceptance_criteria:
+      - "Switching to Live starts readiness checks for scoped nodes without clicking each one."
+      - "Global summary visibly distinguishes ready, offline, static, blocked, unavailable, and checking states."
+      - "Node cards expose individual readiness in Live mode."
+      - "Selected panel never shows a blank broken iframe when readiness is offline or unavailable."
+      - "Screenshots mode behavior remains unchanged."
+      - "Prototype/static nodes are not treated as app failures."
+      - "No app-specific behavior is added to nav-map core."
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Readiness model cannot represent app, mockup, prototype, blocked, static, and offline states."
+      - "The implementation would hard-code PRcard behavior into nav-map core."
+      - "Verification fails twice."
+      - "Need to inspect secrets, auth storage, cookies, localStorage, session storage, or env values."
+    receipt:
+      result: done
+      summary: "Implemented a reusable Live readiness slice. Live mode now builds a scoped readiness map from graph/flow nodes, probes iframe-capable live targets, exposes readiness through NavMap context, renders a toolbar summary, adds per-node readiness tabs/border color, and makes the selected panel use the same readiness state with screenshot-backed unavailable notices instead of broken blank iframes."
+      changed_files:
+        - "packages/core/src/types.ts"
+        - "packages/core/src/hooks/useNavMap.ts"
+        - "packages/core/src/hooks/useLiveReadiness.ts"
+        - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+        - "packages/core/src/components/NavMap.tsx"
+        - "packages/core/src/components/NavMapShell.tsx"
+        - "packages/core/src/components/panels/NavMapToolbar.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+        - "packages/core/src/components/nodes/PageNode.tsx"
+        - "packages/core/src/components/nodes/PageNode.test.tsx"
+        - "packages/core/src/components/NavMap.test.tsx"
+      evidence:
+        - "useLiveReadiness computes current-flow or graph scope and includes the selected node when it is outside the active flow."
+        - "Readiness statuses cover checking, reachable, offline, static, blocked, and unavailable without app-specific PRcard logic."
+        - "Toolbar reads liveReadinessSummary from context and displays a compact Live readiness summary when Live mode is active."
+        - "PageNode reads liveReadinessByNode from context and displays Ready/Offline/Static/Blocked/Checking/No Live in Live mode."
+        - "ConnectionPanel removed its selected-node fetch probe and consumes shared readiness; offline/unavailable/checking states keep screenshots visible beneath the notice."
+        - "A stable empty override map fixed an effect loop in no-overrides paths."
+      verification:
+        passed:
+          - "pnpm --filter @neonwatty/nav-map exec vitest run src/hooks/useLiveReadiness.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map exec vitest run src/components/panels/ConnectionPanel.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map exec vitest run src/components/nodes/PageNode.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map exec vitest run src/components/NavMap.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map typecheck"
+        caveat:
+          - "The board's script-form test command `pnpm --filter @neonwatty/nav-map test -- ...` expanded into 43 package test files and hit a Vitest worker heap OOM after 42 files/266 tests had passed. The equivalent direct focused Vitest command passed 5 files/60 tests."
+      limitations:
+        - "Client-side no-cors fetch still proves practical reachability only; it does not prove exact cross-origin status or meaningful page render correctness."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+          status: pass
+          evidence: "5 focused test files passed; 60 tests passed."
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+          evidence: "Package typecheck passed."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add or update docs and demo receipts for the Live readiness behavior after the implementation package lands."
+    allowed_files:
+      - "README.md"
+      - "docs/goals/nav-map-live-readiness-preflight/**"
+    verify:
+      - "Documentation describes app/mockup/prototype readiness and browser-probe limitations."
+      - "Documentation does not include secrets, env values, cookies, tokens, or auth storage contents."
+    stop_if:
+      - "Implementation behavior is still changing."
+      - "Docs would need to reveal private project details or secrets."
+    receipt:
+      result: done
+      changed_files:
+        - "README.md"
+        - "docs/goals/nav-map-live-readiness-preflight/state.yaml"
+      summary: "Updated README Preview Modes docs to describe Live readiness as a scoped browser-side preflight with toolbar summary, per-node labels, screenshot fallback preservation, app/mockup/prototype distinctions, Live Target overrides, and no-cors reachability limitations."
+      commands:
+        - cmd: "rg -n \"secret|token|cookie|env|storage|OAuth|private key|service-role|localStorage|sessionStorage\" README.md docs/goals/nav-map-live-readiness-preflight/state.yaml"
+          status: pass
+          evidence: "Matches are existing safety guidance, allowed example auth-state paths, or non-secret browser local storage wording; no secret values or auth storage contents were printed."
+        - cmd: "git diff -- README.md"
+          status: pass
+          evidence: "Reviewed docs-only diff for Live readiness wording."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Run final local verification and Chrome dogfood workflows against reachable and intentionally offline Live targets."
+    allowed_files:
+      - "docs/goals/nav-map-live-readiness-preflight/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "curl -I -sS 'http://localhost:3001/?dataset=prcard'"
+      - "Codex Chrome: current-flow Live preflight shows global summary and per-node statuses."
+      - "Codex Chrome: reachable app route renders live with corrected sandbox."
+      - "Codex Chrome: reachable HTML mockup renders live."
+      - "Codex Chrome: intentionally offline target shows offline fallback and screenshot remains usable."
+      - "Codex Chrome: no fresh browser warning/error logs."
+    stop_if:
+      - "Local target app cannot be started or no safe replacement target exists."
+      - "Chrome extension cannot be controlled."
+      - "Verification reveals a regression requiring implementation files outside the active Worker scope."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/goals/nav-map-live-readiness-preflight/state.yaml"
+      summary: "Ran the final automated verification and fresh Codex Chrome dogfood pass against the PRcard demo, reachable app routes on localhost:3000, the demo-hosted HTML mockup, static prototype surfaces, and an intentionally offline Live Target override."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+          status: pass
+          evidence: "5 focused test files passed; 60 tests passed."
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+          evidence: "TypeScript completed with no errors."
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+          evidence: "tsup ESM/CJS/DTS build completed successfully."
+        - cmd: "curl -I -sS 'http://localhost:3001/?dataset=prcard'"
+          status: pass
+          evidence: "HTTP 200 from the exact demo review URL."
+        - cmd: "curl -I -sS 'http://localhost:3001/mockups/prcard-quick-setup.html'"
+          status: pass
+          evidence: "HTTP 200 from the HTML mockup target."
+        - cmd: "curl -I -sS 'http://localhost:3000/home'"
+          status: pass
+          evidence: "HTTP 200 from a reachable app-route target."
+      chrome_workflows:
+        - name: "Current-flow Live preflight"
+          status: pass
+          evidence: "Fresh Chrome tab opened http://localhost:3001/?dataset=prcard. Live mode showed `Live: 6 ready` in Signed-out activation and each visible app node had a `Ready` tab."
+        - name: "Reachable app route"
+          status: pass
+          evidence: "Selecting Home showed Target Health `Ready`, resolved http://localhost:3000/home, and rendered one iframe with sandbox `allow-scripts allow-forms allow-same-origin`."
+        - name: "Reachable HTML mockup"
+          status: pass
+          evidence: "Switching to GitHub-connected creator showed `Live: 7 ready / 2 static`; selecting Quick Setup HTML Mockup rendered http://localhost:3001/mockups/prcard-quick-setup.html with sandbox `allow-scripts allow-forms`."
+        - name: "Static prototype surface"
+          status: pass
+          evidence: "Selecting Quick Setup Concept showed Prototype/Static health, no iframe, and retained screenshot-backed details."
+        - name: "Intentionally offline target"
+          status: pass
+          evidence: "Setting app base URL to http://localhost:65534 changed the flow summary to `Live: 1 ready / 5 offline / 2 static`; selected Quick Setup showed Offline, no iframe, and the Live target unavailable message while preserving screenshot context. The override was cleared afterward and the flow returned to `Live: 6 ready / 2 static`."
+        - name: "Browser warnings/errors"
+          status: pass
+          evidence: "Chrome warning/error log read returned an empty list after the dogfood workflows."
+      limitations:
+        - "Readiness still uses browser-side reachability; it does not prove exact cross-origin HTTP status or full app render correctness."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the Live readiness preflight tranche satisfies the original user outcome."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if Live remains a mystery toggle for app routes, mockups, prototypes, offline targets, or screenshot fallbacks."
+      - "Reject completion if Chrome dogfood receipts are missing."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "mapping from receipts to oracle"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "The Live readiness preflight tranche satisfies the original outcome. Live is no longer a mystery toggle: the app shows scoped readiness before/while rendering live previews, exposes global and per-node status, preserves screenshot fallback for static/offline states, and gives users a local Live Target editor for app/mockup dogfooding."
+      oracle_mapping:
+        - "Reusable model and shared context are proven by T003 implementation plus focused tests covering reachable, offline, static, blocked, unavailable, toolbar summary, node labels, and selected-panel fallback."
+        - "Docs describe app/mockup/prototype readiness, Live Target overrides, screenshot fallback behavior, and browser-probe limitations."
+        - "Automated proof passed: focused Vitest, typecheck, core build, and local HTTP checks."
+        - "Chrome proof passed: fresh tab on http://localhost:3001/?dataset=prcard validated current-flow summary/per-node statuses, reachable app iframe, reachable HTML mockup iframe, static prototype handling, intentional offline fallback, override clearing, and no warning/error logs."
+      missing_evidence: []
+      limitations:
+        - "Browser-side readiness is practical reachability only; it does not prove exact cross-origin HTTP status or full page render correctness."
+      next_task: null
+
+checks:
+  dirty_fingerprint: "git status remains dirty with this goal's changes plus preexisting nav-map work; no unrelated changes were reverted."
+  last_verification:
+    result: pass
+    task: T005
+    commands:
+      - "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/components/NavMap.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "curl -I -sS 'http://localhost:3001/?dataset=prcard'"
+      - "Codex Chrome dogfood workflows recorded in T005 receipt"

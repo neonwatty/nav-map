@@ -3,7 +3,15 @@ import type { Edge, Node } from '@xyflow/react';
 import type { AnalyticsAdapter } from '../analytics/types';
 import { NavMapContext, type NavMapContextValue } from '../hooks/useNavMap';
 import type { WalkthroughState } from '../hooks/useWalkthrough';
-import type { EdgeMode, NavMapGraph, NavMapPreviewMode, NavMapTheme, ViewMode } from '../types';
+import type {
+  EdgeMode,
+  NavMapGraph,
+  NavMapLiveReadinessByNode,
+  NavMapLiveReadinessSummary,
+  NavMapPreviewMode,
+  NavMapTheme,
+  ViewMode,
+} from '../types';
 import type { WorkflowFilter } from '../workflowFilters';
 import { NavMapCanvas } from './NavMapCanvas';
 import { NavMapChrome } from './NavMapChrome';
@@ -39,6 +47,13 @@ interface NavMapShellProps {
   setEdgeMode: Dispatch<SetStateAction<EdgeMode>>;
   previewMode: NavMapPreviewMode;
   setPreviewMode: Dispatch<SetStateAction<NavMapPreviewMode>>;
+  liveReadinessByNode: NavMapLiveReadinessByNode;
+  liveReadinessSummary: NavMapLiveReadinessSummary;
+  liveBaseUrlOverride: string;
+  setLiveBaseUrlOverride: (url: string) => void;
+  liveUrlOverrides: Record<string, string>;
+  setLiveUrlOverride: (nodeId: string, url: string) => void;
+  clearLiveUrlOverride: (nodeId: string) => void;
   showSharedNav: boolean;
   setShowSharedNav: Dispatch<SetStateAction<boolean>>;
   showRedirects: boolean;
@@ -115,7 +130,22 @@ export function NavMapShell(props: NavMapShellProps) {
   } = props;
 
   return (
-    <NavMapContext.Provider value={{ ...ctx, focusedGroupId, edgeMode, showCoverage, previewMode }}>
+    <NavMapContext.Provider
+      value={{
+        ...ctx,
+        focusedGroupId,
+        edgeMode,
+        showCoverage,
+        previewMode,
+        liveReadinessByNode: props.liveReadinessByNode,
+        liveReadinessSummary: props.liveReadinessSummary,
+        liveBaseUrlOverride: props.liveBaseUrlOverride,
+        setLiveBaseUrlOverride: props.setLiveBaseUrlOverride,
+        liveUrlOverrides: props.liveUrlOverrides,
+        setLiveUrlOverride: props.setLiveUrlOverride,
+        clearLiveUrlOverride: props.clearLiveUrlOverride,
+      }}
+    >
       <div
         ref={containerRef}
         className={className}

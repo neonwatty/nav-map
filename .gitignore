@@ -23,6 +23,7 @@ nav-screenshots/
 
 # Test artifacts
 .playwright-mcp/
+docs/goals/**/.goalbuddy-board/
 
 # Landing page brainstorm artifacts
 .superpowers/

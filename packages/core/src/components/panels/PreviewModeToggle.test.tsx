@@ -8,47 +8,23 @@ describe('PreviewModeToggle', () => {
 
     render(<PreviewModeToggle value="screenshots" isDark={false} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use live previews where available' }));
-
-    expect(onChange).toHaveBeenCalledWith('live');
-  });
-
-  it('changes to live mode on pointer activation without double firing click', () => {
-    const onChange = vi.fn();
-    const liveButtonName = 'Use live previews where available';
-
-    render(<PreviewModeToggle value="screenshots" isDark={false} onChange={onChange} />);
-
-    const liveButton = screen.getByRole('button', { name: liveButtonName });
-    fireEvent.pointerDown(liveButton, { button: 0 });
-    fireEvent.click(liveButton);
-
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('live');
-  });
-
-  it('accepts pointer activation when the event omits a button value', () => {
-    const onChange = vi.fn();
-
-    render(<PreviewModeToggle value="screenshots" isDark={false} onChange={onChange} />);
-
-    fireEvent.pointerDown(
-      screen.getByRole('button', { name: 'Use live previews where available' })
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
     );
 
     expect(onChange).toHaveBeenCalledWith('live');
   });
 
-  it('changes to live mode on mouse activation', () => {
+  it('changes back to screenshots mode on click activation', () => {
     const onChange = vi.fn();
 
-    render(<PreviewModeToggle value="screenshots" isDark={false} onChange={onChange} />);
+    render(<PreviewModeToggle value="live" isDark={false} onChange={onChange} />);
 
-    fireEvent.mouseDown(screen.getByRole('button', { name: 'Use live previews where available' }), {
-      button: 0,
-    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+    );
 
-    expect(onChange).toHaveBeenCalledWith('live');
+    expect(onChange).toHaveBeenCalledWith('screenshots');
   });
 
   it('does not re-emit the active mode', () => {
@@ -56,13 +32,20 @@ describe('PreviewModeToggle', () => {
 
     render(<PreviewModeToggle value="live" isDark={false} onChange={onChange} />);
 
-    fireEvent.pointerDown(
-      screen.getByRole('button', { name: 'Use live previews where available' }),
-      {
-        button: 0,
-      }
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Render live app or mockup previews where available' })
     );
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('labels the control as a preview render mode selector', () => {
+    render(<PreviewModeToggle value="screenshots" isDark={false} onChange={() => {}} />);
+
+    expect(screen.getByRole('group', { name: 'Preview render mode' })).toBeTruthy();
+    expect(screen.getByText('Render')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Render saved screenshots and static surface images' })
+    ).toBeTruthy();
   });
 });

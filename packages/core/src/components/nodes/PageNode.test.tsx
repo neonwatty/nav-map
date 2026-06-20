@@ -58,6 +58,43 @@ function renderPageNode(data: Record<string, unknown>) {
   );
 }
 
+function renderLivePageNode(data: Record<string, unknown>, liveStatus: 'reachable' | 'offline') {
+  const props = {
+    id: String(data.id ?? 'node'),
+    data,
+    selected: false,
+    dragging: false,
+    isConnectable: true,
+    zIndex: 0,
+    positionAbsoluteX: 0,
+    positionAbsoluteY: 0,
+  } as unknown as NodeProps;
+
+  return render(
+    <NavMapContext.Provider
+      value={{
+        ...contextValue,
+        previewMode: 'live',
+        liveReadinessByNode: {
+          [String(data.nodeId ?? data.id ?? 'node')]: {
+            nodeId: String(data.nodeId ?? data.id ?? 'node'),
+            status: liveStatus,
+            artifactKind: 'app',
+            liveUrl: 'http://localhost:3000/dashboard',
+            liveUrlSource: 'graph-base',
+            message:
+              liveStatus === 'reachable'
+                ? 'Live target is reachable.'
+                : 'Live target is not reachable.',
+          },
+        },
+      }}
+    >
+      <PageNode {...props} />
+    </NavMapContext.Provider>
+  );
+}
+
 describe('PageNode preview tabs', () => {
   it('shows App and Live for an app node', () => {
     renderPageNode({
@@ -75,6 +112,24 @@ describe('PageNode preview tabs', () => {
   it('shows Prototype and Static for a generated-image prototype node', () => {
     renderPageNode({
       id: 'prototype-dashboard',
+      label: 'Dashboard Prototype',
+      route: 'prototype://dashboard',
+      group: 'prototype',
+      screenshot: 'dashboard-prototype.png',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'generated-image',
+      },
+    });
+
+    expect(screen.getByText('Prototype')).toBeTruthy();
+    expect(screen.getByText('Static')).toBeTruthy();
+  });
+
+  it('uses the original graph node id for preview status on flow occurrence nodes', () => {
+    renderPageNode({
+      id: 'flow-1-step-0-prototype-dashboard',
+      nodeId: 'prototype-dashboard',
       label: 'Dashboard Prototype',
       route: 'prototype://dashboard',
       group: 'prototype',
@@ -133,5 +188,22 @@ describe('PageNode preview tabs', () => {
     expect(screen.queryByRole('img', { name: 'Dashboard' })).toBeNull();
     expect(screen.getByText('Dashboard')).toBeTruthy();
     expect(screen.getByText('/dashboard')).toBeTruthy();
+  });
+
+  it('shows live readiness on nodes in live mode', () => {
+    renderLivePageNode(
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        route: '/dashboard',
+        group: 'app',
+        screenshot: 'dashboard.png',
+      },
+      'offline'
+    );
+
+    expect(screen.getByText('App')).toBeTruthy();
+    expect(screen.getByText('Live')).toBeTruthy();
+    expect(screen.getByText('Offline')).toBeTruthy();
   });
 });

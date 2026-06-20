@@ -6,6 +6,11 @@ import { useNavMapNavigation } from './useNavMapNavigation';
 const nodes: Node[] = [
   { id: 'home', position: { x: 10, y: 20 }, data: {} },
   { id: 'settings', position: { x: 100, y: 200 }, data: {} },
+  {
+    id: 'flow-0-step-2-settings',
+    position: { x: 300, y: 400 },
+    data: { nodeId: 'settings' },
+  },
 ];
 
 function renderNavigation(options: Partial<Parameters<typeof useNavMapNavigation>[0]> = {}) {
@@ -47,6 +52,19 @@ describe('useNavMapNavigation', () => {
     expect(setTreeRootId).toHaveBeenCalledWith('settings');
   });
 
+  it('selects the graph node id for flow occurrence nodes', () => {
+    const setSelectedNodeId = vi.fn();
+    const push = vi.fn();
+    const { result } = renderNavigation({ ctx: { setSelectedNodeId }, walkthrough: { push } });
+
+    act(() => {
+      result.current.onSelectionChange({ nodes: [nodes[2]], edges: [] });
+    });
+
+    expect(setSelectedNodeId).toHaveBeenCalledWith('settings');
+    expect(push).toHaveBeenCalledWith('settings');
+  });
+
   it('navigates to a node and centers with default navigation zoom', () => {
     const setSelectedNodeId = vi.fn();
     const push = vi.fn();
@@ -64,6 +82,20 @@ describe('useNavMapNavigation', () => {
     expect(setSelectedNodeId).toHaveBeenCalledWith('settings');
     expect(push).toHaveBeenCalledWith('settings');
     expect(setCenter).toHaveBeenCalledWith(190, 270, { zoom: 0.8, duration: 300 });
+  });
+
+  it('centers on a flow occurrence when navigating by graph node id', () => {
+    const setCenter = vi.fn();
+    const { result } = renderNavigation({
+      nodes: [nodes[0], nodes[2]],
+      setCenter,
+    });
+
+    act(() => {
+      result.current.navigateToNode('settings');
+    });
+
+    expect(setCenter).toHaveBeenCalledWith(390, 470, { zoom: 0.8, duration: 300 });
   });
 
   it('navigates from search with closer zoom and longer duration', () => {

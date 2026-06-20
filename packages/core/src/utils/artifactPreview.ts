@@ -10,9 +10,15 @@ export interface NavMapNodePreviewState {
   artifactKind: NavMapArtifactKind;
   status: NavMapLivePreviewStatus;
   liveUrl?: string;
+  liveUrlSource?: 'manifest' | 'graph-base' | 'local-base-override' | 'local-node-override';
   liveMode: 'iframe' | 'browser' | 'external';
   blockedReason?: NavMapLivePreviewBlockedReason;
   limitations: string[];
+}
+
+export interface NavMapPreviewOverrides {
+  appBaseUrl?: string;
+  nodeLiveUrls?: Record<string, string>;
 }
 
 export function getArtifactKind(node: NavMapNode): NavMapArtifactKind {
@@ -27,13 +33,25 @@ export function getArtifactKind(node: NavMapNode): NavMapArtifactKind {
 
 export function getNodePreviewState(
   node: NavMapNode,
-  graph?: Pick<NavMapGraph, 'meta'>
+  graph?: Pick<NavMapGraph, 'meta'>,
+  overrides: NavMapPreviewOverrides = {}
 ): NavMapNodePreviewState {
   const artifactKind = getArtifactKind(node);
   const preview = node.metadata?.preview;
+  const nodeLiveUrlOverride = sanitizeLiveUrl(overrides.nodeLiveUrls?.[node.id]);
   const explicitLiveUrl = sanitizeLiveUrl(preview?.liveUrl);
+  const overrideBaseUrl = sanitizeNonEmptyString(overrides.appBaseUrl);
   const liveUrl =
-    explicitLiveUrl ?? (artifactKind === 'app' ? deriveAppLiveUrl(node, graph) : undefined);
+    nodeLiveUrlOverride ??
+    explicitLiveUrl ??
+    (artifactKind === 'app' ? deriveAppLiveUrl(node, graph, overrideBaseUrl) : undefined);
+  const liveUrlSource = resolveLiveUrlSource({
+    artifactKind,
+    liveUrl,
+    nodeLiveUrlOverride,
+    explicitLiveUrl,
+    overrideBaseUrl,
+  });
   const declaredStatus = sanitizeLiveStatus(preview?.liveStatus);
   const baseStatus =
     declaredStatus ?? (liveUrl ? 'available' : artifactKind === 'prototype' ? 'static' : 'blocked');
@@ -53,6 +71,7 @@ export function getNodePreviewState(
     artifactKind,
     status,
     ...(liveUrl ? { liveUrl } : {}),
+    ...(liveUrlSource ? { liveUrlSource } : {}),
     liveMode,
     ...(blockedReason ? { blockedReason } : {}),
     limitations: Array.isArray(preview?.limitations)
@@ -92,12 +111,37 @@ export function getPreviewStatusMessage(state: NavMapNodePreviewState): string {
   return `Live preview blocked because ${formatBlockedReason(state.blockedReason)}.`;
 }
 
-function deriveAppLiveUrl(node: NavMapNode, graph?: Pick<NavMapGraph, 'meta'>): string | undefined {
+function deriveAppLiveUrl(
+  node: NavMapNode,
+  graph?: Pick<NavMapGraph, 'meta'>,
+  overrideBaseUrl?: string
+): string | undefined {
   if (node.route.startsWith('prototype://')) return undefined;
   if (!node.route.startsWith('/')) return undefined;
-  const baseUrl = sanitizeNonEmptyString(graph?.meta.baseUrl);
+  const baseUrl = overrideBaseUrl ?? sanitizeNonEmptyString(graph?.meta.baseUrl);
   if (!baseUrl) return undefined;
   return `${baseUrl.replace(/\/$/, '')}${node.route}`;
+}
+
+function resolveLiveUrlSource({
+  artifactKind,
+  liveUrl,
+  nodeLiveUrlOverride,
+  explicitLiveUrl,
+  overrideBaseUrl,
+}: {
+  artifactKind: NavMapArtifactKind;
+  liveUrl?: string;
+  nodeLiveUrlOverride?: string;
+  explicitLiveUrl?: string;
+  overrideBaseUrl?: string;
+}): NavMapNodePreviewState['liveUrlSource'] | undefined {
+  if (!liveUrl) return undefined;
+  if (nodeLiveUrlOverride) return 'local-node-override';
+  if (explicitLiveUrl) return 'manifest';
+  if (artifactKind === 'app' && overrideBaseUrl) return 'local-base-override';
+  if (artifactKind === 'app') return 'graph-base';
+  return undefined;
 }
 
 function formatBlockedReason(reason?: NavMapLivePreviewBlockedReason): string {

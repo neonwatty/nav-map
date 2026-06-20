@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import type { NavMapGraph, ViewMode, EdgeMode, NavMapPreviewMode } from '../../types';
+import type {
+  NavMapGraph,
+  ViewMode,
+  EdgeMode,
+  NavMapPreviewMode,
+  NavMapLiveReadinessSummary,
+} from '../../types';
 import type { AnalyticsAdapter } from '../../analytics/types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { ViewModeSelector } from './ViewModeSelector';
@@ -70,7 +76,7 @@ export function NavMapToolbar({
   onToggleCoverage,
   onPreviewModeChange,
 }: NavMapToolbarProps) {
-  const { isDark } = useNavMapContext();
+  const { isDark, liveReadinessSummary } = useNavMapContext();
   const [showEdgePanel, setShowEdgePanel] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const edgePanelRef = useRef<HTMLDivElement>(null);
@@ -101,11 +107,14 @@ export function NavMapToolbar({
         right: 12,
         display: 'flex',
         gap: 6,
-        zIndex: 15,
+        zIndex: 60,
       }}
     >
       <ViewModeSelector viewMode={viewMode} onViewModeChange={onViewModeChange} />
       <PreviewModeToggle value={previewMode} isDark={isDark} onChange={onPreviewModeChange} />
+      {previewMode === 'live' && liveReadinessSummary && (
+        <LiveReadinessSummaryBadge summary={liveReadinessSummary} isDark={isDark} />
+      )}
 
       {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
         <FlowSelector
@@ -192,4 +201,59 @@ export function NavMapToolbar({
       />
     </div>
   );
+}
+
+function LiveReadinessSummaryBadge({
+  summary,
+  isDark,
+}: {
+  summary: NavMapLiveReadinessSummary;
+  isDark: boolean;
+}) {
+  const hasWarning = summary.offline > 0 || summary.unavailable > 0 || summary.blocked > 0;
+  const text = formatLiveReadinessSummary(summary);
+
+  return (
+    <div
+      aria-label="Live readiness summary"
+      title={text}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        minHeight: 32,
+        maxWidth: 280,
+        padding: '0 10px',
+        borderRadius: 7,
+        border: `1px solid ${
+          hasWarning ? (isDark ? '#7f1d1d' : '#fecaca') : isDark ? '#1f3a2f' : '#bbf7d0'
+        }`,
+        background: hasWarning ? (isDark ? '#1b1115' : '#fff1f2') : isDark ? '#0f1a16' : '#ecfdf5',
+        color: hasWarning ? (isDark ? '#fca5a5' : '#991b1b') : isDark ? '#86efac' : '#166534',
+        fontSize: 12,
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+function formatLiveReadinessSummary(summary: NavMapLiveReadinessSummary): string {
+  if (summary.total === 0) return 'Live: no targets';
+  if (summary.checking > 0) {
+    return `Live: checking ${summary.checking}/${summary.total}`;
+  }
+
+  const parts = [
+    summary.reachable > 0 ? `${summary.reachable} ready` : '',
+    summary.offline > 0 ? `${summary.offline} offline` : '',
+    summary.static > 0 ? `${summary.static} static` : '',
+    summary.blocked > 0 ? `${summary.blocked} blocked` : '',
+    summary.unavailable > 0 ? `${summary.unavailable} no live` : '',
+  ].filter(Boolean);
+
+  return `Live: ${parts.join(' / ')}`;
 }

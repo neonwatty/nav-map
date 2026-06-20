@@ -50,16 +50,20 @@ describe('useViewModeLayout builders', () => {
     const layout = buildFlowLayoutInput(graph, 0);
 
     expect(layout?.nodes.map(node => [node.id, node.data.flowStepNumber])).toEqual([
-      ['home', 1],
-      ['docs', 2],
-      ['billing', 3],
+      ['flow-0-step-0-home', 1],
+      ['flow-0-step-1-docs', 2],
+      ['flow-0-step-2-billing', 3],
     ]);
+    expect(layout?.nodes.map(node => node.data.nodeId)).toEqual(['home', 'docs', 'billing']);
     expect(layout?.edges).toEqual([
       expect.objectContaining({
-        id: 'home-docs',
-        source: 'home',
-        target: 'docs',
+        id: 'flow-0-edge-0-home-docs',
+        source: 'flow-0-step-0-home',
+        target: 'flow-0-step-1-docs',
         data: expect.objectContaining({
+          edgeId: 'home-docs',
+          sourceNodeId: 'home',
+          targetNodeId: 'docs',
           label: 'Docs',
           edgeType: 'link',
           action: 'Open docs',
@@ -67,10 +71,16 @@ describe('useViewModeLayout builders', () => {
         }),
       }),
       expect.objectContaining({
-        id: 'docs-billing',
-        source: 'docs',
-        target: 'billing',
-        data: expect.objectContaining({ label: '', edgeType: 'router-push' }),
+        id: 'flow-0-edge-1-docs-billing',
+        source: 'flow-0-step-1-docs',
+        target: 'flow-0-step-2-billing',
+        data: expect.objectContaining({
+          edgeId: 'docs-billing',
+          sourceNodeId: 'docs',
+          targetNodeId: 'billing',
+          label: '',
+          edgeType: 'router-push',
+        }),
       }),
     ]);
     expect(layout?.nodes[0].data).toEqual(
@@ -79,6 +89,31 @@ describe('useViewModeLayout builders', () => {
         filePath: 'app/page.tsx',
       })
     );
+  });
+
+  it('uses unique render ids when a flow revisits the same graph node', () => {
+    const loopingGraph: NavMapGraph = {
+      ...graph,
+      flows: [{ name: 'Looping flow', steps: ['billing', 'team', 'billing'] }],
+      edges: [
+        ...graph.edges,
+        { id: 'team-billing', source: 'team', target: 'billing', type: 'router-push' },
+      ],
+    };
+
+    const layout = buildFlowLayoutInput(loopingGraph, 0);
+
+    expect(layout?.nodes.map(node => node.id)).toEqual([
+      'flow-0-step-0-billing',
+      'flow-0-step-1-team',
+      'flow-0-step-2-billing',
+    ]);
+    expect(new Set(layout?.nodes.map(node => node.id)).size).toBe(3);
+    expect(layout?.nodes.map(node => node.data.nodeId)).toEqual(['billing', 'team', 'billing']);
+    expect(layout?.edges.map(edge => [edge.source, edge.target])).toEqual([
+      ['flow-0-step-0-billing', 'flow-0-step-1-team'],
+      ['flow-0-step-1-team', 'flow-0-step-2-billing'],
+    ]);
   });
 
   it('returns null when the selected flow does not exist', () => {
