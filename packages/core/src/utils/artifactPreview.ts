@@ -21,6 +21,14 @@ export interface NavMapPreviewOverrides {
   nodeLiveUrls?: Record<string, string>;
 }
 
+export interface NavMapArtifactReviewAffordance {
+  reviewModeLabel: string;
+  guidance: string;
+  targetInputLabel: string;
+  openLabel: string;
+  openTitle: string;
+}
+
 export function getArtifactKind(node: NavMapNode): NavMapArtifactKind {
   if (node.metadata?.surfaceType === 'html-mockup') return 'mockup';
   if (node.metadata?.kind === 'prototype-surface' || node.route.startsWith('prototype://')) {
@@ -109,6 +117,53 @@ export function getPreviewStatusMessage(state: NavMapNodePreviewState): string {
     return 'Static screenshot preview only.';
   }
   return `Live target blocked because ${formatBlockedReason(state.blockedReason)}.`;
+}
+
+export function getArtifactReviewAffordance(
+  state: NavMapNodePreviewState
+): NavMapArtifactReviewAffordance {
+  const hasLiveTarget = state.status === 'available' && Boolean(state.liveUrl);
+
+  if (state.artifactKind === 'app') {
+    return {
+      reviewModeLabel: 'Real app route',
+      guidance: hasLiveTarget
+        ? 'Use Target to try the real app route after preflight; app iframes allow same-origin browser APIs.'
+        : 'Enter an app base URL before Target can try this real app route.',
+      targetInputLabel: 'App base URL',
+      openLabel: hasLiveTarget ? 'Open app' : 'Open target',
+      openTitle: hasLiveTarget
+        ? 'Open this app route in a new browser tab'
+        : 'No app target is configured. Enter an app base URL to enable this action.',
+    };
+  }
+
+  if (state.artifactKind === 'mockup') {
+    return {
+      reviewModeLabel: 'HTML mockup',
+      guidance: hasLiveTarget
+        ? 'Use Target to try the mockup fixture; treat limitations as part of the review context.'
+        : 'Enter a mockup live URL before Target can try this fixture.',
+      targetInputLabel: 'Mockup live URL',
+      openLabel: hasLiveTarget ? 'Open mockup' : 'Open target',
+      openTitle: hasLiveTarget
+        ? 'Open this mockup in a new browser tab'
+        : 'No mockup target is configured. Enter a mockup live URL to enable this action.',
+    };
+  }
+
+  const livePrototype = hasLiveTarget;
+  return {
+    reviewModeLabel: livePrototype ? 'Prototype target' : 'Static prototype',
+    guidance: livePrototype
+      ? 'Use Target to try this prototype URL, but treat it as design reference rather than app behavior.'
+      : 'Use the saved/static reference for review; no live interaction is expected for this prototype.',
+    targetInputLabel: 'Prototype live URL',
+    openLabel: livePrototype ? 'Open prototype' : 'Open target',
+    openTitle: livePrototype
+      ? 'Open this prototype target in a new browser tab'
+      : 'Static prototype has no live target. Use the saved preview or add a prototype live URL.',
+  };
 }
 
 function deriveAppLiveUrl(

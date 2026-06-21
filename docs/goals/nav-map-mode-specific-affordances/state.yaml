@@ -1,0 +1,286 @@
+version: 2
+
+goal:
+  title: "Nav Map Mode-Specific Affordances"
+  slug: "nav-map-mode-specific-affordances"
+  kind: specific
+  tranche: "Clarify reusable screenshot/prototype, mockup, and app review affordances without changing route behavior or hard-coding app-specific logic."
+  status: done
+  oracle:
+    signal: "Focused tests plus a fresh Playwright CLI smoke walkthrough over PRcard, Deckchecker, and Bleep show that screenshot/prototype, mockup, and app artifacts expose distinct useful affordances, unavailable controls explain themselves, Target/live behavior still works, and no route behavior regresses."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing focused tests/typecheck/build as applicable, documented or scripted smoke coverage, and a recorded Playwright CLI receipt covering screenshot/prototype, mockup, and app datasets."
+  intake:
+    original_request: "Continue after the merged Target/live UX polish with the next product slice focused on mode-specific affordances."
+    interpreted_outcome: "Users and agents can distinguish screenshot/prototype, mockup, and app review affordances and know which actions apply to each artifact kind."
+    input_shape: specific
+    audience: "Agents and humans performing nav-map manual QA across screenshot/prototype, mockup, and app workflow atlases."
+    authority: inferred
+    proof_type: test
+    completion_proof: "Focused tests plus Playwright CLI smoke proving the selected mode-specific affordance slice across representative datasets."
+    likely_misfire: "Adding broad labels or app-specific copy that makes the UI busier without clarifying actionable differences between artifacts."
+    blind_spots_considered:
+      - "Screenshot/prototype surfaces may be intentionally static and should not imply interaction."
+      - "HTML mockups may be live and interactive, but their sandbox and fidelity differ from real app routes."
+      - "App routes may eventually support deeper live walking that should not be promised for mockups/prototypes."
+      - "A global screenshot/mockup/app mode switch may be less accurate than artifact-specific affordances on each node/details surface."
+      - "Codex Chrome remains unavailable; Playwright CLI is the approved interim browser proof."
+    existing_plan_facts:
+      - "Target/live readiness and unavailable Animate UX are merged into main."
+      - "The local demo smoke is the current repeatable browser receipt."
+      - "App-specific data belongs in manifests, fixtures, screenshots, or docs, not nav-map core."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-mode-specific-affordances/"
+    command: "npx goalbuddy board docs/goals/nav-map-mode-specific-affordances"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Audit current screenshot/prototype, mockup, and app artifact affordances, unavailable controls, and smoke coverage without editing product files."
+    inputs:
+      - "README and docs covering Preview Modes, Demo Smoke, and workflow artifacts."
+      - "Workflow manifest/types/conversion boundaries."
+      - "Current node cards, selected-node details, toolbar controls, Target/live readiness, and smoke script."
+      - "Recent merged Target/live UX polish receipts."
+    constraints:
+      - "Read-only."
+      - "Do not inspect or print secrets, environment values, auth storage, cookies, tokens, localStorage, sessionStorage, OAuth secrets, private keys, service-role keys, or Playwright auth storage."
+      - "Do not edit implementation files."
+      - "Keep recommendations reusable and data-driven; do not hard-code PRcard, Deckchecker, Bleep, or other app behavior into nav-map core."
+      - "Use Playwright CLI as the browser-proof reference while Codex Chrome is unavailable."
+    expected_output:
+      - "Evidence map of current artifact-kind affordances."
+      - "Smallest reusable UX/model proposal."
+      - "Mode-specific actions or unavailable states worth surfacing."
+      - "Focused implementation candidates with affected files and tests."
+      - "Playwright CLI workflows that should be required for acceptance."
+      - "Known limitations and deferred follow-up candidates."
+    receipt:
+      result: done
+      note: "notes/T001-mode-affordance-scout.md"
+      summary: "Current UI already labels App/Mockup/Prototype and Target readiness; the remaining gap is generic details-panel action affordances. Recommend a small artifact-review affordance helper and ConnectionPanel/smoke tests for Open app, Open mockup, and disabled static prototype target behavior."
+      evidence:
+        - "README.md documents Saved/Target as preview source, not a global artifact mode switch."
+        - "packages/core/src/utils/artifactPreview.ts centralizes artifact kind, live URL, status, liveMode, and limitations."
+        - "packages/core/src/components/nodes/PageNode.tsx already renders artifact/current-preview tabs."
+        - "packages/core/src/components/panels/ConnectionPanel.tsx already renders Preview, Live Target, URL overrides, resolved URL, and generic Open action."
+        - "scripts/demo-smoke.mjs already covers PRcard app/prototype/mockup details, Target readiness, search, audit, unavailable Animate, and Deckchecker/Bleep non-ready Target states."
+      recommended_slice:
+        - "Add a reusable artifact-review affordance helper derived from NavMapNodePreviewState."
+        - "Use it in ConnectionPanel for Review Mode, mode-specific URL labels, Open app/Open mockup/Open prototype labels, and explicit disabled static-prototype target title."
+        - "Add focused helper and panel tests."
+        - "Strengthen demo smoke to prove app, static prototype, and mockup action affordances."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the smallest safe implementation slice and measurable acceptance criteria from the Scout findings."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Prefer one coherent reusable affordance slice over scattered labels."
+      - "Reject app-specific hard-coding."
+      - "Include Playwright CLI proof across screenshot/prototype, mockup, and app artifacts."
+    expected_output:
+      - "Decision: approved implementation slice, defer, or blocked."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "Playwright CLI workflow checklist."
+      - "stop_if conditions."
+      - "Deferred follow-up candidates."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      note: "notes/T002-judge-mode-affordance-worker.md"
+      rationale: "Approve one vertical slice through artifactPreview helper, ConnectionPanel, focused tests, README, and demo smoke. Avoid a global mode switch and avoid manifest/scanner route changes."
+      approved_worker:
+        task_id: T003
+        objective: "Implement artifact-specific review affordances in selected-node details: helper-derived review mode/guidance, artifact-specific target input labels, artifact-specific Open action labels/titles, explicit disabled static prototype target behavior, focused tests, README smoke wording, and Playwright smoke assertions."
+        allowed_files:
+          - "packages/core/src/utils/artifactPreview.ts"
+          - "packages/core/src/utils/artifactPreview.test.ts"
+          - "packages/core/src/components/panels/ConnectionPanel.tsx"
+          - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+          - "scripts/demo-smoke.mjs"
+          - "README.md"
+          - "docs/goals/nav-map-mode-specific-affordances/state.yaml"
+          - "docs/goals/nav-map-mode-specific-affordances/notes/*"
+        verify:
+          - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/hooks/useLiveReadiness.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map typecheck"
+          - "pnpm --filter @neonwatty/nav-map build"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+          - "pnpm smoke:demo --url http://localhost:3001"
+          - "git diff --check"
+        stop_if:
+          - "Need files outside allowed_files."
+          - "Behavior requires app-specific hard-coding in nav-map core."
+          - "A route, manifest schema, or scanner behavior change becomes necessary."
+          - "Verification fails twice for the same unexplained reason."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement artifact-specific review affordances in selected-node details: helper-derived review mode/guidance, artifact-specific target input labels, artifact-specific Open action labels/titles, explicit disabled static prototype target behavior, focused tests, README smoke wording, and Playwright smoke assertions."
+    allowed_files:
+      - "packages/core/src/utils/artifactPreview.ts"
+      - "packages/core/src/utils/artifactPreview.test.ts"
+      - "packages/core/src/components/panels/ConnectionPanel.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+      - "scripts/demo-smoke.mjs"
+      - "README.md"
+      - "docs/goals/nav-map-mode-specific-affordances/state.yaml"
+      - "docs/goals/nav-map-mode-specific-affordances/notes/*"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/hooks/useLiveReadiness.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+      - "pnpm smoke:demo --url http://localhost:3001"
+      - "git diff --check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Behavior requires app-specific hard-coding."
+      - "Need to inspect secrets, auth storage, browser storage, cookies, tokens, or environment values."
+      - "Verification fails twice for the same unexplained reason."
+      - "Codex Chrome becomes available and materially changes the acceptance proof; pause for PM/Judge update."
+    receipt:
+      result: done
+      note: "notes/T003-worker-mode-affordances.md"
+      changed_files:
+        - "packages/core/src/utils/artifactPreview.ts"
+        - "packages/core/src/utils/artifactPreview.test.ts"
+        - "packages/core/src/components/panels/ConnectionPanel.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+        - "scripts/demo-smoke.mjs"
+        - "README.md"
+        - "docs/goals/nav-map-mode-specific-affordances/state.yaml"
+        - "docs/goals/nav-map-mode-specific-affordances/notes/T001-mode-affordance-scout.md"
+        - "docs/goals/nav-map-mode-specific-affordances/notes/T002-judge-mode-affordance-worker.md"
+        - "docs/goals/nav-map-mode-specific-affordances/notes/T003-worker-mode-affordances.md"
+      summary: "Added reusable artifact-review affordances and wired selected-node details to show Real app route/Open app, HTML mockup/Open mockup, and Static prototype/disabled Open target behavior. Strengthened focused tests, README smoke coverage, and Playwright smoke assertions."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/hooks/useLiveReadiness.test.tsx"
+          status: pass
+          evidence: "45 files and 304 tests passed."
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "pnpm smoke:demo --url http://localhost:3001"
+          status: pass
+          evidence: "Receipt explicitly included real-app Open app, static-prototype disabled Open target, and HTML-mockup Open mockup checks."
+        - cmd: "git diff --check"
+          status: pass
+      warnings:
+        - "Smoke warnings include expected live-target resource warnings for offline local targets and external/404 routes."
+        - "Codex Chrome remains unavailable; Playwright CLI is the approved browser proof path."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the implemented mode-specific affordance slice satisfies the original owner outcome for this tranche."
+    inputs:
+      - "All done task receipts."
+      - "Last verification commands."
+      - "Playwright CLI walkthrough receipt."
+      - "Current dirty diff."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion without browser proof from Playwright CLI while Codex Chrome is unavailable."
+      - "Reject completion if screenshot/prototype, mockup, and app affordances remain ambiguous."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: "complete"
+      full_outcome_complete: true
+      note: "notes/T999-final-audit.md"
+      summary: "The slice satisfies the oracle: app, mockup, and static prototype affordances are distinct and smoke-proven; unavailable prototype target action explains itself; Target/live and route behavior remain green."
+      verification:
+        - "Focused core tests passed: 45 files, 304 tests."
+        - "Core typecheck passed."
+        - "Core build passed."
+        - "Dataset curl checks passed for PRcard, Deckchecker, and Bleep on localhost:3001."
+        - "pnpm smoke:demo --url http://localhost:3001 passed with explicit app/mockup/prototype affordance checks plus existing Target/live coverage."
+        - "git diff --check passed."
+      warnings:
+        - "Expected smoke resource warnings remain for offline/external live targets."
+        - "Codex Chrome remains unavailable; Playwright CLI is the approved browser proof path."
+
+checks:
+  dirty_fingerprint: "README.md, core artifact-preview helper/tests, ConnectionPanel/tests, demo smoke script, and goal board files."
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "pnpm --filter @neonwatty/nav-map test -- src/utils/artifactPreview.test.ts src/components/panels/ConnectionPanel.test.tsx src/components/nodes/PageNode.test.tsx src/hooks/useLiveReadiness.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+      - "pnpm smoke:demo --url http://localhost:3001"
+      - "git diff --check"
