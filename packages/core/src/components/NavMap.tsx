@@ -223,6 +223,8 @@ function NavMapInner({
 
   const ctx = useNavMapState(graph, screenshotBasePath, theme);
   const walkthrough = useWalkthrough();
+  const { setSelectedNodeId } = ctx;
+  const { clear: clearWalkthrough } = walkthrough;
   const { zoomTier } = useSemanticZoom();
   const { isNarrow } = useResponsive();
   const viewportX = useStore(s => s.transform[0]);
@@ -347,16 +349,16 @@ function NavMapInner({
   );
 
   useEffect(() => {
-    ctx.setSelectedNodeId(null);
+    setSelectedNodeId(null);
     setWorkflowFilter(null);
     setTreeRootId(null);
     setAuditFocus(null);
-    guardedSetShowSearch(false);
+    setShowSearch(false);
     setSearchQuery('');
-    walkthrough.clear();
+    clearWalkthrough();
     closeGallery();
     setIsAnimatingFlow(false);
-  }, [graphStateScopeKey]);
+  }, [clearWalkthrough, closeGallery, graphStateScopeKey, setAuditFocus, setSelectedNodeId]);
 
   const { styledNodes, styledEdges } = useGraphStyling({
     nodes,
