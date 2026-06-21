@@ -461,7 +461,7 @@ contents.
 | `auth <url>` | Capture authentication state for protected pages |
 | `auth-state` | Capture or verify workflow auth states |
 | `record <dir>` | Record navigation with Playwright |
-| `record-flows <dir>` | Record user flows from Playwright test specs |
+| `record-flows` | Record user flows from Playwright test specs |
 | `generate` | Load `nav-map.config.json`, optionally log in, crawl, and write output |
 | `check-config` | Validate `nav-map.config.json` without launching a browser |
 | `diagnostics <file>` | Inspect crawl diagnostics from `nav-map.json` or diagnostics JSON |
@@ -545,7 +545,7 @@ npx @neonwatty/nav-map-scanner scan ./app --screenshots --base-url https://myapp
 
 ```bash
 # Record flows from Playwright test specs
-npx @neonwatty/nav-map-scanner record-flows ./app \
+npx @neonwatty/nav-map-scanner record-flows \
   --flows-dir ./tests/flows \
   --base-url http://localhost:3000
 ```
