@@ -7,6 +7,7 @@ const explicitBaseUrl = readOption('--url') ?? process.env.DEMO_SMOKE_URL ?? nul
 const baseUrl = normalizeBaseUrl(
   explicitBaseUrl ?? (await detectBaseUrl(['http://localhost:3000', 'http://localhost:3001']))
 );
+const seatifyLocalExpectReachable = process.env.SEATIFY_LOCAL_EXPECT_REACHABLE === '1';
 const viewport = { width: 858, height: 760 };
 const receipt = {
   name: 'nav-map-demo-smoke',
@@ -46,6 +47,7 @@ try {
   await smokePrcard();
   await smokeDeckchecker();
   await smokeBleep();
+  await smokeSeatifyLocal();
   await smokeInvalidDataset();
 
   if (messages.length > 0) {
@@ -139,8 +141,9 @@ async function smokePrcard() {
   await clickTargetPreview();
   await waitForTargetSummary(text => text.includes('targets:') && !text.includes('checking'));
   await openSearchAndSelect('home', 'Home');
-  await expectVisibleText(['Current Preview', 'Saved Fallback', 'Target Preflight', 'Offline']);
-  pass('PRcard Target preview shows offline app node status and saved fallback');
+  await expectVisibleText(['Current Preview', 'Saved Fallback', 'Target Preflight']);
+  await expectAnyVisibleText(['Unverified External', 'Offline', 'No Target']);
+  pass('PRcard Target preview shows non-ready app node status and saved fallback');
   await openSearchAndSelect('quick setup concept', 'Quick Setup Concept');
   await expectVisibleText(['Surface Details', 'Artifact', 'Prototype', 'Static prototype']);
   pass('PRcard Target preview keeps static prototype node status explicit');
@@ -191,6 +194,54 @@ async function smokeBleep() {
   await expectVisibleText(['Live Target', 'Target Preflight']);
   await expectAnyVisibleText(['Unverified External', 'Offline', 'No Target']);
   pass('Bleep Target preview reports non-ready external/local target state');
+}
+
+async function smokeSeatifyLocal() {
+  await gotoDataset('seatify-local', 'Marketing');
+  await expectPreviewSource('saved');
+  await expectVisibleText(['Marketing', 'Demo', 'Auth', 'Protected']);
+  await expectNodeCard('Home', ['App', 'Saved Preview']);
+  await openSearchAndSelect('home', 'Home');
+  await expectVisibleText([
+    'Page Details',
+    'Artifact',
+    'App',
+    'Review Mode',
+    'Real app route',
+    'Current Preview',
+    'Saved Screenshot',
+    'http://localhost:3002/',
+  ]);
+  await expectButton('Open app');
+  pass('Seatify local app node details show saved screenshot and real-app affordance');
+
+  await openSearchAndSelect('dashboard boundary', 'Dashboard Boundary');
+  await expectVisibleText([
+    'Page Details',
+    'Protected dashboard entry',
+    'signed-out',
+    '/login?redirect=%2Fdashboard',
+  ]);
+  pass('Seatify protected route boundary explains signed-out redirect');
+
+  await clickTargetPreview();
+  if (seatifyLocalExpectReachable) {
+    await waitForTargetSummary(
+      text => !text.includes('checking') && (text.includes('unverified') || text.includes('ready'))
+    );
+    await openSearchAndSelect('home', 'Home');
+    await expectVisibleText(['Live Target', 'Target Preflight']);
+    await expectAnyVisibleText(['Unverified External', 'Ready']);
+    pass('Seatify local Target preview reaches the running app or reports iframe-limited reachability');
+  } else {
+    await waitForTargetSummary(text =>
+      ['unverified', 'offline', 'unavailable'].some(word => text.includes(word))
+    );
+    await openSearchAndSelect('home', 'Home');
+    await expectVisibleText(['Live Target', 'Target Preflight']);
+    await expectAnyVisibleText(['Unverified External', 'Offline', 'No Target']);
+    pass('Seatify local Target preview reports reachable-or-offline local app state');
+  }
 }
 
 async function smokeInvalidDataset() {
