@@ -202,8 +202,9 @@ describe('scanner command registration', () => {
       '--contract',
       '--no-screenshots',
     ]);
-    expect(command.getOptionValue('output')).toBe('nav-map.json');
+    expect(command.getOptionValue('output')).toBeUndefined();
     expect(command.getOptionValue('screenshotDir')).toBe('nav-screenshots');
+    expect(help).toContain('workflow.inspect.json');
     expect(help).toContain('Screenshot capture navigates manifest nodes only');
     expect(help).toContain('Auth state is referenced by id only in command output');
   });
@@ -314,6 +315,8 @@ describe('scanner command registration', () => {
     expect(command.description()).toBe('Render expected-vs-observed probe findings');
     expect(command.registeredArguments.map(argument => argument.name())).toEqual(['manifest']);
     expect(optionFlags(command)).toEqual(['--probe <path>', '--format <format>', '--out <path>']);
-    expect(command.getOptionValue('out')).toBe('.nav-map/probe-runs/latest.diff.md');
+    expect(command.getOptionValue('out')).toBeUndefined();
+    expect(command.helpInformation()).toContain('defaults to .md or .json based on');
+    expect(command.helpInformation()).toContain('--format');
   });
 });

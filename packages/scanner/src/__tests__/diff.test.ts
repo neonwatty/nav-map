@@ -6,6 +6,7 @@ import {
   loadProbeRun,
   renderProbeDiff,
   renderProbeDiffContract,
+  validateProbeRunManifest,
   writeProbeDiff,
 } from '../modes/diff.js';
 
@@ -142,7 +143,50 @@ describe('renderProbeDiff', () => {
       },
     });
     expect(contract.data.findings[0].checkSummary).toEqual({ pass: 1, fail: 1 });
+    expect(contract.data).toMatchObject({
+      command: expect.stringContaining('nav-map diff <manifest> --probe <probe-run>'),
+      warnings: ['1 route probe(s) failed expectations.'],
+    });
     expect(contract.nextActions[0].command).toContain('nav-map context <manifest>');
+  });
+
+  it('validates that a probe run belongs to the diff manifest', () => {
+    const run = {
+      app: 'Deckchecker Speaker',
+      baseUrl: 'http://localhost:3000',
+      startedAt: '2026-06-14T00:00:00.000Z',
+      finishedAt: '2026-06-14T00:01:00.000Z',
+      results: [
+        {
+          nodeId: 'speaker-events',
+          route: '/my/events',
+          concreteRoute: '/my/events',
+          finalUrl: 'http://localhost:3000/my/events',
+          status: 'pass' as const,
+          consoleErrors: [],
+          failedRequests: [],
+        },
+      ],
+    };
+
+    expect(() =>
+      validateProbeRunManifest(run, {
+        name: 'Deckchecker Speaker',
+        nodes: [{ id: 'speaker-events', route: '/my/events' }],
+      })
+    ).not.toThrow();
+    expect(() =>
+      validateProbeRunManifest(run, {
+        name: 'Other App',
+        nodes: [{ id: 'speaker-events', route: '/my/events' }],
+      })
+    ).toThrow('does not match manifest');
+    expect(() =>
+      validateProbeRunManifest(run, {
+        name: 'Deckchecker Speaker',
+        nodes: [{ id: 'home', route: '/' }],
+      })
+    ).toThrow('node ids not present');
   });
 });
 

@@ -30,6 +30,7 @@ export function createProbeCommand(): Command {
                 .map((item: string) => item.trim())
                 .filter(Boolean)
             : undefined,
+          manifestPath,
           outputPath: opts.out,
           screenshotsDir: opts.screenshotsDir,
           contract: Boolean(opts.contract),
@@ -38,6 +39,9 @@ export function createProbeCommand(): Command {
         const warned = run.results.filter(result => result.status === 'warn').length;
         console.log(`Wrote ${opts.out}`);
         console.log(`Results: ${run.results.length} routes, ${failed} failed, ${warned} warned`);
+        console.log(
+          `Receipt: ${run.selection?.nodeIds.length ?? run.results.length} selected nodes, ${run.selection?.routeVariableKeys.length ?? 0} route variable keys, ${run.screenshotSummary?.captured ?? run.results.filter(result => result.screenshot).length} screenshots, auth state ${run.authState ?? 'none'}`
+        );
         if (failed > 0) {
           process.exit(1);
         }

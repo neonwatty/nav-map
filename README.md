@@ -420,15 +420,19 @@ Agent-oriented screenshot/mockup/app QA loop:
 ```bash
 node packages/scanner/bin/nav-map.js workflow packages/demo/public/prcard.workflow.json --inspect --contract
 node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract
-node packages/scanner/bin/nav-map.js auth-state verify packages/demo/public/prcard.workflow.json --state signed-in --base-url http://localhost:3000 --contract
+node packages/scanner/bin/nav-map.js auth-state verify packages/demo/public/deckchecker-speaker.workflow.json --state speaker --base-url http://localhost:3000 --contract
 node packages/scanner/bin/nav-map.js probe packages/demo/public/prcard.workflow.json --base-url http://localhost:3000 --contract
-node packages/scanner/bin/nav-map.js diff packages/demo/public/prcard.workflow.json --probe .nav-map/probe-runs/latest.json
+node packages/scanner/bin/nav-map.js diff packages/demo/public/prcard.workflow.json --probe .nav-map/probe-runs/latest.json --format json
 node packages/scanner/bin/nav-map.js workflow packages/demo/public/prcard.workflow.json --base-url http://localhost:3000 --screenshot-dir public/screenshots/workflow -o public/nav-map.json
 ```
 
 Use `workflow --inspect` and `context --contract` first so agents see app routes and
 prototype/mockup surfaces before touching a browser. The UI `Target` preview is a lightweight
 reachability preflight; use `probe` and `diff` receipts for route/workflow audit evidence.
+`workflow --inspect` writes `workflow.inspect.json` by default unless `-o/--output` is provided;
+normal workflow generation writes `nav-map.json` by default. `diff --format json` writes
+`.nav-map/probe-runs/latest.diff.json` by default and validates that the probe receipt matches
+the manifest name and route node ids before writing.
 Workflow screenshot generation navigates app route nodes only. Prototype, mockup, component, and
 concept surfaces stay as manifest artifacts and are reported as skipped live captures in the
 generation receipt. Auth state is referenced by id only; do not inspect or print storage-state

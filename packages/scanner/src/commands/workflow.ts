@@ -11,7 +11,10 @@ export function createWorkflowCommand(): Command {
       ].join('\n')
     )
     .argument('<manifest>', 'Path to workflow manifest JSON')
-    .option('-o, --output <path>', 'Output file path', 'nav-map.json')
+    .option(
+      '-o, --output <path>',
+      'Output file path; defaults to nav-map.json, or workflow.inspect.json with --inspect'
+    )
     .option('--base-url <url>', 'Base URL for deterministic screenshot capture')
     .option('--screenshot-dir <dir>', 'Screenshot output directory', 'nav-screenshots')
     .option('--auth-state <state>', 'Auth state id for screenshot capture')
