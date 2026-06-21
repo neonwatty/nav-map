@@ -9,7 +9,7 @@ import {
 } from '@neonwatty/nav-map';
 
 const HELP_DISMISSED_KEY = 'nav-map:demo-help-dismissed';
-type DemoDataset = 'prcard' | 'deckchecker-speaker' | 'bleep';
+type DemoDataset = 'prcard' | 'deckchecker-speaker' | 'bleep' | 'seatify-local';
 
 const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default: mod.NavMap })), {
   ssr: false,
@@ -111,6 +111,7 @@ export default function HomePage() {
           <option value="prcard">PRcard workflow</option>
           <option value="deckchecker-speaker">Deckchecker speaker</option>
           <option value="bleep">Bleep app scan</option>
+          <option value="seatify-local">Seatify local dogfood</option>
         </select>
       </label>
       {datasetWarning && (
@@ -163,7 +164,12 @@ function readInitialDatasetSelection(): { dataset: DemoDataset; invalidDataset: 
 }
 
 function isDemoDataset(value: string | null): value is DemoDataset {
-  return value === 'prcard' || value === 'deckchecker-speaker' || value === 'bleep';
+  return (
+    value === 'prcard' ||
+    value === 'deckchecker-speaker' ||
+    value === 'bleep' ||
+    value === 'seatify-local'
+  );
 }
 
 type DemoViewMode = 'hierarchy' | 'map' | 'flow' | 'tree';
@@ -178,6 +184,10 @@ function isDemoViewMode(value: unknown): value is DemoViewMode {
 }
 
 async function loadDemoGraph(dataset: DemoDataset): Promise<NavMapGraph> {
+  if (dataset === 'seatify-local') {
+    return fetchJson<NavMapGraph>('/seatify-local.nav-map.json');
+  }
+
   if (dataset === 'bleep') {
     return fetchJson<NavMapGraph>('/bleep-app.nav-map.json');
   }

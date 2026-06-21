@@ -306,7 +306,7 @@ or secrets.
 ### Demo Smoke
 
 The demo smoke is the local browser receipt for manual-QA regressions across the bundled PRcard,
-Deckchecker, and Bleep datasets:
+Deckchecker, Bleep, and Seatify local dogfood datasets:
 
 ```bash
 pnpm dev
@@ -320,14 +320,25 @@ By default the smoke looks for the demo on `http://localhost:3000` and then
 The smoke uses an 858px viewport and verifies that all dataset URLs render, the `Saved`/`Target`
 preview controls are usable, PRcard app/prototype/mockup node details remain distinct,
 Deckchecker and Bleep app nodes expose non-ready target states without requiring external service
-availability, Target node details expose per-node readiness labels, PRcard details show
-artifact-specific actions such as `Open app`, disabled static-prototype `Open target`, and
-`Open mockup`, Search can select a node, Audit can focus an issue, PRcard explains unavailable
+availability, Seatify local nodes expose app-mode screenshots, protected-route redirect context,
+and app target readiness labels, Target node details expose per-node readiness labels, PRcard
+details show artifact-specific actions such as `Open app`, disabled static-prototype `Open target`,
+and `Open mockup`, Search can select a node, Audit can focus an issue, PRcard explains unavailable
 animation before flow mode, PRcard flow animation starts and stops, and invalid dataset keys show
 an explicit warning. It prints a JSON receipt with
 routes, checks, warnings, and failures. Keep it local-only: if external app targets are offline,
 unavailable, or unverified, the smoke should assert those labels instead of depending on live
 third-party services.
+
+For Seatify dogfooding, run Seatify separately and opt into the local reachability assertion:
+
+```bash
+cd /Users/neonwatty/Desktop/seatify
+npm run dev -- -p 3002
+
+cd /Users/neonwatty/Desktop/nav-map-fresh
+SEATIFY_LOCAL_EXPECT_REACHABLE=1 pnpm smoke:demo --url http://localhost:<nav-map-demo-port>
+```
 
 You can also convert manifests in code without the React component entry:
 

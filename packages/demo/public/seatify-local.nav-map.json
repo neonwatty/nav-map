@@ -1,0 +1,527 @@
+{
+  "version": "1.0",
+  "meta": {
+    "name": "Seatify Local Dogfood",
+    "baseUrl": "http://localhost:3002",
+    "generatedAt": "2026-06-20T19:23:20.617-07:00",
+    "generatedBy": "manual",
+    "framework": "nextjs-app",
+    "workflow": {
+      "fixtureApp": "Seatify",
+      "fixtureSource": "/Users/neonwatty/Desktop/seatify",
+      "description": "Signed-out local Seatify map used to dogfood nav-map app-mode screenshots, Target preflight, iframe limitations, and protected-route redirect boundaries.",
+      "safety": "Read-only signed-out dogfood. Do not inspect auth storage, cookies, tokens, env values, or private user data.",
+      "layout": {
+        "defaultViewMode": "map",
+        "defaultTreeRootId": "home",
+        "sectionOrder": ["marketing", "demo", "auth", "protected", "legal"]
+      },
+      "personas": [
+        {
+          "id": "signed-out",
+          "label": "Signed out visitor",
+          "description": "Visitor exploring public Seatify pages and auth redirects without a saved auth state."
+        }
+      ],
+      "authStates": [
+        {
+          "id": "signed-out",
+          "label": "Signed out",
+          "kind": "anonymous"
+        }
+      ],
+      "dogfoodReceipts": {
+        "capturedAt": "2026-06-20T19:23:20.617-07:00",
+        "appBaseUrl": "http://localhost:3002",
+        "commands": [
+          "npm run dev -- -p 3002",
+          "curl -I --max-time 10 http://localhost:3002/",
+          "playwright route probe for /, /how-it-works, /pricing, /free-rsvp, /demo, /login, /signup, /dashboard, /dashboard/new, /privacy, /terms",
+          "playwright screenshot capture for seven signed-out routes"
+        ],
+        "routesTested": [
+          "/",
+          "/how-it-works",
+          "/pricing",
+          "/free-rsvp",
+          "/demo",
+          "/demo-lab",
+          "/login",
+          "/signup",
+          "/dashboard",
+          "/dashboard/new",
+          "/privacy",
+          "/terms"
+        ],
+        "knownLimitations": [
+          "Seatify sends X-Frame-Options: SAMEORIGIN, so nav-map Target preflight may report local routes as Unverified External from the demo app origin.",
+          "Protected dashboard routes are represented as signed-out redirect boundaries; no auth state was captured or inspected."
+        ]
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "group": "marketing",
+      "screenshot": "screenshots/seatify-local/home.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Public Seatify landing page and primary signed-out funnel entry.",
+        "section": "marketing",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["The Elegant Way to Plan Your Seating Chart"],
+          "status": 200
+        },
+        "inspect": {
+          "selector": "main"
+        },
+        "sourceHints": ["src/app/page.tsx"]
+      }
+    },
+    {
+      "id": "how-it-works",
+      "route": "/how-it-works",
+      "label": "How It Works",
+      "group": "marketing",
+      "screenshot": "screenshots/seatify-local/how-it-works.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Public explanation of the five-step Seatify planning workflow.",
+        "section": "marketing",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Five Simple Steps"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/how-it-works/page.tsx"]
+      }
+    },
+    {
+      "id": "pricing",
+      "route": "/pricing",
+      "label": "Pricing",
+      "group": "marketing",
+      "screenshot": "screenshots/seatify-local/pricing.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Public pricing surface and conversion decision point.",
+        "section": "marketing",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Simple, Transparent Pricing"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/pricing/page.tsx"]
+      }
+    },
+    {
+      "id": "free-rsvp",
+      "route": "/free-rsvp",
+      "label": "Free RSVP",
+      "group": "marketing",
+      "screenshot": "screenshots/seatify-local/free-rsvp.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Public RSVP offer surface for signed-out visitors.",
+        "section": "marketing",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Free RSVP Management"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/free-rsvp/page.tsx"]
+      }
+    },
+    {
+      "id": "demo-lab",
+      "route": "/demo-lab",
+      "label": "Demo Lab",
+      "group": "demo",
+      "screenshot": "screenshots/seatify-local/demo-lab.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Interactive signed-out optimizer demo for seating conflict resolution.",
+        "section": "demo",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Watch Seatify solve a real wedding seating chart"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/demo-lab/page.tsx"]
+      }
+    },
+    {
+      "id": "demo-redirect",
+      "route": "/demo",
+      "label": "Demo Redirect",
+      "group": "demo",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Legacy demo entry that redirects signed-out visitors to the demo lab.",
+        "section": "demo",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectedRedirects": [
+          {
+            "to": "/demo-lab",
+            "reason": "The /demo route resolves to the current demo lab surface."
+          }
+        ],
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Watch Seatify solve a real wedding seating chart"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/demo/page.tsx", "src/app/demo-lab/page.tsx"]
+      }
+    },
+    {
+      "id": "login",
+      "route": "/login",
+      "label": "Login",
+      "group": "auth",
+      "screenshot": "screenshots/seatify-local/login.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Signed-out authentication entry for protected app routes.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Welcome Back"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/(auth)/login/page.tsx"]
+      }
+    },
+    {
+      "id": "signup",
+      "route": "/signup",
+      "label": "Signup",
+      "group": "auth",
+      "screenshot": "screenshots/seatify-local/signup.png",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Signed-out account creation entry point.",
+        "section": "auth",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-out",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Create Your Account"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/(auth)/signup/page.tsx"]
+      }
+    },
+    {
+      "id": "dashboard",
+      "route": "/dashboard",
+      "label": "Dashboard Boundary",
+      "group": "protected",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Protected dashboard entry; signed-out visitors should be redirected to login.",
+        "section": "protected",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "signed-out",
+            "to": "/login?redirect=%2Fdashboard"
+          }
+        ],
+        "expectations": {
+          "signedOutRedirect": "/login?redirect=%2Fdashboard",
+          "selectors": ["main"],
+          "text": ["Welcome Back"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/dashboard/page.tsx"]
+      }
+    },
+    {
+      "id": "dashboard-new",
+      "route": "/dashboard/new",
+      "label": "New Event Boundary",
+      "group": "protected",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Protected new-event entry; signed-out visitors should be redirected to login.",
+        "section": "protected",
+        "personas": ["signed-out"],
+        "authRequirement": "signed-in",
+        "authRequired": true,
+        "expectedRedirects": [
+          {
+            "when": "signed-out",
+            "to": "/login?redirect=%2Fdashboard%2Fnew"
+          }
+        ],
+        "expectations": {
+          "signedOutRedirect": "/login?redirect=%2Fdashboard%2Fnew",
+          "selectors": ["main"],
+          "text": ["Welcome Back"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/dashboard/new/page.tsx"]
+      }
+    },
+    {
+      "id": "privacy",
+      "route": "/privacy",
+      "label": "Privacy",
+      "group": "legal",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Legal privacy surface linked from auth and marketing pages.",
+        "section": "legal",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Privacy Policy"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/privacy/page.tsx"]
+      }
+    },
+    {
+      "id": "terms",
+      "route": "/terms",
+      "label": "Terms",
+      "group": "legal",
+      "metadata": {
+        "artifactKind": "app",
+        "purpose": "Legal terms surface linked from auth and marketing pages.",
+        "section": "legal",
+        "personas": ["signed-out"],
+        "authRequirement": "public",
+        "authRequired": false,
+        "expectations": {
+          "selectors": ["main"],
+          "text": ["Terms of Service"],
+          "status": 200
+        },
+        "sourceHints": ["src/app/terms/page.tsx"]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-home-how",
+      "source": "home",
+      "target": "how-it-works",
+      "label": "HOW IT WORKS",
+      "type": "link"
+    },
+    {
+      "id": "e-home-pricing",
+      "source": "home",
+      "target": "pricing",
+      "label": "PRICING",
+      "type": "link"
+    },
+    {
+      "id": "e-home-free-rsvp",
+      "source": "home",
+      "target": "free-rsvp",
+      "label": "RSVP offer",
+      "type": "link"
+    },
+    {
+      "id": "e-home-demo",
+      "source": "home",
+      "target": "demo-lab",
+      "label": "Watch the Preview",
+      "type": "link"
+    },
+    {
+      "id": "e-home-login",
+      "source": "home",
+      "target": "login",
+      "label": "LOG IN",
+      "type": "link"
+    },
+    {
+      "id": "e-home-signup",
+      "source": "home",
+      "target": "signup",
+      "label": "JOIN WAITLIST",
+      "type": "link"
+    },
+    {
+      "id": "e-demo-redirect",
+      "source": "demo-redirect",
+      "target": "demo-lab",
+      "label": "redirect",
+      "type": "redirect"
+    },
+    {
+      "id": "e-how-pricing",
+      "source": "how-it-works",
+      "target": "pricing",
+      "label": "pricing CTA",
+      "type": "link"
+    },
+    {
+      "id": "e-pricing-signup",
+      "source": "pricing",
+      "target": "signup",
+      "label": "GET STARTED FREE",
+      "type": "link"
+    },
+    {
+      "id": "e-free-rsvp-signup",
+      "source": "free-rsvp",
+      "target": "signup",
+      "label": "JOIN WAITLIST",
+      "type": "link"
+    },
+    {
+      "id": "e-login-signup",
+      "source": "login",
+      "target": "signup",
+      "label": "Sign up",
+      "type": "link"
+    },
+    {
+      "id": "e-signup-login",
+      "source": "signup",
+      "target": "login",
+      "label": "Sign in",
+      "type": "link"
+    },
+    {
+      "id": "e-dashboard-login",
+      "source": "dashboard",
+      "target": "login",
+      "label": "signed-out redirect",
+      "type": "redirect"
+    },
+    {
+      "id": "e-dashboard-new-login",
+      "source": "dashboard-new",
+      "target": "login",
+      "label": "signed-out redirect",
+      "type": "redirect"
+    },
+    {
+      "id": "e-signup-terms",
+      "source": "signup",
+      "target": "terms",
+      "label": "Terms",
+      "type": "link"
+    },
+    {
+      "id": "e-signup-privacy",
+      "source": "signup",
+      "target": "privacy",
+      "label": "Privacy",
+      "type": "link"
+    }
+  ],
+  "groups": [
+    {
+      "id": "marketing",
+      "label": "Marketing",
+      "color": "#c9966d",
+      "routePrefix": "/"
+    },
+    {
+      "id": "demo",
+      "label": "Demo",
+      "color": "#46a06f",
+      "routePrefix": "/demo"
+    },
+    {
+      "id": "auth",
+      "label": "Auth",
+      "color": "#6e8ca8",
+      "routePrefix": "/login"
+    },
+    {
+      "id": "protected",
+      "label": "Protected",
+      "color": "#b07ce8",
+      "routePrefix": "/dashboard"
+    },
+    {
+      "id": "legal",
+      "label": "Legal",
+      "color": "#556878",
+      "routePrefix": "/terms"
+    }
+  ],
+  "sections": [
+    {
+      "id": "marketing",
+      "label": "Marketing",
+      "description": "Signed-out public funnel and conversion surfaces.",
+      "targets": ["home", "how-it-works", "pricing", "free-rsvp"]
+    },
+    {
+      "id": "demo",
+      "label": "Demo",
+      "description": "Optimizer demo and redirect entry.",
+      "targets": ["demo-redirect", "demo-lab"]
+    },
+    {
+      "id": "auth",
+      "label": "Auth",
+      "description": "Signed-out authentication entry points.",
+      "targets": ["login", "signup"]
+    },
+    {
+      "id": "protected",
+      "label": "Protected Boundaries",
+      "description": "Signed-out redirects into auth from protected app routes.",
+      "targets": ["dashboard", "dashboard-new"]
+    },
+    {
+      "id": "legal",
+      "label": "Legal",
+      "description": "Legal surfaces linked from auth and marketing flows.",
+      "targets": ["privacy", "terms"]
+    }
+  ],
+  "flows": [
+    {
+      "id": "signed-out-public-exploration",
+      "label": "Signed-out public exploration",
+      "description": "Primary marketing-to-demo-to-auth path for an unauthenticated visitor.",
+      "steps": ["home", "how-it-works", "pricing", "free-rsvp", "demo-lab", "signup", "login"]
+    },
+    {
+      "id": "protected-route-boundaries",
+      "label": "Protected route boundaries",
+      "description": "Signed-out redirects for protected app routes.",
+      "steps": ["dashboard", "login", "dashboard-new", "login"]
+    }
+  ]
+}
