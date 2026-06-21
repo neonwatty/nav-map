@@ -104,6 +104,12 @@ async function smokePrcard() {
   await openAuditAndFocusIssue();
   pass('audit panel focuses a route-health issue and navigates to it');
 
+  await expectDisabledButton(
+    'Animate',
+    'Switch to Flow view and choose a recorded flow to animate'
+  );
+  pass('PRcard map mode explains why flow animation is unavailable');
+
   await clickButton('Flow');
   await waitForText('Flow: Signed-out activation');
   await clickButton('Animate');
@@ -115,6 +121,12 @@ async function smokePrcard() {
   await clickButton('Map');
   await clickTargetPreview();
   await waitForTargetSummary(text => text.includes('targets:') && !text.includes('checking'));
+  await openSearchAndSelect('home', 'Home');
+  await expectVisibleText(['Current Preview', 'Saved Fallback', 'Target Preflight', 'Offline']);
+  pass('PRcard Target preview shows offline app node status and saved fallback');
+  await openSearchAndSelect('quick setup concept', 'Quick Setup Concept');
+  await expectVisibleText(['Surface Details', 'Artifact', 'Prototype', 'Static Reference']);
+  pass('PRcard Target preview keeps static prototype node status explicit');
   await openSearchAndSelect('quick setup html', 'Quick Setup HTML Mockup');
   await expectVisibleText(['Target Preflight', 'Ready', 'Live Iframe']);
   pass('PRcard Target preview preflight reaches the local HTML mockup');
@@ -141,6 +153,7 @@ async function smokeDeckchecker() {
   await selectNode('Landing');
   await expectNoVisibleText('Target PreflightReady');
   await expectVisibleText(['Live Target', 'Target Preflight']);
+  await expectAnyVisibleText(['Unverified External', 'Offline', 'No Target']);
   pass('Deckchecker Target preview reports non-ready external/local target state');
 }
 
@@ -157,6 +170,9 @@ async function smokeBleep() {
   await waitForTargetSummary(text =>
     ['unverified', 'offline', 'unavailable'].some(word => text.includes(word))
   );
+  await openSearchAndSelect('home', 'Home');
+  await expectVisibleText(['Live Target', 'Target Preflight']);
+  await expectAnyVisibleText(['Unverified External', 'Offline', 'No Target']);
   pass('Bleep Target preview reports non-ready external/local target state');
 }
 
@@ -264,6 +280,19 @@ async function clickButton(name) {
   await button.click();
 }
 
+async function expectDisabledButton(name, title) {
+  const button = page.getByRole('button', { name, exact: true });
+  await button.waitFor({ state: 'visible', timeout: 10000 });
+  const disabled = await button.isDisabled();
+  if (!disabled) {
+    throw new Error(`Expected "${name}" button to be disabled`);
+  }
+  const actualTitle = await button.getAttribute('title');
+  if (title && actualTitle !== title) {
+    throw new Error(`Expected "${name}" title "${title}". Saw: ${actualTitle}`);
+  }
+}
+
 async function tryCloseRouteHealth() {
   try {
     await page.getByRole('button', { name: 'Close route health' }).click({ timeout: 1200 });
@@ -313,6 +342,13 @@ async function expectVisibleText(fragments) {
     if (!text.includes(fragment.toLowerCase())) {
       throw new Error(`Expected visible text to include "${fragment}"`);
     }
+  }
+}
+
+async function expectAnyVisibleText(fragments) {
+  const text = (await visibleText()).toLowerCase();
+  if (!fragments.some(fragment => text.includes(fragment.toLowerCase()))) {
+    throw new Error(`Expected visible text to include one of: ${fragments.join(', ')}`);
   }
 }
 

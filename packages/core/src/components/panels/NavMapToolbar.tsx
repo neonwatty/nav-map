@@ -98,6 +98,14 @@ export function NavMapToolbar({
 
   const showEdgeControls = viewMode === 'map' || viewMode === 'hierarchy';
   const edgeActive = showSharedNav || showRedirects || !focusMode || edgeMode !== 'smooth';
+  const hasFlows = Boolean(graph?.flows && graph.flows.length > 0);
+  const selectedFlow = selectedFlowIndex !== null ? graph?.flows?.[selectedFlowIndex] : undefined;
+  const canAnimateFlow = viewMode === 'flow' && Boolean(selectedFlow);
+  const animateTitle = getAnimateTitle({
+    viewMode,
+    canAnimateFlow,
+    isAnimatingFlow,
+  });
 
   return (
     <div
@@ -121,7 +129,7 @@ export function NavMapToolbar({
         <LiveReadinessSummaryBadge summary={liveReadinessSummary} isDark={isDark} />
       )}
 
-      {(viewMode === 'flow' || viewMode === 'map') && graph?.flows && graph.flows.length > 0 && (
+      {(viewMode === 'flow' || viewMode === 'map') && hasFlows && graph?.flows && (
         <FlowSelector
           flows={graph.flows}
           selectedIndex={selectedFlowIndex}
@@ -151,15 +159,16 @@ export function NavMapToolbar({
         />
       )}
 
-      {viewMode === 'flow' && selectedFlowIndex !== null && graph?.flows?.[selectedFlowIndex] && (
+      {hasFlows && (
         <button
           onClick={onAnimate}
-          disabled={isAnimatingFlow}
+          disabled={!canAnimateFlow || isAnimatingFlow}
           style={{
             ...toolbarButtonStyle(isDark, isAnimatingFlow),
-            opacity: isAnimatingFlow ? 0.6 : 1,
+            opacity: !canAnimateFlow || isAnimatingFlow ? 0.6 : 1,
+            cursor: !canAnimateFlow || isAnimatingFlow ? 'not-allowed' : 'pointer',
           }}
-          title="Animate the selected flow"
+          title={animateTitle}
         >
           {isAnimatingFlow ? 'Animating...' : 'Animate'}
         </button>
@@ -206,6 +215,21 @@ export function NavMapToolbar({
       />
     </div>
   );
+}
+
+function getAnimateTitle({
+  viewMode,
+  canAnimateFlow,
+  isAnimatingFlow,
+}: {
+  viewMode: ViewMode;
+  canAnimateFlow: boolean;
+  isAnimatingFlow: boolean;
+}): string {
+  if (isAnimatingFlow) return 'Flow animation is running';
+  if (canAnimateFlow) return 'Animate the selected flow';
+  if (viewMode !== 'flow') return 'Switch to Flow view and choose a recorded flow to animate';
+  return 'Choose a recorded flow to animate';
 }
 
 function LiveReadinessSummaryBadge({

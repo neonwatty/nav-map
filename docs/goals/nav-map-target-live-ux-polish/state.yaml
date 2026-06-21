@@ -1,0 +1,282 @@
+version: 2
+
+goal:
+  title: "Nav Map Target Live UX Polish"
+  slug: "nav-map-target-live-ux-polish"
+  kind: specific
+  tranche: "Polish Target/live node status clarity, unavailable Animate UX, and repeatable Playwright smoke proof without changing route behavior."
+  status: done
+  oracle:
+    signal: "Focused tests plus a fresh Playwright CLI walkthrough over PRcard, Deckchecker, and Bleep demonstrate that users can see each relevant node's live/checking/offline/static/blocked/unavailable state, understand unavailable Animate controls, and rerun the same smoke workflow from documented commands without Codex Chrome."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing focused tests/typecheck as applicable, docs or script for repeatable Playwright smoke, and a recorded Playwright CLI receipt covering screenshot, mockup, and app datasets."
+  intake:
+    original_request: "Do the next efficient follow-up: Target/live UX polish with per-node live status clarity, clearer unavailable Animate state, and repeatable Playwright smoke proof."
+    interpreted_outcome: "Agents and humans can understand live availability and disabled animation states at a glance, then rerun a small local smoke workflow with Playwright CLI."
+    input_shape: specific
+    audience: "Agents and humans performing nav-map manual QA across screenshot, mockup, and app workflow atlases."
+    authority: requested
+    proof_type: test
+    completion_proof: "Focused tests plus Playwright CLI walkthrough proving the polished UX across representative datasets."
+    likely_misfire: "Landing a narrow demo-only label change that does not clarify node-level live state, Animate unavailability, or repeatable QA proof across modes."
+    blind_spots_considered:
+      - "Codex Chrome bridge is unavailable; Playwright CLI is the approved interim browser proof."
+      - "Live URLs can be unavailable because the local app is offline, iframe embedding is blocked, auth is required, or the node is intentionally static."
+      - "Mockup and app modes may eventually have features that screenshot/prototype mode should not expose."
+      - "UX copy must stay generic and data-driven rather than hard-coded to PRcard, Deckchecker, or Bleep."
+    existing_plan_facts:
+      - "Previous live readiness work introduced live availability UX and local target checks."
+      - "The user wants per-node tabs or border affordances to make live/non-live status clear."
+      - "The user wants Animate controls to explain unavailable states instead of silently doing nothing."
+      - "Browser validation must use Playwright CLI until Codex Chrome is repaired."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-target-live-ux-polish/"
+    command: "npx goalbuddy board docs/goals/nav-map-target-live-ux-polish"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Audit current Target/live status UX, Animate unavailable UX, existing Playwright smoke evidence, and the smallest reusable polish model without editing product files."
+    inputs:
+      - "README and docs covering screenshot/mockup/app/manual-QA workflows."
+      - "Workflow manifest/types/conversion boundaries."
+      - "Current Target/live readiness, node rendering, toolbar, selected-panel, and animation controls."
+      - "Existing tests and recent Playwright CLI walkthrough receipts."
+    constraints:
+      - "Read-only."
+      - "Do not inspect or print secrets, environment values, auth storage, cookies, tokens, localStorage, sessionStorage, OAuth secrets, private keys, service-role keys, or Playwright auth storage."
+      - "Do not edit implementation files."
+      - "Keep recommendations reusable and manifest/data-driven; do not hard-code PRcard, Deckchecker, Bleep, or other app behavior into nav-map core."
+      - "Use Playwright CLI as the browser-proof reference while Codex Chrome is unavailable."
+    expected_output:
+      - "Evidence map of current Target/live and Animate behavior."
+      - "Smallest reusable UX/model proposal."
+      - "Focused implementation candidates with affected files and tests."
+      - "Playwright CLI workflows that should be required for acceptance."
+      - "Known limitations and follow-up candidates."
+    receipt:
+      result: done
+      note: "notes/T001-target-live-ux-scout.md"
+      summary: "Live readiness is already modeled with reusable per-node and summary primitives. The smallest useful polish is not another model; it is an always-explainable Animate affordance plus stronger smoke assertions for node-level Target labels and unavailable Animate UX."
+      evidence:
+        - "README.md documents Preview Modes and Demo Smoke."
+        - "packages/core/src/hooks/useLiveReadiness.ts provides reusable readiness status, scope, summary, labels, and browser probes."
+        - "packages/core/src/components/nodes/PageNode.tsx renders artifact/current-preview tabs and live-readiness border accents."
+        - "packages/core/src/components/panels/ConnectionPanel.tsx renders reachable iframes, non-ready fallbacks, and Live Target editing."
+        - "packages/core/src/components/panels/NavMapToolbar.tsx renders the global Target preflight summary and currently hides Animate outside selected-flow state."
+        - "scripts/demo-smoke.mjs already covers PRcard, Deckchecker, Bleep, Target preview, search, audit, PRcard flow animation, and invalid dataset fallback."
+      baseline_commands:
+        - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+        - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+        - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+        - "pnpm smoke:demo --url http://localhost:3001"
+      recommended_slice:
+        - "Make Animate visibly unavailable/explained when no selected flow can animate."
+        - "Add focused toolbar tests for Animate enabled, running, and unavailable states."
+        - "Strengthen demo smoke to assert node-level Target labels and unavailable Animate behavior."
+        - "Refresh README Demo Smoke wording only if coverage changes."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the smallest safe implementation slice and measurable acceptance criteria from the Scout findings."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Prefer one coherent reusable UI/QA slice over scattered label changes."
+      - "Reject app-specific hard-coding."
+      - "Include Playwright CLI proof across screenshot, mockup, and app datasets."
+    expected_output:
+      - "Decision: approved implementation slice, defer, or blocked."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "Playwright CLI workflow checklist."
+      - "stop_if conditions."
+      - "Deferred follow-up candidates."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      note: "notes/T002-judge-target-live-worker.md"
+      rationale: "Approve one bounded polish slice. The live-readiness model is already reusable; the remaining high-value gap is an explainable unavailable Animate affordance plus stronger smoke proof for node-level Target labels and animation states."
+      approved_worker:
+        task_id: T003
+        objective: "Ship the smallest Target/live UX polish slice: visible/explained unavailable Animate state, focused tests for that state, stronger demo smoke assertions for per-node Target labels and Animate availability, and README wording aligned with the smoke coverage."
+        allowed_files:
+          - "packages/core/src/components/panels/NavMapToolbar.tsx"
+          - "packages/core/src/components/NavMap.test.tsx"
+          - "scripts/demo-smoke.mjs"
+          - "README.md"
+          - "docs/goals/nav-map-target-live-ux-polish/state.yaml"
+          - "docs/goals/nav-map-target-live-ux-polish/notes/*"
+        verify:
+          - "pnpm --filter @neonwatty/nav-map test -- src/components/NavMap.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/ConnectionPanel.test.tsx src/hooks/useLiveReadiness.test.tsx"
+          - "pnpm --filter @neonwatty/nav-map typecheck"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+          - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+          - "pnpm smoke:demo --url http://localhost:3001"
+        stop_if:
+          - "Need files outside allowed_files."
+          - "Behavior requires app-specific hard-coding."
+          - "The smoke would need external services to be reachable."
+          - "Verification fails twice for the same unexplained reason."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Ship the smallest Target/live UX polish slice: visible/explained unavailable Animate state, focused tests for that state, stronger demo smoke assertions for per-node Target labels and Animate availability, and README wording aligned with the smoke coverage."
+    allowed_files:
+      - "packages/core/src/components/panels/NavMapToolbar.tsx"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "scripts/demo-smoke.mjs"
+      - "README.md"
+      - "docs/goals/nav-map-target-live-ux-polish/state.yaml"
+      - "docs/goals/nav-map-target-live-ux-polish/notes/*"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test -- src/components/NavMap.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/ConnectionPanel.test.tsx src/hooks/useLiveReadiness.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+      - "pnpm smoke:demo --url http://localhost:3001"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Behavior requires app-specific hard-coding."
+      - "Need to inspect secrets, auth storage, browser storage, cookies, tokens, or environment values."
+      - "Verification fails twice for the same unexplained reason."
+      - "Codex Chrome becomes available and materially changes the acceptance proof; pause for PM/Judge update."
+    receipt:
+      result: done
+      note: "notes/T003-worker-target-live-polish.md"
+      changed_files:
+        - "packages/core/src/components/panels/NavMapToolbar.tsx"
+        - "packages/core/src/components/NavMap.test.tsx"
+        - "scripts/demo-smoke.mjs"
+        - "README.md"
+        - "docs/goals/nav-map-target-live-ux-polish/state.yaml"
+        - "docs/goals/nav-map-target-live-ux-polish/notes/T001-target-live-ux-scout.md"
+        - "docs/goals/nav-map-target-live-ux-polish/notes/T002-judge-target-live-worker.md"
+        - "docs/goals/nav-map-target-live-ux-polish/notes/T003-worker-target-live-polish.md"
+      summary: "Added a disabled/explained Animate affordance for graphs with flows when animation is unavailable, added a NavMap regression test, strengthened demo smoke assertions for node-level Target labels and unavailable Animate, and updated README smoke coverage."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map test -- src/components/NavMap.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/ConnectionPanel.test.tsx src/hooks/useLiveReadiness.test.tsx"
+          status: pass
+          evidence: "45 files and 304 tests passed."
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+          evidence: "Core package rebuilt for demo smoke."
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+          status: pass
+          evidence: "HTTP 200."
+        - cmd: "pnpm smoke:demo --url http://localhost:3001"
+          status: pass
+          evidence: "JSON receipt covered PRcard, Deckchecker, Bleep, invalid dataset fallback, Target mode, node-level readiness labels, unavailable Animate, and PRcard animation start/stop."
+        - cmd: "git diff --check"
+          status: pass
+      warnings:
+        - "Smoke warnings include expected live-target resource warnings for offline local targets and external/404 routes."
+        - "Codex Chrome proof remains unavailable; Playwright CLI is the approved fallback for this goal."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the Target/live UX polish satisfies the original owner outcome for this tranche."
+    inputs:
+      - "All done task receipts."
+      - "Last verification commands."
+      - "Playwright CLI walkthrough receipt."
+      - "Current dirty diff."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion without browser proof from Playwright CLI while Codex Chrome is unavailable."
+      - "Reject completion if node-level live clarity, unavailable Animate UX, or repeatable smoke proof remains ambiguous."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: "complete"
+      full_outcome_complete: true
+      note: "notes/T999-final-audit.md"
+      summary: "The slice satisfies the oracle: node-level Target states are visible and smoke-proven, unavailable Animate is explicit and tested, README documents the repeatable Playwright smoke, and all focused verification passed."
+      verification:
+        - "Focused core tests passed: 45 files, 304 tests."
+        - "Core typecheck passed."
+        - "Core build passed."
+        - "Dataset curl checks passed for PRcard, Deckchecker, and Bleep on localhost:3001."
+        - "pnpm smoke:demo --url http://localhost:3001 passed with PRcard, Deckchecker, Bleep, invalid dataset fallback, Target mode, node-level readiness labels, unavailable Animate, and PRcard animation start/stop."
+        - "git diff --check passed."
+      warnings:
+        - "Expected smoke resource warnings remain for offline/external live targets."
+        - "Codex Chrome remains unavailable; Playwright CLI is the approved browser proof path."
+
+checks:
+  dirty_fingerprint: "README.md, core toolbar/test, demo smoke script, goal board files, plus pre-existing packages/demo/next-env.d.ts generated noise."
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "pnpm --filter @neonwatty/nav-map test -- src/components/NavMap.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/ConnectionPanel.test.tsx src/hooks/useLiveReadiness.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=prcard'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=deckchecker-speaker'"
+      - "curl -fsS -I 'http://localhost:3001/?dataset=bleep'"
+      - "pnpm smoke:demo --url http://localhost:3001"
+      - "git diff --check"
