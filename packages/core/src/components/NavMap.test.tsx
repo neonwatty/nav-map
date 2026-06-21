@@ -196,6 +196,17 @@ describe('NavMap props', () => {
     expect(screen.getByRole('button', { name: 'Animate' })).toBeTruthy();
   });
 
+  it('explains when flow animation is unavailable outside flow mode', async () => {
+    render(<NavMap graph={flowGraph} defaultViewMode="map" />);
+
+    const animate = (await screen.findByRole('button', { name: 'Animate' })) as HTMLButtonElement;
+
+    expect(animate.disabled).toBe(true);
+    expect(animate.getAttribute('title')).toBe(
+      'Switch to Flow view and choose a recorded flow to animate'
+    );
+  });
+
   it('uses workflow layout default view mode when no prop is provided', async () => {
     render(
       <NavMap
