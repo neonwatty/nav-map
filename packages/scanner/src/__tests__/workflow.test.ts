@@ -124,6 +124,22 @@ describe('runWorkflowManifest', () => {
     });
 
     expect(result.screenshotCount).toBe(1);
+    expect(result.receipt).toMatchObject({
+      command: expect.stringContaining('nav-map workflow'),
+      authStateId: 'speaker',
+      routeVariablesApplied: ['eventId', 'sessionId'],
+      screenshotCapture: {
+        requested: true,
+        routeCount: 1,
+        capturedNodeIds: ['speaker-upload'],
+        skippedSurfaceIds: [],
+      },
+      warnings: [],
+    });
+    expect(result.receipt.nextActions[0].command).toContain('nav-map context');
+    expect(result.receipt.nextActions[1].command).toContain('--auth-state speaker');
+    expect(JSON.stringify(result.receipt)).not.toContain('speaker.storage.json');
+    expect(JSON.stringify(result.receipt)).not.toContain('.nav-map/auth');
     expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
       [
         {
@@ -179,6 +195,10 @@ describe('runWorkflowManifest', () => {
       edgeCount: 1,
       screenshotCount: 1,
     });
+    expect(result.receipt.screenshotCapture.skippedSurfaceIds).toEqual(['dashboard-concept']);
+    expect(result.receipt.warnings).toContain(
+      'Prototype/mockup/component surfaces are manifest artifacts, not live captures.'
+    );
     expect(mocks.captureScreenshotsMock).toHaveBeenCalledWith(
       [{ id: 'dashboard', route: '/dashboard' }],
       'https://example.test',

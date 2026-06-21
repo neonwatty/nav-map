@@ -25,6 +25,8 @@ interface CountItem {
 
 interface WorkflowOverviewSummary {
   hasWorkflowSignal: boolean;
+  overviewKind: 'workflow' | 'scan';
+  routeCount: number;
   sectionItems: CountItem[];
   personaItems: CountItem[];
   authItems: CountItem[];
@@ -55,8 +57,14 @@ export function WorkflowOverview({
 
   if (!graph || !summary.hasWorkflowSignal) return null;
 
+  const isWorkflowOverview = summary.overviewKind === 'workflow';
   const evidenceCount =
     summary.screenshotCount + summary.inspectHintCount + summary.sourceHintCount;
+  const healthCount = Object.values(summary.healthCounts).reduce(
+    (total, count) => total + count,
+    0
+  );
+  const scanHintCount = summary.inspectHintCount + summary.sourceHintCount;
   return (
     <aside
       aria-label="Workflow overview"
@@ -65,7 +73,7 @@ export function WorkflowOverview({
     >
       <div style={{ display: 'grid', gap: 8 }}>
         <div style={{ display: 'grid', gap: 2 }}>
-          <div style={eyebrowStyle(isDark)}>Workflow</div>
+          <div style={eyebrowStyle(isDark)}>{isWorkflowOverview ? 'Workflow' : 'Scan'}</div>
           <div style={titleStyle(isDark)}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {graph.meta.name}
@@ -77,11 +85,23 @@ export function WorkflowOverview({
         </div>
 
         <div style={metricGridStyle}>
-          <Metric label="Sections" value={summary.sectionItems.length} isDark={isDark} />
-          <Metric label="Personas" value={summary.personaItems.length} isDark={isDark} />
-          <Metric label="Auth" value={summary.authItems.length} isDark={isDark} />
-          <Metric label="Redirects" value={summary.redirectCount} isDark={isDark} />
-          <Metric label="Evidence" value={evidenceCount} isDark={isDark} />
+          {isWorkflowOverview ? (
+            <>
+              <Metric label="Sections" value={summary.sectionItems.length} isDark={isDark} />
+              <Metric label="Personas" value={summary.personaItems.length} isDark={isDark} />
+              <Metric label="Auth" value={summary.authItems.length} isDark={isDark} />
+              <Metric label="Redirects" value={summary.redirectCount} isDark={isDark} />
+              <Metric label="Evidence" value={evidenceCount} isDark={isDark} />
+            </>
+          ) : (
+            <>
+              <Metric label="Routes" value={summary.routeCount} isDark={isDark} />
+              <Metric label="Screens" value={summary.screenshotCount} isDark={isDark} />
+              <Metric label="Hints" value={scanHintCount} isDark={isDark} />
+              <Metric label="Health" value={healthCount} isDark={isDark} />
+              <Metric label="Redirects" value={summary.redirectCount} isDark={isDark} />
+            </>
+          )}
         </div>
 
         {filterItems.section.length > 0 && (
@@ -172,6 +192,8 @@ export function buildWorkflowOverviewSummary(
 ): WorkflowOverviewSummary {
   const empty: WorkflowOverviewSummary = {
     hasWorkflowSignal: false,
+    overviewKind: 'scan',
+    routeCount: 0,
     sectionItems: [],
     personaItems: [],
     authItems: [],
@@ -234,10 +256,10 @@ export function buildWorkflowOverviewSummary(
   const sectionOrder = graph.meta.workflow?.layout?.sectionOrder ?? [];
   const personaOrder = graph.meta.workflow?.personas?.map(persona => persona.id) ?? [];
   const hasWorkflowSignal = Boolean(
-    graph.meta.workflow ||
-    sections.size ||
-    personas.size ||
-    authRequirements.size ||
+    graph.meta.workflow || sections.size || personas.size || authRequirements.size
+  );
+  const hasOverviewSignal = Boolean(
+    hasWorkflowSignal ||
     expectedRedirectCount ||
     edgeRedirectCount ||
     screenshotCount ||
@@ -247,7 +269,9 @@ export function buildWorkflowOverviewSummary(
   );
 
   return {
-    hasWorkflowSignal,
+    hasWorkflowSignal: hasOverviewSignal,
+    overviewKind: hasWorkflowSignal ? 'workflow' : 'scan',
+    routeCount: graph.nodes.length,
     sectionItems: toCountItems(sections, sectionOrder),
     personaItems: toCountItems(personas, personaOrder),
     authItems: toCountItems(authRequirements),

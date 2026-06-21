@@ -18,6 +18,8 @@ import {
 } from './RouteHealthPanel.helpers';
 import { PanelEmptyState } from './PanelEmptyState';
 
+const responsiveToolbarClearance = 104;
+
 interface RouteHealthPanelProps {
   graph: NavMapGraph;
   isDark: boolean;
@@ -61,11 +63,11 @@ export function RouteHealthPanel({
     <aside
       style={{
         position: 'absolute',
-        top: 58,
+        top: responsiveToolbarClearance,
         left: 12,
         width: 360,
         maxWidth: 'calc(100vw - 24px)',
-        maxHeight: 'calc(100vh - 82px)',
+        maxHeight: `calc(100vh - ${responsiveToolbarClearance + 24}px)`,
         overflow: 'auto',
         background: isDark ? '#14141e' : '#fff',
         border: `1px solid ${isDark ? '#2a2a3a' : '#d8dae0'}`,

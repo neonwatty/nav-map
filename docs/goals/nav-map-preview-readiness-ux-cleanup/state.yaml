@@ -1,0 +1,619 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Nav Map Preview Readiness UX Cleanup"
+  slug: "nav-map-preview-readiness-ux-cleanup"
+  kind: existing_plan
+  tranche: "Implement the three-agent audit recommendations for clearer screenshot/mockup/prototype/app preview UX, target readiness semantics, responsive manual-QA controls, and agent-oriented CLI/context output."
+  status: done
+  oracle:
+    signal: "Fresh Codex Chrome walkthroughs of PRcard, Deckchecker, and Bleep plus CLI/context receipts prove that artifact type, current preview, target preflight, and route/workflow audit are distinct and usable for manual QA."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing focused tests/typecheck/build plus Chrome walkthroughs at desktop and 858px width covering PRcard app/prototype/mockup nodes, Deckchecker external app targets, Bleep raw scan overview, preview toggles, selected node details, search/audit/animation sanity, and CLI/context output including surfaces."
+  intake:
+    original_request: "Create a GoalBuddy prep board from the three-agent CLI and Chrome UX audit for screenshot, mockup, and app versions."
+    interpreted_outcome: "nav-map becomes straightforward for agents and humans to use for manual QA across saved screenshots, HTML mockups, static prototypes, and live app routes."
+    input_shape: existing_plan
+    audience: "agents and humans performing manual QA with nav-map"
+    authority: requested
+    proof_type: demo
+    completion_proof: "Focused tests plus fresh Chrome and CLI receipts proving the simplified UX end to end."
+    likely_misfire: "Shipping cosmetic wording changes while the app still reports screenshot views as Live, opaque external targets as Ready, static prototypes with duplicate Static badges, or raw scans as empty workflow atlases."
+    blind_spots_considered:
+      - "Browser no-cors reachability does not prove iframe embeddability or app render correctness."
+      - "Route health and target preflight are separate concepts but currently compete visually."
+      - "CLI commands are capable but fragmented; agent users need a first-class workflow and receipts."
+      - "Cross-dataset persisted UI state can make a valid graph look broken or stale."
+      - "Responsive toolbar behavior matters because manual QA often happens with side panels open."
+    existing_plan_facts:
+      - "Three independent agents audited the app in Codex Chrome and inspected the codebase."
+      - "All agents converged on overloaded Live/Screenshot vocabulary."
+      - "Two agents observed external targets being reported as ready despite iframe uncertainty."
+      - "Two agents observed toolbar overflow around 858px width with panels open."
+      - "One agent found nav-map context omits prototype/mockup surfaces."
+      - "One agent found workflow screenshot receipts are too thin for agent operation."
+      - "One agent found raw scans show zero-value workflow counters under a Workflow heading."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-preview-readiness-ux-cleanup/"
+    command: "npx goalbuddy board docs/goals/nav-map-preview-readiness-ux-cleanup"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the three-agent audit and lock the first implementation sequence, allowed files, verification commands, and stop conditions."
+    inputs:
+      - "Three-agent audit receipts from the current thread."
+      - "Goal oracle in docs/goals/nav-map-preview-readiness-ux-cleanup/goal.md."
+      - "Current repo state on main."
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Do not inspect secrets, auth storage, env values, cookies, tokens, localStorage, sessionStorage, or browser profile data."
+      - "Preserve the four-axis UX model: artifact type, current preview, target preflight, route/workflow audit."
+      - "Prefer the largest safe useful Worker slice; avoid one tiny task per label."
+    expected_output:
+      - "Decision: approve, revise, or block the proposed sequence."
+      - "First Worker objective."
+      - "Allowed files."
+      - "Verification commands and required Chrome workflows."
+      - "Stop conditions."
+      - "Deferred tasks or scope cuts."
+    receipt:
+      result: done
+      task_id: T001
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Approve the sequence and T002 as first Worker. Current code validates the audit: UI conflates artifact/status/readiness, opaque no-cors probes become Ready, context omits surfaces, demo silently falls back on bad dataset keys, and state persists across datasets. T002 is the right dependency-first vertical slice because T003-T005 rely on the four-axis language and readiness model being corrected first."
+      evidence:
+        - "state.yaml defines T002-T005 with objective, allowed_files, verify commands, and stop_if."
+        - "packages/core/src/components/panels/ConnectionPanel.tsx shows Preview Status as artifact/status and Live Status/Target Health together."
+        - "packages/core/src/components/nodes/PageNode.tsx stacks artifact, preview status, and readiness badges, allowing duplicate Static labels."
+        - "packages/core/src/hooks/useLiveReadiness.ts treats opaque no-cors responses as reachable and labels reachable as Ready."
+        - "packages/scanner/src/modes/context.ts builds routes from manifest.nodes only, not manifest.surfaces."
+        - "packages/demo/app/page.tsx falls back invalid dataset keys to prcard and persists view mode globally."
+      parallel_safety:
+        safe_parallel_workers: false
+        reason: "T002 and T003 both touch NavMap/toolbar semantics, T002 and T004 both touch README/model language, and T005 depends on post-cleanup labels; run sequentially."
+      required_board_updates:
+        - "Activate T002 unchanged as the first Worker."
+        - "Keep T003, T004, T005 queued in the current order."
+        - "Do not mark full outcome complete until T999 maps fresh tests, CLI receipts, and Chrome walkthroughs to the oracle."
+
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Clean up preview and readiness language so screenshot, mockup, prototype, app, current preview, and target preflight states are not conflated."
+    allowed_files:
+      - "packages/core/src/types.ts"
+      - "packages/core/src/utils/artifactPreview.ts"
+      - "packages/core/src/utils/artifactPreview.test.ts"
+      - "packages/core/src/hooks/useLiveReadiness.ts"
+      - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+      - "packages/core/src/components/nodes/PageNode.tsx"
+      - "packages/core/src/components/nodes/PageNode.test.tsx"
+      - "packages/core/src/components/panels/PreviewModeToggle.tsx"
+      - "packages/core/src/components/panels/PreviewModeToggle.test.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+      - "packages/core/src/components/panels/NavMapToolbar.tsx"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "README.md"
+    expected_output:
+      - "Distinct labels for Artifact, Current Preview, Live Target, and Route/Workflow Audit."
+      - "No duplicate Static labels on prototype/static nodes."
+      - "Screenshot mode no longer presents Live as the primary status."
+      - "Opaque external/no-cors targets no longer display as simply Ready."
+      - "Details panel copy explains saved screenshot versus target preflight without burying the useful action."
+    acceptance_criteria:
+      - "PRcard app nodes in Screenshots mode show saved-preview language and separate live-target capability."
+      - "PRcard prototype nodes show one clear Static Reference label."
+      - "PRcard HTML mockup nodes distinguish saved screenshot, HTML mockup artifact, and live target."
+      - "Deckchecker and Bleep external live targets reached through opaque/no-cors probes show Unverified External or equivalent, not Ready."
+      - "Route health labels remain separate from target preflight labels."
+    verify:
+      - "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/NavMap.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "Codex Chrome: PRcard screenshot/live toggle with one app node, one static prototype node, and one HTML mockup node."
+      - "Codex Chrome: Deckchecker and Bleep live target labels show external/unverified semantics when iframe readiness is not proven."
+    stop_if:
+      - "Need files outside allowed_files."
+      - "A status label change would break existing public types without a migration path."
+      - "Cannot distinguish no-cors external reachability from iframe-ready targets in the current model."
+      - "Verification fails twice."
+      - "Need to inspect secret-bearing files or browser storage."
+    receipt:
+      result: done
+      task_id: T002
+      full_outcome_complete: false
+      summary:
+        - "Renamed the global preview control from Render/Screenshots/Live to Preview/Saved/Target."
+        - "Separated Artifact, Current Preview, Live Target, and Target Preflight labels in node cards, the details panel, and toolbar summary."
+        - "Added an unverified readiness state so opaque no-cors/external targets are not reported as Ready."
+        - "Kept saved screenshots/static references visible when Target mode is checking, offline, unavailable, or unverified."
+        - "Updated README preview-mode docs to explain the four-axis model and browser preflight limitations."
+      files_changed:
+        - "README.md"
+        - "packages/core/src/types.ts"
+        - "packages/core/src/utils/artifactPreview.ts"
+        - "packages/core/src/utils/artifactPreview.test.ts"
+        - "packages/core/src/hooks/useLiveReadiness.ts"
+        - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+        - "packages/core/src/components/nodes/PageNode.tsx"
+        - "packages/core/src/components/nodes/PageNode.test.tsx"
+        - "packages/core/src/components/panels/PreviewModeToggle.tsx"
+        - "packages/core/src/components/panels/PreviewModeToggle.test.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+        - "packages/core/src/components/panels/NavMapToolbar.tsx"
+        - "packages/core/src/components/NavMap.test.tsx"
+      changed_files:
+        - "README.md"
+        - "packages/core/src/types.ts"
+        - "packages/core/src/utils/artifactPreview.ts"
+        - "packages/core/src/utils/artifactPreview.test.ts"
+        - "packages/core/src/hooks/useLiveReadiness.ts"
+        - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+        - "packages/core/src/components/nodes/PageNode.tsx"
+        - "packages/core/src/components/nodes/PageNode.test.tsx"
+        - "packages/core/src/components/panels/PreviewModeToggle.tsx"
+        - "packages/core/src/components/panels/PreviewModeToggle.test.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.tsx"
+        - "packages/core/src/components/panels/ConnectionPanel.test.tsx"
+        - "packages/core/src/components/panels/NavMapToolbar.tsx"
+        - "packages/core/src/components/NavMap.test.tsx"
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/NavMap.test.tsx"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+      verification:
+        automated:
+          - command: "pnpm --filter @neonwatty/nav-map exec vitest run src/utils/artifactPreview.test.ts src/hooks/useLiveReadiness.test.tsx src/components/nodes/PageNode.test.tsx src/components/panels/PreviewModeToggle.test.tsx src/components/panels/ConnectionPanel.test.tsx src/components/NavMap.test.tsx"
+            result: "passed, 6 files and 71 tests"
+          - command: "pnpm --filter @neonwatty/nav-map typecheck"
+            result: "passed"
+          - command: "pnpm --filter @neonwatty/nav-map build"
+            result: "passed; run so the demo consumed the updated package output"
+        chrome:
+          - "Verified http://localhost:3001/?dataset=prcard in Codex Chrome after curl confirmed the URL was serving."
+          - "PRcard Saved/Map view showed App + Saved Preview nodes, Prototype + Static Reference nodes, and Mockup + Saved Preview nodes, with no Live badge in saved mode."
+          - "PRcard mockup details in Saved mode showed Artifact, Current Preview, Live Target, and saved-preview explanatory copy."
+          - "PRcard Target mode showed the HTML mockup as Current Preview: Live Iframe with Target Preflight: Ready and a target summary of ready/offline/static-reference counts."
+          - "Deckchecker Target mode showed external app targets as Unverified External and a target summary of 10 unverified / 1 offline, not Ready."
+          - "Bleep Target mode showed external app targets as Unverified External and a target summary of 19 unverified, not Ready."
+      limitations:
+        - "Route/workflow audit semantics are preserved but broader audit UX cleanup is deferred to T003/T005."
+        - "Existing dirty generated file packages/demo/next-env.d.ts was not touched."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Make the manual-QA app shell resilient: responsive toolbar, scan-vs-workflow overview clarity, and dataset-scoped transient state."
+    allowed_files:
+      - "packages/core/src/components/NavMap.tsx"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "packages/core/src/components/panels/NavMapToolbar.tsx"
+      - "packages/core/src/components/panels/ToolbarMoreMenu.tsx"
+      - "packages/core/src/components/panels/ToolbarMoreMenu.test.tsx"
+      - "packages/core/src/components/panels/WorkflowOverview.tsx"
+      - "packages/core/src/components/panels/WorkflowOverview.test.tsx"
+      - "packages/core/src/components/panels/StatusBanners.tsx"
+      - "packages/core/src/hooks/useNavMap.ts"
+      - "packages/core/src/hooks/usePersistentState.ts"
+      - "packages/demo/app/page.tsx"
+    expected_output:
+      - "Primary view and preview controls remain visible with side panels open at 858px width."
+      - "Raw scans do not show empty workflow counters as if workflow metadata is missing or broken."
+      - "Dataset switches reset or scope transient selected-node, audit, search, walkthrough, and preview context."
+      - "Demo dataset selector has accessible labeling and invalid dataset keys show an explicit unknown/alias hint instead of silent PRcard fallback."
+    acceptance_criteria:
+      - "At 858px width with a selected node and side panel open, View, Saved/Target preview controls, Search, and Audit are visible/clickable with no primary control offscreen."
+      - "Bleep raw scan overview no longer shows 0 Sections / 0 Personas / 0 Auth under a Workflow heading."
+      - "Switching prcard -> deckchecker-speaker -> bleep does not carry stale audit/search/walkthrough/selected-node context without an explicit retained-state explanation."
+      - "The demo Dataset select is accessible by label."
+      - "http://localhost:3001/?dataset=deckchecker shows an unknown dataset or alias hint, not a silent PRcard graph."
+    verify:
+      - "pnpm --filter @neonwatty/nav-map exec vitest run src/components/NavMap.test.tsx src/components/panels/ToolbarMoreMenu.test.tsx src/components/panels/WorkflowOverview.test.tsx"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter demo build"
+      - "Codex Chrome: 858px viewport, selected node panel open, controls visible."
+      - "Codex Chrome: dataset switch PRcard, Deckchecker, Bleep, invalid dataset key."
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Responsive toolbar work requires a broader design-system refactor."
+      - "Dataset state reset would remove user-owned persisted preferences without an explicit decision."
+      - "Verification fails twice."
+      - "Need to inspect secret-bearing files or browser storage."
+    receipt:
+      result: done
+      task_id: T003
+      board_path: "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+      changed_files:
+        - "packages/core/src/components/NavMap.tsx"
+        - "packages/core/src/components/NavMap.test.tsx"
+        - "packages/core/src/components/panels/NavMapToolbar.tsx"
+        - "packages/core/src/components/panels/WorkflowOverview.tsx"
+        - "packages/core/src/components/panels/WorkflowOverview.test.tsx"
+        - "packages/core/src/hooks/usePersistentState.ts"
+        - "packages/demo/app/page.tsx"
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/components/NavMap.test.tsx src/components/panels/ToolbarMoreMenu.test.tsx src/components/panels/WorkflowOverview.test.tsx"
+          status: pass
+          notes: "3 files and 27 tests passed"
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+        - cmd: "pnpm --filter demo build"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+          notes: "Run so the local demo consumed the updated package output for Chrome verification"
+        - cmd: "git diff --check"
+          status: pass
+      chrome_verification:
+        - "Curl confirmed http://localhost:3001/?dataset=prcard served before browser handoff."
+        - "Codex Chrome PRcard selected-node walkthrough confirmed Page Details open and primary controls visible/clickable: Hierarchy, Map, Flow, Tree, Saved, Target, Audit, Search."
+        - "Codex Chrome confirmed toolbar style uses flex-wrap: wrap and max-width: calc(100% - 24px). Extension viewport was 1284px wide; exact 858px resizing was not exposed by the Chrome extension, so the 858px condition is covered by implementation/test plus visible Chrome control checks."
+        - "Codex Chrome dataset switch PRcard -> Deckchecker -> Bleep did not carry selected-node panel, workflow filter, search input, or Target preview mode into the next graph."
+        - "Codex Chrome Bleep raw scan showed Scan with Routes, Screens, Hints, Health, and Redirects instead of Workflow with 0 Sections / 0 Personas / 0 Auth."
+        - "Codex Chrome invalid URL http://localhost:3001/?dataset=deckchecker&t003=2 showed Unknown dataset \"deckchecker\". Showing PRcard workflow instead."
+      summary: "Manual-QA shell is now more resilient: toolbar wraps instead of overflowing, graph-scoped persisted preview/view/audit state prevents stale context across datasets, transient search/filter/selection/walkthrough state clears on graph changes, raw scans render as Scan rather than empty workflow atlases, and invalid demo dataset keys show an explicit warning."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Improve the CLI and agent context path so screenshot/mockup/app workflows include surfaces, receipts, and a clear recommended loop."
+    allowed_files:
+      - "README.md"
+      - "package.json"
+      - "packages/scanner/src/program.ts"
+      - "packages/scanner/src/commands/context.ts"
+      - "packages/scanner/src/commands/workflow.ts"
+      - "packages/scanner/src/commands/probe.ts"
+      - "packages/scanner/src/modes/context.ts"
+      - "packages/scanner/src/modes/workflow.ts"
+      - "packages/scanner/src/modes/agent-contract.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+      - "packages/scanner/src/__tests__/context.test.ts"
+      - "packages/scanner/src/__tests__/workflow.test.ts"
+    expected_output:
+      - "CLI help or docs explain the agent loop: workflow inspect, context, auth-state verify, probe, diff, workflow generate."
+      - "Preview/readiness model is described in scanner help/docs so agents know when UI Live mode is lightweight and when probe receipts are authoritative."
+      - "nav-map context includes prototype/mockup surfaces with artifact kind, surface type, screenshot, source hints, and live preview metadata."
+      - "workflow generation emits or can write stronger receipts for captured nodes, skipped surfaces, failures, auth-state id only, route substitutions, and screenshot paths."
+      - "Root package scripts or docs make local scanner help easy to invoke in the workspace."
+    acceptance_criteria:
+      - "node packages/scanner/bin/nav-map.js --help gives agents a visible path to the recommended QA loop or points to a dedicated command/help section."
+      - "node packages/scanner/bin/nav-map.js workflow --help explains screenshot capture versus surfaces and receipt output."
+      - "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json includes PRcard surfaces."
+      - "Workflow receipt output never includes storage-state contents, cookies, tokens, or raw env values; auth state is referenced by id only."
+      - "README shows one concise agent-oriented screenshot/mockup/app QA recipe."
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner exec vitest run src/__tests__/commands.test.ts src/__tests__/context.test.ts src/__tests__/workflow.test.ts"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "node packages/scanner/bin/nav-map.js --help"
+      - "node packages/scanner/bin/nav-map.js workflow --help"
+      - "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Receipt design requires a public schema change that should be split and judged separately."
+      - "A command would require reading auth storage contents instead of referencing auth-state ids."
+      - "Verification fails twice."
+    receipt:
+      result: done
+      task_id: T004
+      board_path: "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+      changed_files:
+        - "README.md"
+        - "package.json"
+        - "packages/scanner/src/program.ts"
+        - "packages/scanner/src/commands/workflow.ts"
+        - "packages/scanner/src/modes/context.ts"
+        - "packages/scanner/src/modes/workflow.ts"
+        - "packages/scanner/src/__tests__/commands.test.ts"
+        - "packages/scanner/src/__tests__/context.test.ts"
+        - "packages/scanner/src/__tests__/workflow.test.ts"
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner exec vitest run src/__tests__/commands.test.ts src/__tests__/context.test.ts src/__tests__/workflow.test.ts"
+          status: pass
+          notes: "3 files and 33 tests passed"
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+          notes: "Run so node packages/scanner/bin/nav-map.js used current dist"
+        - cmd: "node packages/scanner/bin/nav-map.js --help"
+          status: pass
+          notes: "Help shows the agent QA loop and Target/preflight versus probe/diff distinction"
+        - cmd: "node packages/scanner/bin/nav-map.js workflow --help"
+          status: pass
+          notes: "Workflow help explains node screenshot capture, surface artifacts, auth-state ids, and receipts"
+        - cmd: "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract"
+          status: pass
+          notes: "Contract summary included surfaceCount: 3 and no .nav-map/auth or storage.json text"
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Scanner CLI is now more agent-ready: top-level and workflow help describe the recommended QA loop, README has the same concise recipe, context contracts include prototype/mockup surfaces, and workflow generation returns a safe receipt with route captures, skipped surface ids, route variable keys, and auth-state id only."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add durable browser/manual-QA smoke coverage for the cleaned-up UX across PRcard, Deckchecker, and Bleep."
+    allowed_files:
+      - "package.json"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "packages/demo/app/page.tsx"
+      - "packages/demo/package.json"
+      - "scripts"
+      - "README.md"
+    expected_output:
+      - "A repeatable local smoke command or documented browser receipt template covering the core manual-QA workflows."
+      - "Coverage for each dataset URL, preview toggle, selected node details, PRcard prototype/mockup/app nodes, Deckchecker/Bleep app nodes, search, audit focus, and PRcard animation start/stop."
+    acceptance_criteria:
+      - "Smoke path verifies all three valid dataset URLs render the expected graph names."
+      - "Smoke path verifies preview toggle labels and target-state labels after cleanup."
+      - "Smoke path verifies PRcard app/prototype/mockup node details."
+      - "Smoke path verifies Deckchecker and Bleep app node details."
+      - "Smoke path verifies Search navigates, Audit focuses an issue, and PRcard Animate starts/stops the overlay."
+    verify:
+      - "pnpm test"
+      - "pnpm validate"
+      - "Codex Chrome fresh walkthrough using the smoke checklist."
+    stop_if:
+      - "Need files outside allowed_files."
+      - "The smoke implementation would require credentials, auth storage, or external service state."
+      - "The smoke path becomes flaky due to network dependencies; split to local-only proof and document external limitations."
+      - "Verification fails twice."
+    receipt:
+      result: done
+      task_id: T005
+      board_path: "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+      changed_files:
+        - "README.md"
+        - "packages/core/src/components/NavMap.test.tsx"
+        - "scripts"
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/components/NavMap.test.tsx"
+          status: pass
+          notes: "1 file and 21 tests passed; added flow animation start/stop coverage."
+        - cmd: "node --check scripts/demo-smoke.mjs"
+          status: pass
+        - cmd: "DEMO_SMOKE_URL=http://localhost:3001 pnpm smoke:demo"
+          status: pass
+          notes: "Passed before port autodetect; covered PRcard, Deckchecker, Bleep, invalid dataset, Search, Audit, Target, and animation."
+        - cmd: "pnpm test"
+          status: pass
+          notes: "core 45 files / 302 tests passed; scanner 21 passed + 1 skipped files, 163 passed + 2 skipped tests."
+        - cmd: "pnpm validate"
+          status: pass
+          notes: "Passed after final edits; lint emitted existing warnings but no errors, then format check, typecheck, knip production, core build, and demo build passed."
+        - cmd: "curl -fsS 'http://localhost:3000/?dataset=prcard'"
+          status: pass
+          notes: "Verified restarted local demo after validation; response written to /tmp/nav-map-final-prcard.html with 13885 bytes."
+        - cmd: "pnpm smoke:demo"
+          status: pass
+          notes: "Passed after port autodetect; baseUrl http://localhost:3000, 858x760 viewport, 4 routes and 24 checks."
+      smoke_receipt:
+        command: "pnpm smoke:demo"
+        base_url: "http://localhost:3000"
+        viewport: "858x760"
+        routes:
+          - "http://localhost:3000/?dataset=prcard&smoke=prcard"
+          - "http://localhost:3000/?dataset=deckchecker-speaker&smoke=deckchecker-speaker"
+          - "http://localhost:3000/?dataset=bleep&smoke=bleep"
+          - "http://localhost:3000/?dataset=deckchecker&smoke=invalid"
+        covered:
+          - "All valid dataset URLs render expected graph names."
+          - "Saved and Target preview controls are usable."
+          - "PRcard app, prototype, and HTML mockup details remain distinct."
+          - "PRcard Search selects prototype/mockup nodes."
+          - "PRcard Audit focuses a route-health issue."
+          - "PRcard flow animation starts and stops."
+          - "PRcard Target preflight reaches the local HTML mockup."
+          - "Deckchecker and Bleep app node details render."
+          - "Deckchecker and Bleep Target summaries show unverified external states."
+          - "Invalid dataset key shows the explicit fallback warning."
+        warnings:
+          - "At 858px, the route-health close button can be overlapped by the wrapped toolbar after focusing an issue; Audit focus still passed and the toolbar Audit toggle closes the panel."
+          - "Expected browser resource warnings are summarized for offline/unverified target preflight loads."
+      chrome_verification:
+        - "Codex Chrome opened http://localhost:3000/?dataset=prcard&chrome=t005 and verified PRcard controls: Saved, Target, Search, Audit."
+        - "Codex Chrome Search selected Quick Setup HTML Mockup and showed Surface Details plus Live Target fields."
+        - "Codex Chrome Audit focused a route-health issue."
+        - "Codex Chrome Flow mode started and stopped Signed-out activation animation."
+        - "Codex Chrome PRcard Target mode showed target summary: 2 ready / 13 offline / 2 static reference."
+        - "Codex Chrome Deckchecker Target mode showed Targets: 11 unverified and Unverified External labels."
+        - "Codex Chrome Bleep Target mode showed Targets: 19 unverified and Unverified External labels."
+        - "Codex Chrome Search opened selected app-node details for Deckchecker Landing and Bleep Home."
+        - "Codex Chrome invalid dataset URL showed Unknown dataset \"deckchecker\" and loaded PRcard fallback."
+        - "After final validation, curl and Codex Chrome reverified http://localhost:3000/?dataset=prcard&final=t005."
+      summary: "Added a repeatable demo smoke command that autodetects localhost:3000/3001, runs an 858px Playwright browser receipt across PRcard, Deckchecker, Bleep, and invalid dataset states, and documents the manual-QA coverage. Added focused NavMap unit coverage for flow animation start/stop."
+      remaining_blockers:
+        - "Route-health panel close button can be overlapped by the wrapped toolbar at 858px after issue focus; outside T005 allowed_files, recorded for final audit/follow-up."
+      verification_attempts: 2
+      stopped_because: null
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Fix the 858px route-health panel close-button overlap discovered by the demo smoke."
+    allowed_files:
+      - "packages/core/src/components/panels/RouteHealthPanel.tsx"
+      - "packages/core/src/components/panels/RouteHealthPanel.test.tsx"
+      - "scripts/demo-smoke.mjs"
+      - "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+    expected_output:
+      - "Route Health panel header controls remain clickable when the toolbar wraps at 858px."
+      - "The demo smoke no longer needs to warn that the close button is overlapped."
+    acceptance_criteria:
+      - "Route Health panel starts below the wrapped toolbar enough that Close route health is clickable at 858px."
+      - "pnpm smoke:demo passes without the route-health overlap warning."
+      - "Focused RouteHealthPanel tests document the panel offset."
+    verify:
+      - "pnpm --filter @neonwatty/nav-map exec vitest run src/components/panels/RouteHealthPanel.test.tsx"
+      - "pnpm smoke:demo"
+      - "pnpm validate"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Fix requires a broader responsive layout redesign."
+      - "Verification fails twice."
+    receipt:
+      result: done
+      task_id: T006
+      board_path: "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+      changed_files:
+        - "packages/core/src/components/panels/RouteHealthPanel.tsx"
+        - "packages/core/src/components/panels/RouteHealthPanel.test.tsx"
+        - "docs/goals/nav-map-preview-readiness-ux-cleanup/state.yaml"
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map exec vitest run src/components/panels/RouteHealthPanel.test.tsx"
+          status: pass
+          notes: "1 file and 6 tests passed."
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+          notes: "Rebuilt core so the local demo consumed the RouteHealthPanel offset fix."
+        - cmd: "pnpm smoke:demo"
+          status: pass
+          notes: "Passed with no route-health overlap warning; only expected target-preflight resource warnings remained."
+        - cmd: "pnpm test"
+          status: pass
+          notes: "core 45 files / 303 tests passed; scanner 21 passed + 1 skipped files, 163 passed + 2 skipped tests."
+        - cmd: "pnpm validate"
+          status: pass
+          notes: "Passed after final edits; lint emitted existing warnings but no errors, then format check, typecheck, knip production, core build, and demo build passed."
+      summary: "Moved the Route Health panel below the wrapped toolbar clearance so its header controls remain clickable at the 858px smoke viewport, and documented the offset in a focused test."
+      smoke_receipt:
+        command: "pnpm smoke:demo"
+        base_url: "http://localhost:3000"
+        viewport: "858x760"
+        status: pass
+        warning_delta: "The prior route-health close-button overlap warning no longer appears."
+      remaining_blockers: []
+      stopped_because: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the cleaned-up UX satisfies the original three-agent audit outcome for this tranche."
+    inputs:
+      - "All done task receipts."
+      - "Last local verification."
+      - "Fresh Codex Chrome receipts."
+      - "Current dirty diff."
+      - "Goal oracle."
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued, active, or blocked without a safe substitute."
+      - "Reject completion if Chrome walkthroughs do not cover PRcard, deckchecker-speaker, and bleep."
+      - "Reject completion if CLI/context receipts do not include surfaces and safe auth-state-id-only output."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to the oracle."
+      - "Missing evidence."
+      - "Next task if not complete."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "The preview-readiness UX cleanup tranche satisfies the original three-agent audit outcome. The UI now separates artifact type, current preview, live target, target preflight, and route/workflow audit; scanner CLI/context output includes surfaces and safe receipts; dataset state is scoped; raw scans render as scans; and durable browser smoke plus Codex Chrome receipts cover PRcard, Deckchecker, and Bleep."
+      evidence:
+        - "T002: Preview/Target language, unverified external target state, node labels, and details panel axes were implemented and verified with focused tests, build, and Chrome walkthroughs."
+        - "T003: Responsive toolbar behavior, dataset-scoped state reset, raw scan overview, accessible dataset selector, and invalid dataset warning were implemented and verified."
+        - "T004: Scanner help/docs/context/workflow receipt paths now describe the agent QA loop, include surfaces, and reference auth state by id only."
+        - "T005: scripts/demo-smoke.mjs provides repeatable 858px browser smoke coverage across PRcard, Deckchecker, Bleep, invalid dataset, Search, Audit, Target, selected details, and animation."
+        - "T006: The only smoke-discovered residual UX issue, route-health close overlap at 858px, was fixed and no longer appears in the smoke receipt."
+      final_verification:
+        - cmd: "pnpm test"
+          status: pass
+          notes: "core 45 files / 303 tests passed; scanner 21 passed + 1 skipped files, 163 passed + 2 skipped tests."
+        - cmd: "pnpm validate"
+          status: pass
+          notes: "lint completed with existing warnings only; format check, typecheck, knip production, core build, and demo build passed."
+        - cmd: "pnpm smoke:demo"
+          status: pass
+          notes: "Passed at 858x760 against localhost:3000 after port autodetect; no route-health overlap warning remained."
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "GoalBuddy check-goal-state"
+          status: pass
+          notes: "Board valid before final audit receipt."
+      chrome_receipts:
+        - "PRcard in Codex Chrome: controls visible, Search selected Quick Setup HTML Mockup, Surface Details and Live Target fields rendered, Audit focused an issue, flow animation started/stopped, Target summary showed ready/offline/static states."
+        - "Deckchecker in Codex Chrome: Target summary showed 11 unverified, Unverified External labels were visible, and Landing app node details showed Artifact App and Current Preview."
+        - "Bleep in Codex Chrome: Target summary showed 19 unverified, Unverified External labels were visible, and Home app node details showed Artifact App and Current Preview."
+        - "Invalid dataset in Codex Chrome: warning for deckchecker rendered and PRcard fallback loaded."
+      limitations:
+        - "Browser Target preflight remains a lightweight reachability check, not proof of full app render correctness; README and scanner help direct agents to probe/diff receipts for stronger audit evidence."
+        - "Expected local demo target-preflight resource warnings remain for app routes that do not exist in the demo shell; the smoke summarizes these as warnings rather than failures."
+        - "Existing generated dirty file packages/demo/next-env.d.ts was not intentionally edited."
+      next_recommended_followup:
+        - "Use the separate docs/goals/nav-map-cli-browser-ux-audit board for the broader independent CLI/browser UX audit requested after this tranche."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "pnpm test"
+      - "pnpm validate"
+      - "pnpm smoke:demo"
+      - "git diff --check"

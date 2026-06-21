@@ -350,6 +350,20 @@ describe('probe helpers', () => {
     });
 
     expect(run.results).toHaveLength(1);
+    expect(run).toMatchObject({
+      command: expect.stringContaining('nav-map probe <manifest>'),
+      selection: {
+        flow: 'Speaker deck workflow',
+        nodeIds: ['my-events-eventid-upload'],
+        routeVariableKeys: ['eventId'],
+      },
+      screenshotSummary: {
+        screenshotDir: screenshotsDir,
+        captured: 1,
+        capturedNodeIds: ['my-events-eventid-upload'],
+      },
+      warnings: [],
+    });
     expect(run.results[0]).toMatchObject({
       nodeId: 'my-events-eventid-upload',
       route: '/my/events/[eventId]/upload',
@@ -379,6 +393,7 @@ describe('probe helpers', () => {
     expect(mocks.browserCloseMock).toHaveBeenCalledOnce();
 
     const receipt = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(receipt.nextActions[0].command).toContain('nav-map diff <manifest>');
     expect(receipt.results[0].screenshot).toBe(
       path.join(screenshotsDir, 'my-events-eventid-upload.png')
     );
@@ -435,6 +450,14 @@ describe('probe helpers', () => {
     expect(receipt.data.results[0].checks).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'status', status: 'pass' })])
     );
+    expect(receipt.data).toMatchObject({
+      command: expect.stringContaining('nav-map probe <manifest>'),
+      selection: { nodeIds: ['speaker-events'] },
+      screenshotSummary: {
+        captured: 1,
+        capturedNodeIds: ['speaker-events'],
+      },
+    });
     expect(receipt.artifacts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ kind: 'probe-receipt', path: outputPath }),

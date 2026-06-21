@@ -6,7 +6,11 @@ import {
   workflowManifestToGraph,
   type WorkflowManifest,
 } from '@neonwatty/nav-map/workflow';
-import { createAgentContract, type AgentContract } from './agent-contract.js';
+import {
+  createAgentContract,
+  type AgentContract,
+  type AgentContractNextAction,
+} from './agent-contract.js';
 import { findAuthState } from './auth-state.js';
 import { captureScreenshots } from '../screenshots/capture.js';
 
@@ -25,6 +29,25 @@ export interface WorkflowCommandResult {
   edgeCount: number;
   groupCount: number;
   screenshotCount: number;
+  receipt: WorkflowGenerationReceipt;
+}
+
+export interface WorkflowGenerationReceipt {
+  command: string;
+  manifestPath: string;
+  outputPath: string;
+  baseUrl?: string;
+  authStateId: string | null;
+  routeVariablesApplied: string[];
+  screenshotCapture: {
+    requested: boolean;
+    routeCount: number;
+    capturedNodeIds: string[];
+    skippedSurfaceIds: string[];
+    screenshotDir?: string;
+  };
+  warnings: string[];
+  nextActions: AgentContractNextAction[];
 }
 
 export interface WorkflowInspectResult {
@@ -88,16 +111,17 @@ export async function runWorkflowManifest(
   const manifest = readWorkflowManifest(resolvedManifestPath);
   const outputPath = path.resolve(options.output ?? 'nav-map.json');
   const shouldCaptureScreenshots = options.screenshots !== false && Boolean(options.baseUrl);
+  const screenshotDir = path.resolve(options.screenshotDir ?? 'nav-screenshots');
+  const captureTargets = manifest.nodes.map(node => ({
+    id: node.id ?? routeToId(node.route),
+    route: resolveOptionalRouteTemplate(node.route, manifest.routeVariables ?? {}),
+  }));
   let screenshotOverrides: Record<string, string> = {};
 
   if (shouldCaptureScreenshots && options.baseUrl) {
-    const screenshotDir = path.resolve(options.screenshotDir ?? 'nav-screenshots');
     const storageState = resolveWorkflowScreenshotStorageState(manifest, options.authState);
     const captured = await captureScreenshots(
-      manifest.nodes.map(node => ({
-        id: node.id ?? routeToId(node.route),
-        route: resolveOptionalRouteTemplate(node.route, manifest.routeVariables ?? {}),
-      })),
+      captureTargets,
       options.baseUrl,
       screenshotDir,
       storageState ? { storageState } : {}
@@ -124,6 +148,30 @@ export async function runWorkflowManifest(
     edgeCount: graph.edges.length,
     groupCount: graph.groups.length,
     screenshotCount: Object.keys(screenshotOverrides).length,
+    receipt: {
+      command: buildWorkflowGenerationCommand(resolvedManifestPath, options, outputPath),
+      manifestPath: resolvedManifestPath,
+      outputPath,
+      ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+      authStateId: options.authState ?? null,
+      routeVariablesApplied: Object.keys(manifest.routeVariables ?? {}),
+      screenshotCapture: {
+        requested: shouldCaptureScreenshots,
+        routeCount: captureTargets.length,
+        capturedNodeIds: Object.keys(screenshotOverrides),
+        skippedSurfaceIds: (manifest.surfaces ?? []).map(surface => surface.id),
+        ...(shouldCaptureScreenshots ? { screenshotDir } : {}),
+      },
+      warnings: buildWorkflowGenerationWarnings(
+        shouldCaptureScreenshots,
+        manifest.surfaces?.length ?? 0
+      ),
+      nextActions: buildWorkflowGenerationNextActions(
+        resolvedManifestPath,
+        options,
+        shouldCaptureScreenshots
+      ),
+    },
   };
 }
 
@@ -279,7 +327,71 @@ function resolveOptionalRouteTemplate(route: string, variables: Record<string, s
   return route.replace(/\[([^\]]+)\]/g, (match, key: string) => variables[key] ?? match);
 }
 
+function buildWorkflowGenerationCommand(
+  manifestPath: string,
+  options: WorkflowCommandOptions,
+  outputPath: string
+): string {
+  return [
+    'nav-map workflow',
+    shellArg(manifestPath),
+    options.baseUrl ? `--base-url ${shellArg(options.baseUrl)}` : '',
+    options.authState ? `--auth-state ${shellArg(options.authState)}` : '',
+    options.screenshotDir
+      ? `--screenshot-dir ${shellArg(path.resolve(options.screenshotDir))}`
+      : '',
+    options.screenshots === false ? '--no-screenshots' : '',
+    `-o ${shellArg(outputPath)}`,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function buildWorkflowGenerationWarnings(
+  shouldCaptureScreenshots: boolean,
+  surfaceCount: number
+): string[] {
+  const warnings: string[] = [];
+  if (!shouldCaptureScreenshots) {
+    warnings.push('Screenshots were not requested; existing manifest screenshots are unchanged.');
+  }
+  if (surfaceCount > 0) {
+    warnings.push('Prototype/mockup/component surfaces are manifest artifacts, not live captures.');
+  }
+  return warnings;
+}
+
+function buildWorkflowGenerationNextActions(
+  manifestPath: string,
+  options: WorkflowCommandOptions,
+  shouldCaptureScreenshots: boolean
+): AgentContractNextAction[] {
+  return [
+    {
+      label: 'Inspect workflow context',
+      command: `nav-map context ${shellArg(manifestPath)} --format json --contract`,
+      reason: 'Review routes, surfaces, auth-state ids, and evidence before manual QA.',
+      safety: 'read-only',
+    },
+    ...(options.baseUrl
+      ? [
+          {
+            label: 'Probe generated route nodes',
+            command: `nav-map probe ${shellArg(manifestPath)} --base-url ${shellArg(options.baseUrl)}${options.authState ? ` --auth-state ${shellArg(options.authState)}` : ''} --contract`,
+            reason: shouldCaptureScreenshots
+              ? 'Verify the same live target used for screenshot generation.'
+              : 'Verify live route reachability before refreshing screenshots.',
+            safety: 'writes-local-files' as const,
+          },
+        ]
+      : []),
+  ];
+}
+
 function shellArg(value: string): string {
+  if (/^<[^>]+>$/.test(value)) {
+    return value;
+  }
   if (/^[A-Za-z0-9_./:@=-]+$/.test(value)) {
     return value;
   }

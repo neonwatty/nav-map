@@ -10,7 +10,7 @@ export function PreviewModeToggle({ value, isDark, onChange }: PreviewModeToggle
   return (
     <div
       role="group"
-      aria-label="Preview render mode"
+      aria-label="Preview source"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -30,20 +30,20 @@ export function PreviewModeToggle({ value, isDark, onChange }: PreviewModeToggle
           whiteSpace: 'nowrap',
         }}
       >
-        Render
+        Preview
       </span>
       <PreviewButton
-        label="Screenshots"
+        label="Saved"
         active={value === 'screenshots'}
         isDark={isDark}
-        title="Render saved screenshots and static surface images"
+        title="Show saved screenshots and static surface images"
         onClick={() => onChange('screenshots')}
       />
       <PreviewButton
-        label="Live"
+        label="Target"
         active={value === 'live'}
         isDark={isDark}
-        title="Render live app or mockup previews where available"
+        title="Try live app or mockup targets where available"
         onClick={() => onChange('live')}
       />
     </div>

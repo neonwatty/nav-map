@@ -84,6 +84,7 @@ export function ConnectionPanel({
   const showLiveUnavailableState =
     showLiveIframe &&
     (liveTargetStatus === 'checking' ||
+      liveTargetStatus === 'unverified' ||
       liveTargetStatus === 'offline' ||
       liveTargetStatus === 'unavailable');
   const workflowMetadata = node.metadata;
@@ -428,7 +429,15 @@ function LiveTargetOfflineState({
   const fallbackMessage =
     status === 'checking'
       ? 'Checking the live target before opening the inline preview.'
-      : `Start the local app server for ${label} or enter a reachable Live Target.`;
+      : status === 'unverified'
+        ? 'Target preflight could not verify iframe rendering. The saved preview remains visible until the target is confirmed.'
+        : `Start the local app server for ${label} or enter a reachable Live Target.`;
+  const title =
+    status === 'checking'
+      ? 'Checking live target'
+      : status === 'unverified'
+        ? 'Live target unverified'
+        : 'Live target unavailable';
 
   return (
     <div
@@ -471,9 +480,7 @@ function LiveTargetOfflineState({
             : undefined,
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 800 }}>
-          {status === 'checking' ? 'Checking live target' : 'Live target unavailable'}
-        </div>
+        <div style={{ fontSize: 13, fontWeight: 800 }}>{title}</div>
         <div style={{ fontSize: 12, lineHeight: 1.4 }}>{message ?? fallbackMessage}</div>
         {liveUrl && <CodeLine value={liveUrl} isDark={isDark} />}
       </div>
@@ -499,21 +506,22 @@ function PreviewStatusBlock({
 }) {
   const previewLimitations = previewState.limitations;
   const artifactKind = getArtifactKindLabel(previewState.artifactKind);
-  const liveStatus = getPreviewStatusLabel(previewState);
+  const liveTargetLabel = getPreviewStatusLabel(previewState);
+  const currentPreviewLabel = formatCurrentPreview(previewMode, previewState, liveTargetStatus);
 
   return (
-    <PanelBlock label="Preview Status" isDark={isDark}>
+    <PanelBlock label="Preview" isDark={isDark}>
       <div style={{ display: 'grid', gap: 6 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#d0d4e0' : '#2f3748' }}>
-          {artifactKind} / {liveStatus}
+          {artifactKind} - {currentPreviewLabel}
         </div>
         <div style={{ display: 'grid', gap: 4 }}>
-          <MetadataRow label="Render Mode" value={formatPreviewMode(previewMode)} isDark={isDark} />
           <MetadataRow label="Artifact" value={artifactKind} isDark={isDark} />
-          <MetadataRow label="Live Status" value={liveStatus} isDark={isDark} />
+          <MetadataRow label="Current Preview" value={currentPreviewLabel} isDark={isDark} />
+          <MetadataRow label="Live Target" value={liveTargetLabel} isDark={isDark} />
           {liveTargetStatus !== 'idle' && (
             <MetadataRow
-              label="Target Health"
+              label="Target Preflight"
               value={formatLiveTargetStatus(liveTargetStatus)}
               isDark={isDark}
               accent={getLiveTargetAccent(liveTargetStatus)}
@@ -521,11 +529,7 @@ function PreviewStatusBlock({
           )}
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#cbd1df' : '#354052' }}>
-          {liveTargetStatus === 'offline' || liveTargetStatus === 'unavailable'
-            ? 'Live target is unavailable. Start the local app server or set a different Live Target.'
-            : liveTargetStatus === 'checking'
-              ? 'Checking the live target before opening the inline preview.'
-              : getPreviewStatusMessage(previewState)}
+          {formatPreviewStatusMessage(previewState, previewMode, liveTargetStatus)}
         </div>
         {previewLimitations.length > 0 && <BadgeList values={previewLimitations} isDark={isDark} />}
       </div>
@@ -604,16 +608,19 @@ function LiveTargetEditor({
         <MetadataRow label="Source" value={sourceLabel} isDark={isDark} />
         {liveTargetStatus !== 'idle' && (
           <MetadataRow
-            label="Target Health"
+            label="Target Preflight"
             value={formatLiveTargetStatus(liveTargetStatus)}
             isDark={isDark}
             accent={getLiveTargetAccent(liveTargetStatus)}
           />
         )}
-        {(liveTargetStatus === 'offline' || liveTargetStatus === 'unavailable') && (
+        {(liveTargetStatus === 'unverified' ||
+          liveTargetStatus === 'offline' ||
+          liveTargetStatus === 'unavailable') && (
           <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#fca5a5' : '#b91c1c' }}>
-            Local target is not reachable. Start the app server for this URL or enter a reachable
-            live target.
+            {liveTargetStatus === 'unverified'
+              ? 'Target preflight reached an external or opaque response, so iframe rendering is not verified.'
+              : 'Local target is not reachable. Start the app server for this URL or enter a reachable live target.'}
           </div>
         )}
         <div style={{ display: 'grid', gap: 5 }}>
@@ -671,6 +678,8 @@ function getLiveTargetAccent(status: NavMapLiveReadinessStatus): string | undefi
   if (status === 'unavailable') return '#a855f7';
   if (status === 'blocked') return '#f97316';
   if (status === 'reachable') return '#22c55e';
+  if (status === 'unverified') return '#eab308';
+  if (status === 'checking') return '#3b82f6';
   return undefined;
 }
 
@@ -688,7 +697,47 @@ function smallActionButtonStyle(isDark: boolean, disabled = false): CSSPropertie
 }
 
 function formatPreviewMode(mode: NavMapPreviewMode): string {
-  return mode === 'live' ? 'Live render mode' : 'Screenshot render mode';
+  return mode === 'live' ? 'Target preview mode' : 'Saved screenshot mode';
+}
+
+function formatCurrentPreview(
+  previewMode: NavMapPreviewMode,
+  previewState: NavMapNodePreviewState,
+  liveTargetStatus: NavMapLiveReadinessStatus
+): string {
+  if (previewMode !== 'live') {
+    return previewState.status === 'static' ? 'Static Reference' : 'Saved Screenshot';
+  }
+  if (liveTargetStatus === 'reachable') return 'Live Iframe';
+  if (liveTargetStatus === 'checking') return 'Checking Target';
+  if (previewState.status === 'static') return 'Static Reference';
+  return 'Saved Fallback';
+}
+
+function formatPreviewStatusMessage(
+  previewState: NavMapNodePreviewState,
+  previewMode: NavMapPreviewMode,
+  liveTargetStatus: NavMapLiveReadinessStatus
+): string {
+  if (previewMode !== 'live') {
+    if (previewState.status === 'available') {
+      return `${getPreviewStatusMessage(previewState)} Switch to Target mode to try the configured URL.`;
+    }
+    return getPreviewStatusMessage(previewState);
+  }
+  if (liveTargetStatus === 'offline' || liveTargetStatus === 'unavailable') {
+    return 'Live target is unavailable. Start the local app server or set a different Live Target.';
+  }
+  if (liveTargetStatus === 'unverified') {
+    return 'Target preflight reached the URL, but iframe rendering is not verified. The saved preview remains visible.';
+  }
+  if (liveTargetStatus === 'checking') {
+    return 'Checking the live target before opening the inline preview.';
+  }
+  if (liveTargetStatus === 'reachable') {
+    return 'Target preflight passed and the live iframe is shown as the current preview.';
+  }
+  return getPreviewStatusMessage(previewState);
 }
 
 function PanelBlock({

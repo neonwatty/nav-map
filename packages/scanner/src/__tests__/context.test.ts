@@ -59,6 +59,23 @@ const manifest = {
       sourceHints: ['web/src/app/admin/events/page.tsx'],
     },
   ],
+  surfaces: [
+    {
+      id: 'speaker-results-mockup',
+      label: 'Speaker Results Mockup',
+      type: 'html-mockup',
+      section: 'speaker',
+      purpose: 'Preview the results experience before wiring live data.',
+      screenshot: 'screenshots/prototypes/speaker-results-mockup.png',
+      sourceHints: ['mockups/speaker-results.html'],
+      preview: {
+        liveUrl: '/mockups/speaker-results.html',
+        liveMode: 'iframe',
+        liveStatus: 'available',
+        limitations: ['fixture-data'],
+      },
+    },
+  ],
   edges: [],
   flows: [
     { name: 'Speaker sign-in and event list', steps: ['speaker-events', 'speaker-settings'] },
@@ -103,6 +120,20 @@ describe('renderWorkflowContext', () => {
     expect(parsed.name).toBe('Deckchecker Speaker');
     expect(parsed.authState).toBe('speaker');
     expect(parsed.routes).toHaveLength(2);
+    expect(parsed.surfaces).toHaveLength(1);
+    expect(parsed.surfaces[0]).toMatchObject({
+      id: 'speaker-results-mockup',
+      artifactKind: 'mockup',
+      surfaceType: 'html-mockup',
+      screenshot: 'screenshots/prototypes/speaker-results-mockup.png',
+      livePreview: {
+        liveUrl: '/mockups/speaker-results.html',
+        liveMode: 'iframe',
+        liveStatus: 'available',
+        limitations: ['fixture-data'],
+      },
+      evidence: ['screenshot', 'inspect', 'source-hint'],
+    });
     expect(parsed.routes[0].id).toBe('speaker-events');
     expect(parsed.flows).toHaveLength(1);
   });
@@ -124,10 +155,12 @@ describe('renderWorkflowContext', () => {
         app: 'Deckchecker Speaker',
         authState: 'speaker',
         routeCount: 2,
+        surfaceCount: 1,
         flowCount: 1,
       },
     });
     expect(parsed.data.routes[0].id).toBe('speaker-events');
+    expect(parsed.data.surfaces[0].id).toBe('speaker-results-mockup');
     expect(parsed.nextActions[0].command).toContain(
       'nav-map probe deckchecker-speaker.workflow.json'
     );
@@ -190,6 +223,22 @@ describe('renderWorkflowContext', () => {
       auth: ['speaker'],
       evidence: ['screenshot'],
     });
+  });
+
+  it('filters surfaces by section and evidence without requiring route-only fields', () => {
+    const output = renderWorkflowContext(manifest, {
+      format: 'json',
+      focus: ['speaker-results-mockup'],
+      evidence: ['screenshot'],
+      lineBudget: 250,
+    });
+
+    const parsed = JSON.parse(output);
+    expect(parsed.routes).toEqual([]);
+    expect(parsed.surfaces.map((surface: { id: string }) => surface.id)).toEqual([
+      'speaker-results-mockup',
+    ]);
+    expect(parsed.flows).toEqual([]);
   });
 
   it('omits contract filter summary when no filters are active', () => {

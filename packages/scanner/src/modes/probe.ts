@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { routeToId } from '@neonwatty/nav-map/workflow';
 import { chromium } from 'playwright';
-import { createAgentContract, type AgentContract } from './agent-contract.js';
+import {
+  createAgentContract,
+  type AgentContract,
+  type AgentContractNextAction,
+} from './agent-contract.js';
 import { findAuthState, type AuthStateManifest, type WorkflowAuthState } from './auth-state.js';
 
 export interface ProbeNodeExpectations {
@@ -69,11 +73,24 @@ export interface ProbeCheckResult {
 
 export interface ProbeRun {
   app: string;
+  command?: string;
   authState?: string;
   authStateKind?: WorkflowAuthState['kind'];
   baseUrl: string;
   startedAt: string;
   finishedAt: string;
+  selection?: {
+    flow?: string;
+    nodeIds: string[];
+    routeVariableKeys: string[];
+  };
+  screenshotSummary?: {
+    screenshotDir: string;
+    captured: number;
+    capturedNodeIds: string[];
+  };
+  warnings?: string[];
+  nextActions?: AgentContractNextAction[];
   results: ProbeNodeResult[];
 }
 
@@ -146,6 +163,7 @@ export async function runProbe(options: {
   authState?: string;
   flow?: string;
   nodes?: string[];
+  manifestPath?: string;
   outputPath: string;
   screenshotsDir: string;
   contract?: boolean;
@@ -153,6 +171,7 @@ export async function runProbe(options: {
   const startedAt = new Date().toISOString();
   const selectedNodes = selectProbeNodes(options.manifest, options);
   const authState = resolveProbeAuthState(options.manifest, options.authState);
+  const selectedNodeIds = selectedNodes.map(node => node.id ?? routeToId(node.route));
   const browser = await chromium.launch({ headless: true });
   const results: ProbeNodeResult[] = [];
 
@@ -242,11 +261,29 @@ export async function runProbe(options: {
 
   const run: ProbeRun = sanitizeProbeValue({
     app: options.manifest.name,
+    command: buildProbeCommand(options),
     authState: options.authState,
     authStateKind: authState.kind,
     baseUrl: options.baseUrl,
     startedAt,
     finishedAt: new Date().toISOString(),
+    selection: {
+      flow: options.flow,
+      nodeIds: selectedNodeIds,
+      routeVariableKeys: Object.keys(options.manifest.routeVariables ?? {}),
+    },
+    screenshotSummary: {
+      screenshotDir: options.screenshotsDir,
+      captured: results.filter(result => result.screenshot).length,
+      capturedNodeIds: results.filter(result => result.screenshot).map(result => result.nodeId),
+    },
+    warnings: buildProbeWarnings(results),
+    nextActions: buildProbeNextActions({
+      manifestPath: options.manifestPath,
+      baseUrl: options.baseUrl,
+      authState: options.authState,
+      outputPath: options.outputPath,
+    }),
     results,
   }) as ProbeRun;
 
@@ -287,20 +324,13 @@ export function buildProbeRunContract(
           description: `Screenshot for ${result.nodeId}`,
         })),
     ],
-    nextActions: [
-      {
-        label: 'Render probe diff JSON',
-        command: `nav-map diff <manifest> --probe ${shellArg(outputPath ?? '<probe-run>')} --format json`,
-        reason: 'Compare probe observations in a compact agent-readable diff contract.',
-        safety: 'writes-local-files',
-      },
-      {
-        label: 'Inspect failing or warning routes',
-        command: `nav-map context <manifest>${run.authState ? ` --auth-state ${shellArg(run.authState)}` : ''} --format json --contract`,
-        reason: 'Load manifest context before proposing route or expectation updates.',
-        safety: 'read-only',
-      },
-    ],
+    nextActions:
+      run.nextActions ??
+      buildProbeNextActions({
+        baseUrl: run.baseUrl,
+        authState: run.authState,
+        outputPath,
+      }),
   });
 }
 
@@ -551,6 +581,71 @@ function countProbeStatuses(results: ProbeNodeResult[]): Record<ProbeStatus, num
   };
 }
 
+function buildProbeCommand(options: {
+  manifestPath?: string;
+  baseUrl: string;
+  authState?: string;
+  flow?: string;
+  nodes?: string[];
+  outputPath: string;
+  screenshotsDir: string;
+  contract?: boolean;
+}): string {
+  return [
+    'nav-map probe',
+    shellArg(options.manifestPath ?? '<manifest>'),
+    `--base-url ${shellArg(options.baseUrl)}`,
+    options.authState ? `--auth-state ${shellArg(options.authState)}` : '',
+    options.flow ? `--flow ${shellArg(options.flow)}` : '',
+    options.nodes?.length ? `--nodes ${shellArg(options.nodes.join(','))}` : '',
+    `--out ${shellArg(options.outputPath)}`,
+    `--screenshots-dir ${shellArg(options.screenshotsDir)}`,
+    options.contract ? '--contract' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function buildProbeWarnings(results: ProbeNodeResult[]): string[] {
+  const warnings: string[] = [];
+  const failed = results.filter(result => result.status === 'fail').length;
+  const warned = results.filter(result => result.status === 'warn').length;
+  const unchecked = results.filter(result => result.status === 'unchecked').length;
+  if (failed > 0) warnings.push(`${failed} route probe(s) failed expectations.`);
+  if (warned > 0) warnings.push(`${warned} route probe(s) passed with warnings.`);
+  if (unchecked > 0) warnings.push(`${unchecked} route probe(s) had no expectations.`);
+  return warnings;
+}
+
+function buildProbeNextActions(options: {
+  manifestPath?: string;
+  baseUrl: string;
+  authState?: string;
+  outputPath?: string;
+}): AgentContractNextAction[] {
+  const manifestArg = options.manifestPath ? shellArg(options.manifestPath) : '<manifest>';
+  return [
+    {
+      label: 'Render probe diff JSON',
+      command: `nav-map diff ${manifestArg} --probe ${shellArg(options.outputPath ?? '<probe-run>')} --format json`,
+      reason: 'Compare probe observations in a compact agent-readable diff contract.',
+      safety: 'writes-local-files',
+    },
+    {
+      label: 'Inspect failing or warning routes',
+      command: `nav-map context ${manifestArg}${options.authState ? ` --auth-state ${shellArg(options.authState)}` : ''} --format json --contract`,
+      reason: 'Load manifest context before proposing route or expectation updates.',
+      safety: 'read-only',
+    },
+    {
+      label: 'Refresh route screenshots after fixes',
+      command: `nav-map workflow ${manifestArg} --base-url ${shellArg(options.baseUrl)}${options.authState ? ` --auth-state ${shellArg(options.authState)}` : ''} --screenshot-dir public/screenshots/workflow -o public/nav-map.json`,
+      reason: 'Regenerate visual evidence after app or expectation changes are verified.',
+      safety: 'writes-local-files',
+    },
+  ];
+}
+
 async function waitForProbeExpectations(
   page: ProbePage,
   expected?: ProbeNodeExpectations,
@@ -619,6 +714,9 @@ function addDecodedCandidate(candidates: Set<string>, value: string): void {
 }
 
 function shellArg(value: string): string {
+  if (/^<[^>]+>$/.test(value)) {
+    return value;
+  }
   if (/^[A-Za-z0-9_./:@=-]+$/.test(value)) {
     return value;
   }

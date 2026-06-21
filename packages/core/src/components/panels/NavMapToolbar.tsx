@@ -106,9 +106,14 @@ export function NavMapToolbar({
         top: 12,
         right: 12,
         display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        alignItems: 'flex-start',
         gap: 6,
+        maxWidth: 'calc(100% - 24px)',
         zIndex: 60,
       }}
+      data-testid="nav-map-toolbar"
     >
       <ViewModeSelector viewMode={viewMode} onViewModeChange={onViewModeChange} />
       <PreviewModeToggle value={previewMode} isDark={isDark} onChange={onPreviewModeChange} />
@@ -210,12 +215,14 @@ function LiveReadinessSummaryBadge({
   summary: NavMapLiveReadinessSummary;
   isDark: boolean;
 }) {
-  const hasWarning = summary.offline > 0 || summary.unavailable > 0 || summary.blocked > 0;
+  const unverified = summary.unverified ?? 0;
+  const hasWarning =
+    unverified > 0 || summary.offline > 0 || summary.unavailable > 0 || summary.blocked > 0;
   const text = formatLiveReadinessSummary(summary);
 
   return (
     <div
-      aria-label="Live readiness summary"
+      aria-label="Target preflight summary"
       title={text}
       style={{
         display: 'flex',
@@ -242,18 +249,20 @@ function LiveReadinessSummaryBadge({
 }
 
 function formatLiveReadinessSummary(summary: NavMapLiveReadinessSummary): string {
-  if (summary.total === 0) return 'Live: no targets';
+  const unverified = summary.unverified ?? 0;
+  if (summary.total === 0) return 'Targets: no targets';
   if (summary.checking > 0) {
-    return `Live: checking ${summary.checking}/${summary.total}`;
+    return `Targets: checking ${summary.checking}/${summary.total}`;
   }
 
   const parts = [
     summary.reachable > 0 ? `${summary.reachable} ready` : '',
+    unverified > 0 ? `${unverified} unverified` : '',
     summary.offline > 0 ? `${summary.offline} offline` : '',
-    summary.static > 0 ? `${summary.static} static` : '',
+    summary.static > 0 ? `${summary.static} static reference` : '',
     summary.blocked > 0 ? `${summary.blocked} blocked` : '',
-    summary.unavailable > 0 ? `${summary.unavailable} no live` : '',
+    summary.unavailable > 0 ? `${summary.unavailable} no target` : '',
   ].filter(Boolean);
 
-  return `Live: ${parts.join(' / ')}`;
+  return `Targets: ${parts.join(' / ')}`;
 }

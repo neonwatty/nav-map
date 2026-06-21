@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { RFNodeData } from '../../utils/graphHelpers';
-import type { NavMapNode } from '../../types';
+import type { NavMapLiveReadiness, NavMapNode, NavMapPreviewMode } from '../../types';
 import { useNavMapContext } from '../../hooks/useNavMap';
 import {
   getArtifactKindLabel,
@@ -53,6 +53,12 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
   const liveReadinessAccent = liveReadiness
     ? getLiveReadinessAccent(liveReadiness.status)
     : undefined;
+  const currentPreviewLabel = getCurrentPreviewTabLabel({
+    previewMode,
+    previewState,
+    liveReadiness,
+    hasScreenshot: Boolean(screenshotSrc),
+  });
   const metadata = nodeData.metadata;
   const healthStatus = metadata?.health?.status;
   const personas = Array.isArray(metadata?.personas) ? metadata.personas : [];
@@ -111,13 +117,10 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
         }}
       >
         <NodeTab label={getArtifactKindLabel(previewState.artifactKind)} />
-        <NodeTab label={getPreviewStatusLabel(previewState)} />
-        {liveReadiness && (
-          <NodeTab
-            label={getLiveReadinessLabel(liveReadiness.status)}
-            accent={liveReadinessAccent}
-          />
-        )}
+        <NodeTab
+          label={currentPreviewLabel}
+          accent={liveReadiness ? liveReadinessAccent : undefined}
+        />
       </div>
 
       <div
@@ -234,6 +237,26 @@ function PageNodeComponent({ id, data, selected }: NodeProps) {
 }
 
 export const PageNode = memo(PageNodeComponent);
+
+function getCurrentPreviewTabLabel({
+  previewMode,
+  previewState,
+  liveReadiness,
+  hasScreenshot,
+}: {
+  previewMode: NavMapPreviewMode;
+  previewState: ReturnType<typeof getNodePreviewState>;
+  liveReadiness?: NavMapLiveReadiness;
+  hasScreenshot: boolean;
+}): string {
+  if (previewMode === 'live') {
+    if (liveReadiness) return getLiveReadinessLabel(liveReadiness.status);
+    return getPreviewStatusLabel(previewState);
+  }
+  if (previewState.status === 'static') return 'Static Reference';
+  if (hasScreenshot) return 'Saved Preview';
+  return 'No Saved Preview';
+}
 
 function NodeTab({ label, accent }: { label: string; accent?: string }) {
   return (

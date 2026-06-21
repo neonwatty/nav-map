@@ -1,0 +1,454 @@
+version: 2
+goal:
+  title: "Nav Map CLI And Browser UX Audit"
+  slug: "nav-map-cli-browser-ux-audit"
+  kind: audit
+  tranche: "Run three independent audits of nav-map CLI/browser/manual-QA UX, synthesize the highest-confidence cleanup slice, and verify it with CLI plus Codex Chrome proof."
+  status: active
+  oracle:
+    signal: "Three independent audit receipts plus a fresh Codex Chrome walkthrough and CLI receipts prove agents and humans can understand and run screenshot, mockup, and app manual-QA workflows."
+    cadence: "after the three Scout audits, after any Worker slice, and at final audit"
+    final_proof: "Ranked synthesis, implemented or explicitly blocked top findings, passing relevant tests/validation, and browser proof covering PRcard, Deckchecker, and Bleep preview/live/search/audit/manual-QA workflows."
+  intake:
+    original_request: "Create a GoalBuddy prep board for three independent agents to audit current CLI UX and browser UX for screenshot, mockup, and app workflows."
+    interpreted_outcome: "Independent CLI/browser UX audit, synthesis, then bounded implementation of approved simplifications with durable proof."
+    input_shape: audit
+    audience: "Agents and humans performing manual QA with nav-map."
+    authority: requested
+    proof_type: review
+    completion_proof: "Three independent audit receipts, ranked synthesis, bounded implemented improvements or blocked decisions, and fresh CLI plus Codex Chrome verification across screenshot, mockup, and app workflows."
+    likely_misfire: "Generic UX commentary or code churn that does not prove the QA loop is simpler and usable across all three workflow modes."
+    blind_spots_considered:
+      - "CLI improvements for agents may differ from browser affordances humans need."
+      - "Mode labels can become clearer without making the UI noisier."
+      - "Live iframe behavior may be limited by server availability, auth, or embedding headers."
+      - "An audit tranche should not mutate product files before independent evidence is gathered."
+    existing_plan_facts:
+      - "The user explicitly wants three independent agents."
+      - "Each audit should include Codex Chrome usage and codebase review where relevant."
+      - "The audit should cover screenshot, mockup, and app versions."
+      - "The outcome should simplify manual QA for agents and humans."
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-cli-browser-ux-audit/"
+    command: "npx goalbuddy board docs/goals/nav-map-cli-browser-ux-audit"
+active_task: T007
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    objective: "Audit the CLI UX from an agent-first perspective across screenshot, mockup, and app workflows."
+    inputs:
+      - "README and scanner CLI docs/help output."
+      - "Scanner command implementation and tests."
+      - "Current workflow manifests and context outputs."
+    constraints:
+      - "Read-only audit."
+      - "Do not inspect or print secrets, environment values, auth storage, browser storage, cookies, or tokens."
+      - "Focus on commands agents need for inspect, context, auth-state verification by id, probe/diff, workflow generation, and receipts."
+    expected_output:
+      - "Findings ranked by severity and friction."
+      - "Specific CLI commands inspected or run."
+      - "Gaps in agent-readable output, help text, receipts, error states, or docs."
+      - "Recommended changes with affected files and verification ideas."
+    receipt:
+      result: done
+      note: "notes/T001-cli-agent-ux-audit.md"
+      summary: "CLI has a strong agent loop and contract envelope, but workflow inspect writes by default, README auth-state examples reference missing PRcard ids, diff ignores the manifest argument, and probe/workflow receipts are too path/console-oriented for agents."
+      high_findings:
+        - "`workflow --inspect --contract` is documented as read-first but writes an output file by default."
+        - "README uses `prcard.workflow.json --state signed-in`, but PRcard has no authStates."
+        - "`diff <manifest>` accepts but ignores the manifest path."
+      recommended_changes:
+        - "Add or clarify read-only/stdout behavior for workflow inspect."
+        - "Fix README auth-state examples or add intended PRcard auth state fixtures."
+        - "Validate or remove the diff manifest argument and align JSON output behavior."
+        - "Enrich probe/workflow receipts with agent-readable command, flow, surfaces, route variables, screenshots, auth-state id, warnings, and nextActions."
+      commands:
+        - "node packages/scanner/bin/nav-map.js --help"
+        - "node packages/scanner/bin/nav-map.js workflow --help"
+        - "node packages/scanner/bin/nav-map.js context --help"
+        - "node packages/scanner/bin/nav-map.js auth-state --help"
+        - "node packages/scanner/bin/nav-map.js probe --help"
+        - "node packages/scanner/bin/nav-map.js diff --help"
+        - "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+        - "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: blocked
+    objective: "Audit the browser UX with Codex Chrome across representative screenshot, mockup, and app datasets."
+    inputs:
+      - "Local demo app."
+      - "Codex Chrome walkthrough of PRcard, Deckchecker, and Bleep datasets."
+      - "Current preview controls, live availability UX, node details, search, audit focus, and animation controls."
+    constraints:
+      - "Read-only audit."
+      - "Use a fresh local demo session and Codex Chrome, not only code inspection."
+      - "Do not inspect browser storage, auth storage, cookies, tokens, or secrets."
+      - "Record routes/datasets tested and visible UX state, not sensitive storage."
+    expected_output:
+      - "Workflow-by-workflow browser observations."
+      - "Confusing or broken states for screenshot, mockup, and app modes."
+      - "Whether preview/live controls are discoverable, truthful, and actionable."
+      - "Manual-QA acceptance checklist improvements."
+    receipt:
+      result: blocked
+      note: "notes/T002-browser-ux-chrome-blocked.md"
+      summary: "Local demo URLs served PRcard, Deckchecker, and Bleep, but Codex Chrome control failed in both the subagent and PM session before any browser tab could be opened. T002 must be rerun when browser control is available."
+      blocking_condition: "mcp node_repl/js browser-control runtime reports `codex/sandbox-state-meta: missing field sandboxPolicy` even for a one-line runtime check."
+      safe_progress_available: true
+      commands:
+        - "curl -fsS 'http://localhost:3000/?dataset=prcard'"
+        - "curl -fsS 'http://localhost:3000/?dataset=deckchecker-speaker'"
+        - "curl -fsS 'http://localhost:3000/?dataset=bleep'"
+        - "Codex Chrome setup attempt via mcp__node_repl.js"
+  - id: T003
+    type: scout
+    assignee: Scout
+    status: done
+    objective: "Audit the UX architecture and code organization for simplification opportunities."
+    inputs:
+      - "Core UI rendering components."
+      - "Workflow manifest/types/conversion boundaries."
+      - "Screenshot, surface, readiness, and live-preview handling."
+      - "Tests and docs that define current behavior."
+    constraints:
+      - "Read-only audit."
+      - "Do not inspect or print secrets, auth storage, browser storage, cookies, or tokens."
+      - "Prefer reusable primitives over app-specific hard-coding."
+    expected_output:
+      - "Simplification opportunities ranked by impact, risk, and blast radius."
+      - "Places where mode-specific UX should be clearer or less duplicated."
+      - "Recommendations for files, tests, and docs if implementation is approved."
+    receipt:
+      result: done
+      note: "notes/T003-ux-architecture-audit.md"
+      summary: "Architecture is data-driven at manifest conversion, but browser UX state is spread through a large NavMap/NavMapShell prop surface and duplicated PageNode/ConnectionPanel preview-readiness logic."
+      top_opportunities:
+        - "Introduce a preview/readiness view-model primitive shared by node cards and details."
+        - "Group NavMapShell props into domain objects."
+        - "Extract mode transition behavior into a hook or reducer."
+        - "Extract live-target override persistence/mutation into a hook."
+      ambiguity_for_judge:
+        - "Prioritize low-risk preview/readiness view model versus larger shell prop restructuring."
+        - "Decide whether label unification belongs in the same implementation slice."
+        - "Decide whether live-target persistence should stay graph-scoped or become manifest/dataset-id scoped."
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    objective: "Synthesize the three audits into one implementation plan with measurable acceptance criteria."
+    inputs:
+      - "T001 CLI audit receipt."
+      - "T002 browser UX audit receipt."
+      - "T003 architecture simplification receipt."
+      - "Current dirty diff and test status."
+    constraints:
+      - "Read-only decision."
+      - "Prefer the smallest reusable model and lowest-risk UX cleanup that improves manual QA."
+      - "Reject recommendations that require secrets, external production state, or hard-coded app behavior."
+    expected_output:
+      - "Decision: approved implementation slice, defer, or blocked."
+      - "Ranked findings with severity."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "Codex Chrome workflow checklist."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      note: "notes/T004-judge-synthesis.md"
+      rationale: "Approve a bounded CLI truthfulness and receipt-quality slice. T002 blocks browser-UX claims and final completion, but it does not block local CLI/docs implementation because T001 findings are concrete, secret-free, app-agnostic, and verifiable. Browser UI refactors from T003 are deferred until Codex Chrome observations exist."
+      blocked_tasks:
+        - "T002 remains blocked on Codex Chrome runtime: codex/sandbox-state-meta missing sandboxPolicy."
+      approved_worker:
+        task_id: T005
+        objective: "Implement the approved CLI manual-QA truthfulness slice: make workflow inspect read behavior and help/output truthful, fix README auth-state examples to use valid demo auth-state ids, make diff's manifest argument either validated or removed from the contract, align JSON output behavior, and enrich probe/diff/workflow receipts with agent-readable command, flow/node, route-variable key, screenshot summary, auth-state id-only, warning, and nextAction fields. Do not touch browser UI in this slice."
+        allowed_files:
+          - "README.md"
+          - "packages/scanner/bin/nav-map.js"
+          - "packages/scanner/src/cli.ts"
+          - "packages/scanner/src/program.ts"
+          - "packages/scanner/src/commands/workflow.ts"
+          - "packages/scanner/src/commands/diff.ts"
+          - "packages/scanner/src/commands/probe.ts"
+          - "packages/scanner/src/modes/workflow.ts"
+          - "packages/scanner/src/modes/diff.ts"
+          - "packages/scanner/src/modes/probe.ts"
+          - "packages/scanner/src/modes/agent-contract.ts"
+          - "packages/scanner/src/output/json.ts"
+          - "packages/scanner/src/__tests__/workflow.test.ts"
+          - "packages/scanner/src/__tests__/diff.test.ts"
+          - "packages/scanner/src/__tests__/probe.test.ts"
+          - "packages/scanner/src/__tests__/commands.test.ts"
+        verify:
+          - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/workflow.test.ts packages/scanner/src/__tests__/diff.test.ts packages/scanner/src/__tests__/probe.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          - "node packages/scanner/bin/nav-map.js workflow --help"
+          - "node packages/scanner/bin/nav-map.js diff --help"
+          - "node packages/scanner/bin/nav-map.js probe --help"
+          - "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+          - "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    objective: "Implement the approved CLI manual-QA truthfulness slice: make workflow inspect read behavior and help/output truthful, fix README auth-state examples to use valid demo auth-state ids, make diff's manifest argument either validated or removed from the contract, align JSON output behavior, and enrich probe/diff/workflow receipts with agent-readable command, flow/node, route-variable key, screenshot summary, auth-state id-only, warning, and nextAction fields. Do not touch browser UI in this slice."
+    allowed_files:
+      - "README.md"
+      - "packages/scanner/bin/nav-map.js"
+      - "packages/scanner/src/cli.ts"
+      - "packages/scanner/src/program.ts"
+      - "packages/scanner/src/commands/workflow.ts"
+      - "packages/scanner/src/commands/diff.ts"
+      - "packages/scanner/src/commands/probe.ts"
+      - "packages/scanner/src/modes/workflow.ts"
+      - "packages/scanner/src/modes/diff.ts"
+      - "packages/scanner/src/modes/probe.ts"
+      - "packages/scanner/src/modes/agent-contract.ts"
+      - "packages/scanner/src/output/json.ts"
+      - "packages/scanner/src/__tests__/workflow.test.ts"
+      - "packages/scanner/src/__tests__/diff.test.ts"
+      - "packages/scanner/src/__tests__/probe.test.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/workflow.test.ts packages/scanner/src/__tests__/diff.test.ts packages/scanner/src/__tests__/probe.test.ts packages/scanner/src/__tests__/commands.test.ts"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "node packages/scanner/bin/nav-map.js workflow --help"
+      - "node packages/scanner/bin/nav-map.js diff --help"
+      - "node packages/scanner/bin/nav-map.js probe --help"
+      - "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+      - "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+    stop_if:
+      - "Need files outside T004 allowed_files."
+      - "Implementation would require inspecting or printing secrets, auth storage, browser storage, cookies, or tokens."
+      - "Change would hard-code app-specific behavior into nav-map core."
+      - "Acceptance criteria are ambiguous or conflict with existing route behavior."
+      - "Verification fails twice for the same reason."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Codex Chrome workflow receipt."
+      - "Known limitations or follow-up tasks."
+    receipt:
+      result: done
+      note: "notes/T005-cli-truthfulness-worker.md"
+      summary: "Implemented the approved CLI truthfulness slice: workflow inspect now has truthful per-mode output defaults, README auth-state examples use a real Deckchecker auth-state id, diff validates its manifest argument and defaults JSON output to a JSON path, and workflow/probe/diff receipts now include reusable command, selection, route-variable, screenshot, warning, and nextAction metadata."
+      changed_files:
+        - "README.md"
+        - "packages/scanner/src/commands/workflow.ts"
+        - "packages/scanner/src/commands/diff.ts"
+        - "packages/scanner/src/commands/probe.ts"
+        - "packages/scanner/src/modes/workflow.ts"
+        - "packages/scanner/src/modes/diff.ts"
+        - "packages/scanner/src/modes/probe.ts"
+        - "packages/scanner/src/__tests__/workflow.test.ts"
+        - "packages/scanner/src/__tests__/diff.test.ts"
+        - "packages/scanner/src/__tests__/probe.test.ts"
+        - "packages/scanner/src/__tests__/commands.test.ts"
+      commands:
+        - command: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/workflow.test.ts packages/scanner/src/__tests__/diff.test.ts packages/scanner/src/__tests__/probe.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          status: pass
+        - command: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - command: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js workflow --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js diff --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js probe --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+          status: pass
+      verification:
+        - command: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/workflow.test.ts packages/scanner/src/__tests__/diff.test.ts packages/scanner/src/__tests__/probe.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          result: pass
+          summary: "164 passed, 2 skipped"
+        - command: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          result: pass
+        - command: "pnpm --filter @neonwatty/nav-map-scanner build"
+          result: pass
+          reason: "Required before running node packages/scanner/bin/nav-map.js because the bin imports dist/cli.js."
+        - command: "node packages/scanner/bin/nav-map.js workflow --help"
+          result: pass
+        - command: "node packages/scanner/bin/nav-map.js diff --help"
+          result: pass
+        - command: "node packages/scanner/bin/nav-map.js probe --help"
+          result: pass
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+          result: pass
+          summary: "Contract summary reported 14 routes, 3 surfaces, and 4 flows."
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+          result: pass
+          summary: "Contract summary reported 11 routes, 0 surfaces, and 4 flows."
+      browser_receipt:
+        result: blocked
+        reason: "T005 intentionally did not touch browser UI; T002 remains blocked on Codex Chrome runtime error `codex/sandbox-state-meta: missing field sandboxPolicy`."
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    objective: "Audit whether the CLI/browser UX audit tranche is complete."
+    inputs:
+      - "All completed task receipts."
+      - "Final verification commands."
+      - "Final Codex Chrome walkthrough receipt."
+      - "Current dirty diff."
+    constraints:
+      - "Read-only final audit."
+      - "Do not claim completion if any required Worker task remains queued, active, or unverified."
+    expected_output:
+      - "complete | not_complete."
+      - "full_outcome_complete: true | false."
+      - "Missing evidence."
+      - "Next task if not complete."
+    receipt:
+      result: done
+      decision: not_complete
+      full_outcome_complete: false
+      note: "notes/T999-final-audit-not-complete.md"
+      summary: "CLI implementation and verification are complete, but the full tranche is not complete because the required Codex Chrome browser walkthrough remains missing."
+      missing_evidence:
+        - "Fresh Codex Chrome walkthrough across PRcard, Deckchecker, and Bleep."
+        - "Browser proof for preview/live/search/audit/manual-QA workflows."
+        - "Browser UX observations after the CLI receipt cleanup."
+      commands:
+        - command: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/workflow.test.ts packages/scanner/src/__tests__/diff.test.ts packages/scanner/src/__tests__/probe.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          status: pass
+          summary: "164 passed, 2 skipped"
+        - command: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js workflow --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js diff --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js probe --help"
+          status: pass
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract --line-budget 80"
+          status: pass
+          summary: "PRcard Workflow Atlas: 14 routes, 3 surfaces, 4 flows."
+        - command: "node packages/scanner/bin/nav-map.js context packages/demo/public/deckchecker-speaker.workflow.json --format json --contract --line-budget 80"
+          status: pass
+          summary: "Deckchecker Speaker Workflow: 11 routes, 0 surfaces, 4 flows."
+        - command: "Codex Chrome setup via node_repl/browser-client"
+          status: fail
+          summary: "Failed before documentation or tab access: codex/sandbox-state-meta missing field sandboxPolicy."
+        - command: "Codex Chrome setup retry via node_repl/browser-client"
+          status: fail
+          summary: "Same blocker: codex/sandbox-state-meta missing field sandboxPolicy."
+      next_task: T006
+  - id: T006
+    type: pm
+    assignee: PM
+    status: done
+    objective: "Run an operator-approved Playwright CLI interim browser walkthrough across PRcard, Deckchecker, and Bleep while the Codex Chrome bridge is down, and keep the Codex Chrome proof requirement explicitly open."
+    inputs:
+      - "T002 blocked browser audit receipt."
+      - "T999 final audit not-complete receipt."
+      - "Chrome troubleshooting instructions."
+      - "Local demo app."
+      - "User instruction on 2026-06-20: Codex Chrome bridge is broken for now; use Playwright CLI until further notice."
+    constraints:
+      - "Do not inspect browser storage, auth storage, cookies, tokens, or secrets."
+      - "Use Playwright CLI only as interim browser evidence; do not claim it is literal Codex Chrome proof."
+      - "Do not use AppleScript or browser storage inspection."
+      - "Keep final completion blocked until either the user changes the oracle or Codex Chrome proof exists."
+    expected_output:
+      - "Playwright CLI availability result."
+      - "Browser walkthrough receipt covering PRcard, Deckchecker, and Bleep preview/live/search/audit/manual-QA workflows."
+      - "Clear remaining gap noting Codex Chrome proof is still pending while the bridge is broken."
+    receipt:
+      result: done
+      decision: interim_playwright_proof_complete
+      full_outcome_complete: false
+      note: "notes/T006-playwright-interim-browser-walkthrough.md"
+      summary: "Operator-approved Playwright CLI walkthrough covered PRcard, Deckchecker, and Bleep. Core app shell, Saved/Target, Audit, Search, and mobile rendering worked. PRcard flow animation worked; animation was not applicable in Deckchecker/Bleep default map/hierarchy states. Target mode produced expected live-target network warnings while unavailable live apps were checked."
+      commands:
+        - command: "pnpm --dir packages/demo exec next dev -p 3001"
+          status: pass
+        - command: "curl -fsS 'http://localhost:3001/?dataset=prcard'"
+          status: pass
+        - command: "curl -fsS 'http://localhost:3001/?dataset=deckchecker-speaker'"
+          status: pass
+        - command: "curl -fsS 'http://localhost:3001/?dataset=bleep'"
+          status: pass
+        - command: "pnpm --filter @neonwatty/nav-map-scanner exec playwright --version"
+          status: pass
+          summary: "Version 1.59.1"
+        - command: "pnpm --dir packages/scanner exec node /tmp/nav-map-playwright-walkthrough.mjs"
+          status: warning
+          summary: "Browser UI passed core checks; report pass=false only because live-target warnings and non-applicable animation states are tracked as explicit caveats."
+      datasets:
+        - id: prcard
+          status: pass_with_expected_live_target_warning
+          screenshots:
+            - "/tmp/nav-map-playwright-proof/prcard-initial.png"
+            - "/tmp/nav-map-playwright-proof/prcard-target.png"
+            - "/tmp/nav-map-playwright-proof/prcard-audit.png"
+            - "/tmp/nav-map-playwright-proof/prcard-search.png"
+            - "/tmp/nav-map-playwright-proof/prcard-mobile.png"
+        - id: deckchecker-speaker
+          status: pass_with_expected_live_target_warning
+          screenshots:
+            - "/tmp/nav-map-playwright-proof/deckchecker-speaker-initial.png"
+            - "/tmp/nav-map-playwright-proof/deckchecker-speaker-target.png"
+            - "/tmp/nav-map-playwright-proof/deckchecker-speaker-audit.png"
+            - "/tmp/nav-map-playwright-proof/deckchecker-speaker-search.png"
+            - "/tmp/nav-map-playwright-proof/deckchecker-speaker-mobile.png"
+        - id: bleep
+          status: pass_with_expected_live_target_warning
+          screenshots:
+            - "/tmp/nav-map-playwright-proof/bleep-initial.png"
+            - "/tmp/nav-map-playwright-proof/bleep-target.png"
+            - "/tmp/nav-map-playwright-proof/bleep-audit.png"
+            - "/tmp/nav-map-playwright-proof/bleep-search.png"
+            - "/tmp/nav-map-playwright-proof/bleep-mobile.png"
+      remaining_gap: "Codex Chrome proof remains pending while the bridge is broken; Playwright CLI is interim evidence only."
+  - id: T007
+    type: pm
+    assignee: PM
+    status: active
+    objective: "Hold the final Codex Chrome proof requirement open until the bridge is fixed or the user permanently changes the goal oracle."
+    inputs:
+      - "T006 Playwright interim browser walkthrough receipt."
+      - "T999 final audit not-complete receipt."
+      - "User instruction to use Playwright CLI until further notice."
+    constraints:
+      - "Do not claim full goal completion from Playwright-only evidence unless the user explicitly changes the completion oracle."
+      - "Do not inspect browser storage, auth storage, cookies, tokens, or secrets."
+    expected_output:
+      - "When Codex Chrome bridge is fixed: rerun browser walkthrough with Codex Chrome and final audit."
+      - "If user changes oracle: update board and final audit to treat Playwright CLI as sufficient browser proof."
+    receipt: null
