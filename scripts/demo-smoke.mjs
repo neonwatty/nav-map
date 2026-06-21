@@ -76,15 +76,29 @@ async function smokePrcard() {
     'Page Details',
     'Artifact',
     'App',
+    'Review Mode',
+    'Real app route',
     'Current Preview',
     'Saved Screenshot',
   ]);
-  pass('prcard app node details show app artifact and saved screenshot preview');
+  await expectButton('Open app');
+  pass('prcard app node details show real-app review mode and Open app action');
 
   await expectNodeCard('Quick Setup Concept', ['Prototype', 'Static Reference']);
   await openSearchAndSelect('quick setup concept', 'Quick Setup Concept');
-  await expectVisibleText(['Surface Details', 'Artifact', 'Prototype', 'Static Reference']);
-  pass('prcard prototype node details show one static-reference concept surface');
+  await expectVisibleText([
+    'Surface Details',
+    'Artifact',
+    'Prototype',
+    'Review Mode',
+    'Static prototype',
+    'Static Reference',
+  ]);
+  await expectDisabledButton(
+    'Open target',
+    'Static prototype has no live target. Use the saved preview or add a prototype live URL.'
+  );
+  pass('prcard prototype node details show static-prototype mode and disabled Open target action');
 
   await expectNodeCard('Quick Setup HTML Mockup', []);
   await openSearchAndSelect('quick setup html', 'Quick Setup HTML Mockup');
@@ -92,13 +106,16 @@ async function smokePrcard() {
     'Surface Details',
     'Artifact',
     'Mockup',
+    'Review Mode',
+    'HTML mockup',
     'Current Preview',
     'Saved Screenshot',
     'Live Target',
     'Target Configured',
     '/mockups/prcard-quick-setup.html',
   ]);
-  pass('prcard mockup node details show saved preview plus configured live target');
+  await expectButton('Open mockup');
+  pass('prcard mockup node details show HTML-mockup mode and Open mockup action');
   pass('search selects PRcard prototype and mockup nodes for details review');
 
   await openAuditAndFocusIssue();
@@ -125,7 +142,7 @@ async function smokePrcard() {
   await expectVisibleText(['Current Preview', 'Saved Fallback', 'Target Preflight', 'Offline']);
   pass('PRcard Target preview shows offline app node status and saved fallback');
   await openSearchAndSelect('quick setup concept', 'Quick Setup Concept');
-  await expectVisibleText(['Surface Details', 'Artifact', 'Prototype', 'Static Reference']);
+  await expectVisibleText(['Surface Details', 'Artifact', 'Prototype', 'Static prototype']);
   pass('PRcard Target preview keeps static prototype node status explicit');
   await openSearchAndSelect('quick setup html', 'Quick Setup HTML Mockup');
   await expectVisibleText(['Target Preflight', 'Ready', 'Live Iframe']);
@@ -290,6 +307,14 @@ async function expectDisabledButton(name, title) {
   const actualTitle = await button.getAttribute('title');
   if (title && actualTitle !== title) {
     throw new Error(`Expected "${name}" title "${title}". Saw: ${actualTitle}`);
+  }
+}
+
+async function expectButton(name) {
+  const button = page.getByRole('button', { name, exact: true });
+  await button.waitFor({ state: 'visible', timeout: 10000 });
+  if (await button.isDisabled()) {
+    throw new Error(`Expected "${name}" button to be enabled`);
   }
 }
 

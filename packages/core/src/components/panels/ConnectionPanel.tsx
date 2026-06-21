@@ -10,6 +10,7 @@ import type {
 import { useNavMapContext } from '../../hooks/useNavMap';
 import { getLiveReadinessLabel } from '../../hooks/useLiveReadiness';
 import {
+  getArtifactReviewAffordance,
   getArtifactKindLabel,
   getNodePreviewState,
   getPreviewStatusLabel,
@@ -213,7 +214,6 @@ export function ConnectionPanel({
         }}
       >
         <WorkflowMetadataSection
-          node={node}
           metadata={workflowMetadata}
           previewState={previewState}
           previewMode={previewMode}
@@ -251,7 +251,6 @@ export function ConnectionPanel({
 }
 
 function WorkflowMetadataSection({
-  node,
   metadata,
   previewState,
   previewMode,
@@ -264,7 +263,6 @@ function WorkflowMetadataSection({
   onNodeLiveUrlChange,
   onClearNodeLiveUrl,
 }: {
-  node: NavMapNode;
   metadata?: NavMapWorkflowMetadata;
   previewState: NavMapNodePreviewState;
   previewMode: NavMapPreviewMode;
@@ -287,7 +285,6 @@ function WorkflowMetadataSection({
           isDark={isDark}
         />
         <LiveTargetEditor
-          node={node}
           previewState={previewState}
           liveTargetStatus={liveTargetStatus}
           isDark={isDark}
@@ -316,7 +313,6 @@ function WorkflowMetadataSection({
         isDark={isDark}
       />
       <LiveTargetEditor
-        node={node}
         previewState={previewState}
         liveTargetStatus={liveTargetStatus}
         isDark={isDark}
@@ -506,6 +502,7 @@ function PreviewStatusBlock({
 }) {
   const previewLimitations = previewState.limitations;
   const artifactKind = getArtifactKindLabel(previewState.artifactKind);
+  const reviewAffordance = getArtifactReviewAffordance(previewState);
   const liveTargetLabel = getPreviewStatusLabel(previewState);
   const currentPreviewLabel = formatCurrentPreview(previewMode, previewState, liveTargetStatus);
 
@@ -517,6 +514,11 @@ function PreviewStatusBlock({
         </div>
         <div style={{ display: 'grid', gap: 4 }}>
           <MetadataRow label="Artifact" value={artifactKind} isDark={isDark} />
+          <MetadataRow
+            label="Review Mode"
+            value={reviewAffordance.reviewModeLabel}
+            isDark={isDark}
+          />
           <MetadataRow label="Current Preview" value={currentPreviewLabel} isDark={isDark} />
           <MetadataRow label="Live Target" value={liveTargetLabel} isDark={isDark} />
           {liveTargetStatus !== 'idle' && (
@@ -531,6 +533,9 @@ function PreviewStatusBlock({
         <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#cbd1df' : '#354052' }}>
           {formatPreviewStatusMessage(previewState, previewMode, liveTargetStatus)}
         </div>
+        <div style={{ fontSize: 12, lineHeight: 1.45, color: isDark ? '#9da6ba' : '#5d6878' }}>
+          {reviewAffordance.guidance}
+        </div>
         {previewLimitations.length > 0 && <BadgeList values={previewLimitations} isDark={isDark} />}
       </div>
     </PanelBlock>
@@ -538,7 +543,6 @@ function PreviewStatusBlock({
 }
 
 function LiveTargetEditor({
-  node,
   previewState,
   liveTargetStatus,
   isDark,
@@ -549,7 +553,6 @@ function LiveTargetEditor({
   onNodeLiveUrlChange,
   onClearNodeLiveUrl,
 }: {
-  node: NavMapNode;
   previewState: NavMapNodePreviewState;
   liveTargetStatus: NavMapLiveReadinessStatus;
   isDark: boolean;
@@ -561,7 +564,8 @@ function LiveTargetEditor({
   onClearNodeLiveUrl?: () => void;
 }) {
   const isApp = previewState.artifactKind === 'app';
-  const inputLabel = isApp ? 'App base URL' : 'Node live URL';
+  const reviewAffordance = getArtifactReviewAffordance(previewState);
+  const inputLabel = reviewAffordance.targetInputLabel;
   const inputValue = isApp ? liveBaseUrlOverride : nodeLiveUrlOverride;
   const placeholder = isApp
     ? (graphBaseUrl ?? 'http://localhost:3000')
@@ -651,9 +655,9 @@ function LiveTargetEditor({
             }
             disabled={!previewState.liveUrl}
             style={smallActionButtonStyle(isDark, !previewState.liveUrl)}
-            title={`Open live target for ${node.label}`}
+            title={reviewAffordance.openTitle}
           >
-            Open
+            {reviewAffordance.openLabel}
           </button>
         </div>
       </div>
@@ -694,10 +698,6 @@ function smallActionButtonStyle(isDark: boolean, disabled = false): CSSPropertie
     fontWeight: 600,
     padding: '5px 9px',
   };
-}
-
-function formatPreviewMode(mode: NavMapPreviewMode): string {
-  return mode === 'live' ? 'Target preview mode' : 'Saved screenshot mode';
 }
 
 function formatCurrentPreview(

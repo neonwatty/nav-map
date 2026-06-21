@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NavMapGraph, NavMapNode } from '../types';
 import {
+  getArtifactReviewAffordance,
   getArtifactKind,
   getNodePreviewState,
   getPreviewStatusLabel,
@@ -39,6 +40,11 @@ describe('artifact preview helpers', () => {
     expect(state.liveUrl).toBe('http://localhost:3000/dashboard');
     expect(state.liveUrlSource).toBe('graph-base');
     expect(getPreviewStatusLabel(state)).toBe('Target Configured');
+    expect(getArtifactReviewAffordance(state)).toMatchObject({
+      reviewModeLabel: 'Real app route',
+      targetInputLabel: 'App base URL',
+      openLabel: 'Open app',
+    });
   });
 
   it('defaults prototype surface nodes to static prototype artifacts', () => {
@@ -56,6 +62,13 @@ describe('artifact preview helpers', () => {
     expect(getPreviewStatusMessage(state)).toBe(
       'Static reference surface. This prototype has no live preview.'
     );
+    expect(getArtifactReviewAffordance(state)).toMatchObject({
+      reviewModeLabel: 'Static prototype',
+      targetInputLabel: 'Prototype live URL',
+      openLabel: 'Open target',
+      openTitle:
+        'Static prototype has no live target. Use the saved preview or add a prototype live URL.',
+    });
   });
 
   it('keeps path-based prototype surfaces static when no explicit preview URL exists', () => {
@@ -178,6 +191,11 @@ describe('artifact preview helpers', () => {
     expect(state.status).toBe('available');
     expect(state.liveUrl).toBe('/mockups/checkout.html');
     expect(state.limitations).toEqual(['fixture data', 'no real auth']);
+    expect(getArtifactReviewAffordance(state)).toMatchObject({
+      reviewModeLabel: 'HTML mockup',
+      targetInputLabel: 'Mockup live URL',
+      openLabel: 'Open mockup',
+    });
   });
 
   it('ignores non-string preview live URLs', () => {

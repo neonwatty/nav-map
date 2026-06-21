@@ -102,11 +102,24 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(screen.getByText('Preview')).toBeTruthy();
     expect(screen.getByText('Prototype - Static Reference')).toBeTruthy();
     expect(screen.getByText('Artifact')).toBeTruthy();
+    expect(screen.getByText('Review Mode')).toBeTruthy();
+    expect(screen.getByText('Static prototype')).toBeTruthy();
     expect(screen.getByText('Current Preview')).toBeTruthy();
     expect(screen.getAllByText('Live Target').length).toBeGreaterThanOrEqual(2);
     expect(
       screen.getByText('Static reference surface. This prototype has no live preview.')
     ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Use the saved/static reference for review; no live interaction is expected for this prototype.'
+      )
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Prototype live URL')).toBeTruthy();
+    const openTarget = screen.getByRole('button', { name: 'Open target' }) as HTMLButtonElement;
+    expect(openTarget.disabled).toBe(true);
+    expect(openTarget.getAttribute('title')).toBe(
+      'Static prototype has no live target. Use the saved preview or add a prototype live URL.'
+    );
     expect(screen.queryByTitle('Live preview: Quick Setup Concept')).toBeNull();
     expect(screen.getByText('Surface')).toBeTruthy();
     expect(screen.getByText('Generated Image')).toBeTruthy();
@@ -163,9 +176,13 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(screen.getByText('Mockup - Live Iframe')).toBeTruthy();
     expect(screen.getByText('Artifact')).toBeTruthy();
     expect(screen.getByText('Mockup')).toBeTruthy();
+    expect(screen.getByText('Review Mode')).toBeTruthy();
+    expect(screen.getByText('HTML mockup')).toBeTruthy();
     expect(screen.getAllByText('Live Target').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Target Configured')).toBeTruthy();
     expect(screen.getAllByText('Target Preflight').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByLabelText('Mockup live URL')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open mockup' })).toBeTruthy();
     expect(screen.getByText('Fixture Data')).toBeTruthy();
     expect(screen.getByText('No Real Auth')).toBeTruthy();
   });
@@ -217,6 +234,9 @@ describe('ConnectionPanel workflow metadata', () => {
     expect(iframe.getAttribute('src')).toBe('http://localhost:3001/home');
     expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-same-origin');
     expect(screen.getByText('App - Live Iframe')).toBeTruthy();
+    expect(screen.getByText('Review Mode')).toBeTruthy();
+    expect(screen.getByText('Real app route')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open app' })).toBeTruthy();
     expect(
       screen.getByText(
         'Target preflight passed and the live iframe is shown as the current preview.'
@@ -486,7 +506,7 @@ describe('ConnectionPanel workflow metadata', () => {
       </NavMapContext.Provider>
     );
 
-    const input = screen.getByLabelText('Node live URL') as HTMLInputElement;
+    const input = screen.getByLabelText('Mockup live URL') as HTMLInputElement;
     const iframe = screen.getByTitle('Live preview: Quick Setup Mockup');
 
     expect(input.value).toBe('/local/quick-setup.html');
@@ -539,7 +559,7 @@ describe('ConnectionPanel workflow metadata', () => {
       </NavMapContext.Provider>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open mockup' }));
 
     expect(openSpy).toHaveBeenCalledWith(
       'https://example.test/mockup.html',

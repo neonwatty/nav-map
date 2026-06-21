@@ -320,9 +320,11 @@ By default the smoke looks for the demo on `http://localhost:3000` and then
 The smoke uses an 858px viewport and verifies that all dataset URLs render, the `Saved`/`Target`
 preview controls are usable, PRcard app/prototype/mockup node details remain distinct,
 Deckchecker and Bleep app nodes expose non-ready target states without requiring external service
-availability, Target node details expose per-node readiness labels, Search can select a node, Audit
-can focus an issue, PRcard explains unavailable animation before flow mode, PRcard flow animation
-starts and stops, and invalid dataset keys show an explicit warning. It prints a JSON receipt with
+availability, Target node details expose per-node readiness labels, PRcard details show
+artifact-specific actions such as `Open app`, disabled static-prototype `Open target`, and
+`Open mockup`, Search can select a node, Audit can focus an issue, PRcard explains unavailable
+animation before flow mode, PRcard flow animation starts and stops, and invalid dataset keys show
+an explicit warning. It prints a JSON receipt with
 routes, checks, warnings, and failures. Keep it local-only: if external app targets are offline,
 unavailable, or unverified, the smoke should assert those labels instead of depending on live
 third-party services.
