@@ -1,214 +1,126 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import {
-  workflowManifestToGraph,
-  type NavMapGraph,
-  type WorkflowManifest,
-} from '@neonwatty/nav-map';
+type SearchParams = Record<string, string | string[] | undefined>;
 
-const HELP_DISMISSED_KEY = 'nav-map:demo-help-dismissed';
-type DemoDataset = 'prcard' | 'deckchecker-speaker' | 'bleep' | 'seatify-local';
+type HomePageProps = {
+  searchParams?: Promise<SearchParams> | SearchParams;
+};
 
-const NavMap = dynamic(() => import('@neonwatty/nav-map').then(mod => ({ default: mod.NavMap })), {
-  ssr: false,
-  loading: () => <div style={{ color: '#888', padding: 40 }}>Loading nav map...</div>,
-});
+const metrics = [
+  { value: '4', label: 'workflow datasets' },
+  { value: '3', label: 'review modes' },
+  { value: '1', label: 'agent-readable atlas' },
+];
 
-export default function HomePage() {
-  const [graph, setGraph] = useState<NavMapGraph | null>(null);
-  const [showInitialHelp, setShowInitialHelp] = useState(false);
-  const [initialSelection] = useState(() => readInitialDatasetSelection());
-  const [dataset, setDataset] = useState<DemoDataset>(initialSelection.dataset);
-  const [datasetWarning, setDatasetWarning] = useState<string | null>(
-    initialSelection.invalidDataset
-      ? `Unknown dataset "${initialSelection.invalidDataset}". Showing PRcard workflow instead.`
-      : null
-  );
+const workflows = [
+  {
+    name: 'PRcard',
+    detail: 'App routes, HTML mockups, prototypes, target preflight, and audit issues in one map.',
+    image: '/screenshots/prcard/quick-setup.webp',
+  },
+  {
+    name: 'Deckchecker',
+    detail: 'Speaker workflow screenshots with saved previews and route-level affordances.',
+    image: '/screenshots/deckchecker-speaker/upload.png',
+  },
+  {
+    name: 'Seatify Local',
+    detail: 'Local dogfood coverage across marketing, auth, protected routes, and demo flows.',
+    image: '/screenshots/seatify-local/home.png',
+  },
+];
 
-  useEffect(() => {
-    setShowInitialHelp(window.localStorage.getItem(HELP_DISMISSED_KEY) !== 'true');
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setGraph(null);
-
-    loadDemoGraph(dataset)
-      .then(nextGraph => {
-        if (!cancelled) {
-          setGraph(nextGraph);
-        }
-      })
-      .catch(error => {
-        console.error('Failed to load demo graph:', error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dataset]);
-
-  if (!graph) {
-    return (
-      <main
-        style={{
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0a0a0f',
-          color: '#888',
-        }}
-      >
-        Loading graph data...
-      </main>
-    );
-  }
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  redirectDatasetRequests(params);
 
   return (
-    <main style={{ width: '100vw', height: '100vh' }}>
-      <label
-        style={{
-          position: 'absolute',
-          right: 14,
-          bottom: 14,
-          zIndex: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: 12,
-          color: '#c8c8d0',
-          background: 'rgba(10, 10, 15, 0.88)',
-          border: '1px solid rgba(120, 130, 155, 0.3)',
-          borderRadius: 8,
-          padding: '7px 9px',
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        Dataset
-        <select
-          value={dataset}
-          onChange={event => {
-            const nextDataset = event.target.value as DemoDataset;
-            const url = new URL(window.location.href);
-            url.searchParams.set('dataset', nextDataset);
-            window.history.replaceState(null, '', url);
-            setDatasetWarning(null);
-            setDataset(nextDataset);
-          }}
-          style={{
-            color: '#f0f2f8',
-            background: '#151722',
-            border: '1px solid #303448',
-            borderRadius: 6,
-            fontSize: 12,
-            padding: '3px 8px',
-          }}
-        >
-          <option value="prcard">PRcard workflow</option>
-          <option value="deckchecker-speaker">Deckchecker speaker</option>
-          <option value="bleep">Bleep app scan</option>
-          <option value="seatify-local">Seatify local dogfood</option>
-        </select>
-      </label>
-      {datasetWarning && (
-        <div
-          role="status"
-          style={{
-            position: 'absolute',
-            left: 14,
-            bottom: 14,
-            zIndex: 20,
-            maxWidth: 'min(420px, calc(100vw - 28px))',
-            color: '#f8d58a',
-            background: 'rgba(42, 31, 12, 0.92)',
-            border: '1px solid rgba(248, 213, 138, 0.36)',
-            borderRadius: 8,
-            padding: '8px 10px',
-            fontSize: 12,
-            lineHeight: 1.35,
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          {datasetWarning}
+    <main className="landing-shell">
+      <section className="landing-hero" aria-labelledby="hero-title">
+        <div className="hero-copy">
+          <p className="eyebrow">Workflow atlas for agents</p>
+          <h1 id="hero-title">NavMap</h1>
+          <p className="hero-lede">
+            Turn routes, mockups, screenshots, live targets, and product flows into a navigable
+            review surface that agents can inspect without losing the shape of the app.
+          </p>
+          <div className="hero-actions" aria-label="Primary actions">
+            <a className="primary-action" href="/demo">
+              Open demo
+            </a>
+            <a className="secondary-action" href="https://www.npmjs.com/package/@neonwatty/nav-map">
+              Package
+            </a>
+          </div>
+          <dl className="hero-metrics">
+            {metrics.map(metric => (
+              <div key={metric.label}>
+                <dt>{metric.value}</dt>
+                <dd>{metric.label}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-      )}
-      <NavMap
-        key={dataset}
-        graph={graph}
-        screenshotBasePath=""
-        defaultViewMode={defaultViewModeForGraph(graph)}
-        defaultEdgeMode="smooth"
-        defaultShowHelp={showInitialHelp}
-        onHelpClose={() => {
-          window.localStorage.setItem(HELP_DISMISSED_KEY, 'true');
-          setShowInitialHelp(false);
-        }}
-        onValidationError={errors => {
-          console.warn('NavMap validation:', errors);
-        }}
-      />
+        <div className="hero-preview" aria-label="NavMap product preview">
+          <div className="preview-frame">
+            <img
+              src="/screenshots/prcard/home.webp"
+              alt="PRcard home route screenshot inside a NavMap workflow atlas"
+            />
+          </div>
+          <div className="preview-strip" aria-hidden="true">
+            <img src="/screenshots/prcard/quick-setup.webp" alt="" />
+            <img src="/screenshots/seatify-local/demo-lab.png" alt="" />
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-band" aria-labelledby="install-title">
+        <div className="band-copy">
+          <p className="eyebrow">Install</p>
+          <h2 id="install-title">Drop a workflow map into any React surface.</h2>
+          <p>
+            NavMap ships the visual component, scanner outputs, workflow manifests, screenshot
+            receipts, and review affordances that make app structure legible to humans and agents.
+          </p>
+        </div>
+        <pre className="install-command" aria-label="Install command">
+          <code>pnpm add @neonwatty/nav-map</code>
+        </pre>
+      </section>
+
+      <section className="workflow-section" aria-labelledby="workflow-title">
+        <div className="section-heading">
+          <p className="eyebrow">Examples</p>
+          <h2 id="workflow-title">Prototype, live app, and HTML mockup review in one place.</h2>
+        </div>
+        <div className="workflow-grid">
+          {workflows.map(workflow => (
+            <article className="workflow-card" key={workflow.name}>
+              <img src={workflow.image} alt={`${workflow.name} workflow screenshot`} />
+              <div>
+                <h3>{workflow.name}</h3>
+                <p>{workflow.detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
 
-function readInitialDatasetSelection(): { dataset: DemoDataset; invalidDataset: string | null } {
-  if (typeof window === 'undefined') return { dataset: 'prcard', invalidDataset: null };
-  const dataset = new URLSearchParams(window.location.search).get('dataset');
-  if (!dataset) return { dataset: 'prcard', invalidDataset: null };
-  if (isDemoDataset(dataset)) return { dataset, invalidDataset: null };
-  return { dataset: 'prcard', invalidDataset: dataset };
-}
+function redirectDatasetRequests(searchParams: SearchParams | undefined) {
+  if (!searchParams?.dataset) return;
 
-function isDemoDataset(value: string | null): value is DemoDataset {
-  return (
-    value === 'prcard' ||
-    value === 'deckchecker-speaker' ||
-    value === 'bleep' ||
-    value === 'seatify-local'
-  );
-}
-
-type DemoViewMode = 'hierarchy' | 'map' | 'flow' | 'tree';
-
-function defaultViewModeForGraph(graph: NavMapGraph): DemoViewMode {
-  const viewMode = graph.meta.workflow?.layout?.defaultViewMode;
-  return isDemoViewMode(viewMode) ? viewMode : 'hierarchy';
-}
-
-function isDemoViewMode(value: unknown): value is DemoViewMode {
-  return value === 'hierarchy' || value === 'map' || value === 'flow' || value === 'tree';
-}
-
-async function loadDemoGraph(dataset: DemoDataset): Promise<NavMapGraph> {
-  if (dataset === 'seatify-local') {
-    return fetchJson<NavMapGraph>('/seatify-local.nav-map.json');
+  const nextParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      for (const item of value) nextParams.append(key, item);
+    } else if (typeof value === 'string') {
+      nextParams.set(key, value);
+    }
   }
 
-  if (dataset === 'bleep') {
-    return fetchJson<NavMapGraph>('/bleep-app.nav-map.json');
-  }
-
-  if (dataset === 'deckchecker-speaker') {
-    const generated = await fetch('/deckchecker-speaker.nav-map.json');
-    if (generated.ok) return (await generated.json()) as NavMapGraph;
-
-    const manifest = await fetchJson<WorkflowManifest>('/deckchecker-speaker.workflow.json');
-    return workflowManifestToGraph(manifest);
-  }
-
-  const generated = await fetch('/prcard.nav-map.json');
-  if (generated.ok) return (await generated.json()) as NavMapGraph;
-
-  const manifest = await fetchJson<WorkflowManifest>('/prcard.workflow.json');
-  return workflowManifestToGraph(manifest);
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  return (await response.json()) as T;
+  redirect(`/demo?${nextParams.toString()}`);
 }
