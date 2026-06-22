@@ -307,6 +307,8 @@ describe('probe helpers', () => {
 
   it('runs selected flow nodes with generated ids, auth storage state, screenshots, and a safe receipt', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-probe-'));
+    const storageStatePath = path.join(tempDir, 'speaker.storage.json');
+    fs.writeFileSync(storageStatePath, JSON.stringify({ cookies: [], origins: [] }));
     const outputPath = path.join(tempDir, 'receipt.json');
     const screenshotsDir = path.join(tempDir, 'screenshots');
     const manifest: ProbeManifest = {
@@ -316,7 +318,7 @@ describe('probe helpers', () => {
         {
           id: 'speaker',
           kind: 'storage-state',
-          storageStatePath: '.nav-map/auth/speaker.storage.json',
+          storageStatePath,
         },
       ],
       routeVariables: { eventId: 'e1' },
@@ -383,7 +385,7 @@ describe('probe helpers', () => {
       timeout: 10_000,
     });
     expect(mocks.newContextMock).toHaveBeenCalledWith({
-      storageState: path.resolve('.nav-map/auth/speaker.storage.json'),
+      storageState: path.resolve(storageStatePath),
     });
     expect(mocks.screenshotMock).toHaveBeenCalledWith({
       path: path.join(screenshotsDir, 'my-events-eventid-upload.png'),
@@ -408,8 +410,56 @@ describe('probe helpers', () => {
       status: 200,
       finalUrl: 'http://localhost:3000/my/events/e1/upload',
     });
-    expect(JSON.stringify(receipt)).not.toContain('speaker.storage.json');
+    expect(JSON.stringify(receipt)).not.toContain(storageStatePath);
     expect(JSON.stringify(receipt)).not.toMatch(/token=secret-value|cookie|localStorage/i);
+  });
+
+  it('writes a safe failed receipt when auth-state storage is not usable', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-probe-'));
+    const outputPath = path.join(tempDir, 'receipt.json');
+    const screenshotsDir = path.join(tempDir, 'screenshots');
+
+    const run = await runProbe({
+      manifest: {
+        version: 'workflow-atlas/1.0',
+        name: 'Deckchecker Speaker',
+        authStates: [
+          {
+            id: 'speaker',
+            kind: 'storage-state',
+            storageStatePath: path.join(tempDir, 'missing.storage.json'),
+          },
+        ],
+        nodes: [
+          {
+            id: 'speaker-events',
+            route: '/my/events',
+            label: 'Events',
+            expectations: { status: 200, text: ['My Events'] },
+          },
+        ],
+      },
+      baseUrl: 'http://localhost:3000',
+      authState: 'speaker',
+      outputPath,
+      screenshotsDir,
+      contract: true,
+    });
+
+    expect(run.authStateStatus).toMatchObject({
+      authState: 'speaker',
+      reasonCode: 'missing-storage-state-file',
+    });
+    expect(run.results[0]).toMatchObject({
+      nodeId: 'speaker-events',
+      status: 'fail',
+      checks: [expect.objectContaining({ name: 'authState', status: 'fail' })],
+    });
+    expect(mocks.launchMock).not.toHaveBeenCalled();
+
+    const receipt = fs.readFileSync(outputPath, 'utf-8');
+    expect(receipt).toContain('missing-storage-state-file');
+    expect(receipt).not.toContain('missing.storage.json');
   });
 
   it('writes a versioned probe contract envelope when requested', async () => {

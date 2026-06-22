@@ -404,6 +404,11 @@ nav-map context packages/demo/public/prcard.workflow.json \
 Auth state files can impersonate users. Keep `.nav-map/auth/` gitignored and never paste storage-state contents into logs, prompts, issues, or commits. Commands that accept `--workflow-manifest` and `--auth-state` resolve the storage-state path from the manifest and pass it to Playwright without needing the storage file contents in agent context.
 Context and contract output intentionally include auth-state ids and summaries, not raw
 storage-state JSON, cookies, bearer tokens, OAuth secrets, private keys, or env values.
+`auth-state verify` receipts include safe `reasonCode` values such as `missing-auth-state`,
+`missing-auth-verify`, `missing-storage-state-file`, `expected-redirect`, and
+`unexpected-redirect`. `probe --auth-state <id>` writes the same kind of safe failed receipt when an
+auth state is unknown or unusable, so agents get next actions without seeing storage-state paths or
+contents.
 
 Use `--contract` when an agent needs a stable envelope rather than raw command data. Contract
 JSON includes `schemaVersion`, `kind`, `summary`, `data`, `artifacts`, and `nextActions`.
@@ -449,8 +454,33 @@ normal workflow generation writes `nav-map.json` by default. `diff --format json
 the manifest name and route node ids before writing.
 Workflow screenshot generation navigates app route nodes only. Prototype, mockup, component, and
 concept surfaces stay as manifest artifacts and are reported as skipped live captures in the
-generation receipt. Auth state is referenced by id only; do not inspect or print storage-state
-contents.
+generation receipt. The receipt separates fresh captures from saved evidence:
+`capturedNodeIds` are newly captured app-route screenshots, `manifestRouteScreenshotNodeIds` are
+route screenshots carried forward from the manifest, and `manifestSurfaceScreenshotIds` are saved
+mockup/prototype/component/concept screenshots. Auth state is referenced by id only; do not inspect
+or print storage-state contents.
+
+For a deterministic local agent-readiness check that does not need external apps or credentials,
+run:
+
+```bash
+pnpm reliability:agent
+```
+
+The gate uses `packages/demo/public/golden-agent.workflow.json`, starts a throwaway local fixture
+server, and writes inspect, context, generated graph, probe, diff, and screenshot receipts to a
+temporary output directory. Use `--out-dir <path>` when CI or a handoff needs to retain those
+artifacts.
+
+Before relying on a build as an installable package, run:
+
+```bash
+pnpm smoke:package-consumer
+```
+
+That smoke builds and packs the core and scanner packages, installs the tarballs into a throwaway
+consumer project, and verifies package exports, TypeScript declarations, CSS export resolution,
+dynamic scanner import, and the `nav-map` bin.
 
 ### Commands
 

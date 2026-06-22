@@ -62,6 +62,14 @@ export interface WorkflowContextSurface {
     liveStatus?: string;
     limitations?: readonly string[];
   };
+  metadata?: {
+    preview?: {
+      liveUrl?: string;
+      liveMode?: string;
+      liveStatus?: string;
+      limitations?: readonly string[];
+    };
+  };
 }
 
 export interface WorkflowContextFlow {
@@ -236,27 +244,30 @@ export function buildWorkflowContextPayload(
       evidence: getEvidenceKinds(node),
       sourceHints: node.sourceHints ?? [],
     })),
-    surfaces: focusedSurfaces.map(surface => ({
-      id: surface.id,
-      label: surface.label,
-      surfaceType: surface.type,
-      artifactKind: surface.type === 'html-mockup' ? 'mockup' : 'prototype',
-      section: surface.section,
-      purpose: surface.purpose,
-      screenshot: surface.screenshot,
-      sourceHints: surface.sourceHints ?? [],
-      ...(surface.preview
-        ? {
-            livePreview: {
-              liveUrl: surface.preview.liveUrl,
-              liveMode: surface.preview.liveMode,
-              liveStatus: surface.preview.liveStatus,
-              limitations: [...(surface.preview.limitations ?? [])],
-            },
-          }
-        : {}),
-      evidence: getSurfaceEvidenceKinds(surface),
-    })),
+    surfaces: focusedSurfaces.map(surface => {
+      const preview = getSurfacePreview(surface);
+      return {
+        id: surface.id,
+        label: surface.label,
+        surfaceType: surface.type,
+        artifactKind: surface.type === 'html-mockup' ? 'mockup' : 'prototype',
+        section: surface.section,
+        purpose: surface.purpose,
+        screenshot: surface.screenshot,
+        sourceHints: surface.sourceHints ?? [],
+        ...(preview
+          ? {
+              livePreview: {
+                liveUrl: preview.liveUrl,
+                liveMode: preview.liveMode,
+                liveStatus: preview.liveStatus,
+                limitations: [...(preview.limitations ?? [])],
+              },
+            }
+          : {}),
+        evidence: getSurfaceEvidenceKinds(surface),
+      };
+    }),
     flows: focusedFlows,
   }) as ContextPayload;
 
@@ -420,11 +431,16 @@ function getEvidenceKinds(node: WorkflowContextNode): string[] {
 }
 
 function getSurfaceEvidenceKinds(surface: WorkflowContextSurface): string[] {
+  const preview = getSurfacePreview(surface);
   return [
     ...(surface.screenshot ? ['screenshot'] : []),
-    ...(surface.preview?.liveUrl ? ['inspect'] : []),
+    ...(preview?.liveUrl ? ['inspect'] : []),
     ...(surface.sourceHints?.length ? ['source-hint'] : []),
   ];
+}
+
+function getSurfacePreview(surface: WorkflowContextSurface): WorkflowContextSurface['preview'] {
+  return surface.preview ?? surface.metadata?.preview;
 }
 
 function uniqueList(values: readonly string[]): string[] {

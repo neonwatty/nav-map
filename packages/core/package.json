@@ -49,7 +49,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node ../../scripts/copy-core-css.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

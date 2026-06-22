@@ -43,6 +43,8 @@ export interface WorkflowGenerationReceipt {
     requested: boolean;
     routeCount: number;
     capturedNodeIds: string[];
+    manifestRouteScreenshotNodeIds: string[];
+    manifestSurfaceScreenshotIds: string[];
     skippedSurfaceIds: string[];
     screenshotDir?: string;
   };
@@ -159,6 +161,15 @@ export async function runWorkflowManifest(
         requested: shouldCaptureScreenshots,
         routeCount: captureTargets.length,
         capturedNodeIds: Object.keys(screenshotOverrides),
+        manifestRouteScreenshotNodeIds: manifest.nodes
+          .map(node => node.id ?? routeToId(node.route))
+          .filter(
+            (nodeId, index) =>
+              Boolean(manifest.nodes[index]?.screenshot) && !screenshotOverrides[nodeId]
+          ),
+        manifestSurfaceScreenshotIds: (manifest.surfaces ?? [])
+          .filter(surface => Boolean(surface.screenshot))
+          .map(surface => surface.id),
         skippedSurfaceIds: (manifest.surfaces ?? []).map(surface => surface.id),
         ...(shouldCaptureScreenshots ? { screenshotDir } : {}),
       },

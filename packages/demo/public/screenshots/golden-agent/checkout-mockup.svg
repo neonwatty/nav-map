@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-label="Golden Checkout HTML Mockup screenshot">
+  <rect width="960" height="640" fill="#f6f7f9"/>
+  <rect x="116" y="74" width="728" height="492" rx="8" fill="#ffffff" stroke="#d8dee8"/>
+  <text x="164" y="150" fill="#17202a" font-family="Arial, sans-serif" font-size="42" font-weight="700">Golden Checkout Mockup</text>
+  <text x="164" y="202" fill="#526070" font-family="Arial, sans-serif" font-size="22">Static HTML fixture with a local iframe target.</text>
+  <rect x="164" y="266" width="632" height="66" rx="6" fill="#f9fafb" stroke="#e5e9f0"/>
+  <text x="196" y="307" fill="#17202a" font-family="Arial, sans-serif" font-size="22" font-weight="700">Artifact</text>
+  <text x="646" y="307" fill="#2563eb" font-family="Arial, sans-serif" font-size="22" font-weight="700">HTML mockup</text>
+  <rect x="164" y="356" width="632" height="66" rx="6" fill="#f9fafb" stroke="#e5e9f0"/>
+  <text x="196" y="397" fill="#17202a" font-family="Arial, sans-serif" font-size="22" font-weight="700">Safety</text>
+  <text x="688" y="397" fill="#2563eb" font-family="Arial, sans-serif" font-size="22" font-weight="700">No writes</text>
+</svg>

@@ -7,7 +7,12 @@ import {
   type AgentContract,
   type AgentContractNextAction,
 } from './agent-contract.js';
-import { findAuthState, type AuthStateManifest, type WorkflowAuthState } from './auth-state.js';
+import {
+  findAuthState,
+  type AuthStateManifest,
+  type AuthStateReasonCode,
+  type WorkflowAuthState,
+} from './auth-state.js';
 
 export interface ProbeNodeExpectations {
   selectors?: string[];
@@ -76,6 +81,7 @@ export interface ProbeRun {
   command?: string;
   authState?: string;
   authStateKind?: WorkflowAuthState['kind'];
+  authStateStatus?: ProbeAuthStateStatus;
   baseUrl: string;
   startedAt: string;
   finishedAt: string;
@@ -92,6 +98,13 @@ export interface ProbeRun {
   warnings?: string[];
   nextActions?: AgentContractNextAction[];
   results: ProbeNodeResult[];
+}
+
+export interface ProbeAuthStateStatus {
+  authState: string;
+  kind?: WorkflowAuthState['kind'];
+  reasonCode?: AuthStateReasonCode;
+  reason?: string;
 }
 
 export function resolveRouteTemplate(route: string, variables: Record<string, string>): string {
@@ -172,6 +185,40 @@ export async function runProbe(options: {
   const selectedNodes = selectProbeNodes(options.manifest, options);
   const authState = resolveProbeAuthState(options.manifest, options.authState);
   const selectedNodeIds = selectedNodes.map(node => node.id ?? routeToId(node.route));
+  if (authState.blocker) {
+    const results = buildAuthStateBlockedProbeResults(
+      selectedNodes,
+      options.manifest,
+      authState.blocker
+    );
+    const run: ProbeRun = sanitizeProbeValue({
+      app: options.manifest.name,
+      command: buildProbeCommand(options),
+      authState: options.authState,
+      authStateKind: authState.kind,
+      authStateStatus: authState.blocker,
+      baseUrl: options.baseUrl,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      selection: buildProbeSelection(options, selectedNodeIds, options.manifest),
+      screenshotSummary: {
+        screenshotDir: options.screenshotsDir,
+        captured: 0,
+        capturedNodeIds: [],
+      },
+      warnings: buildProbeWarnings(results),
+      nextActions: buildProbeNextActions({
+        manifestPath: options.manifestPath,
+        baseUrl: options.baseUrl,
+        authState: options.authState,
+        outputPath: options.outputPath,
+      }),
+      results,
+    }) as ProbeRun;
+
+    writeProbeRun(run, options);
+    return run;
+  }
   const browser = await chromium.launch({ headless: true });
   const results: ProbeNodeResult[] = [];
 
@@ -287,12 +334,16 @@ export async function runProbe(options: {
     results,
   }) as ProbeRun;
 
+  writeProbeRun(run, options);
+  return run;
+}
+
+function writeProbeRun(run: ProbeRun, options: { outputPath: string; contract?: boolean }): void {
   fs.mkdirSync(path.dirname(path.resolve(options.outputPath)), { recursive: true });
   fs.writeFileSync(
     options.outputPath,
     JSON.stringify(options.contract ? buildProbeRunContract(run, options.outputPath) : run, null, 2)
   );
-  return run;
 }
 
 export function buildProbeRunContract(
@@ -381,6 +432,7 @@ function explicitProbeNodeIds(
 interface ResolvedProbeAuthState {
   kind?: WorkflowAuthState['kind'];
   storageState?: string;
+  blocker?: ProbeAuthStateStatus;
 }
 
 function resolveProbeAuthState(
@@ -393,16 +445,94 @@ function resolveProbeAuthState(
 
   const state = findAuthState(manifest, authStateId);
   if (!state) {
-    throw new Error(`Unknown auth state: ${authStateId}`);
+    return {
+      blocker: {
+        authState: authStateId,
+        reasonCode: 'missing-auth-state',
+        reason: 'Auth state id was not found in the workflow manifest.',
+      },
+    };
   }
   if (state.kind !== 'storage-state') {
     return { kind: state.kind };
   }
   if (!state.storageStatePath) {
-    throw new Error(`Auth state "${authStateId}" has no storageStatePath`);
+    return {
+      kind: state.kind,
+      blocker: {
+        authState: authStateId,
+        kind: state.kind,
+        reasonCode: 'missing-storage-state-path',
+        reason: 'Auth state is storage-state, but no storageStatePath is configured.',
+      },
+    };
   }
 
-  return { kind: state.kind, storageState: path.resolve(state.storageStatePath) };
+  const storageState = path.resolve(state.storageStatePath);
+  if (!fs.existsSync(storageState)) {
+    return {
+      kind: state.kind,
+      blocker: {
+        authState: authStateId,
+        kind: state.kind,
+        reasonCode: 'missing-storage-state-file',
+        reason: 'Configured storage-state file is missing; recapture or choose another auth state.',
+      },
+    };
+  }
+
+  return { kind: state.kind, storageState };
+}
+
+function buildProbeSelection(
+  options: { flow?: string },
+  selectedNodeIds: string[],
+  manifest: ProbeManifest
+): ProbeRun['selection'] {
+  return {
+    flow: options.flow,
+    nodeIds: selectedNodeIds,
+    routeVariableKeys: Object.keys(manifest.routeVariables ?? {}),
+  };
+}
+
+function buildAuthStateBlockedProbeResults(
+  selectedNodes: ProbeManifestNode[],
+  manifest: ProbeManifest,
+  blocker: ProbeAuthStateStatus
+): ProbeNodeResult[] {
+  return selectedNodes.map(node => {
+    const nodeId = node.id ?? routeToId(node.route);
+    const concreteRoute = resolveRouteTemplate(node.route, manifest.routeVariables ?? {});
+    return {
+      nodeId,
+      route: sanitizeProbeString(node.route),
+      concreteRoute: sanitizeProbeString(concreteRoute),
+      finalUrl: '',
+      status: 'fail',
+      reason: `Auth state blocker: ${blocker.reason}`,
+      expected: node.expectations
+        ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
+        : undefined,
+      observed: {
+        finalUrl: '',
+        matchedText: [],
+        matchedSelectors: [],
+        consoleErrors: [],
+        failedRequests: [],
+      },
+      checks: [
+        {
+          name: 'authState',
+          status: 'fail',
+          expected: blocker.authState,
+          reason: blocker.reason,
+        },
+      ],
+      consoleErrors: [],
+      failedRequests: [],
+    };
+  });
 }
 
 async function collectMatchedText(

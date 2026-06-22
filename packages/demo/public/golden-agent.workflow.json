@@ -1,0 +1,150 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "Golden Agent Workflow",
+  "baseUrl": "http://127.0.0.1:9",
+  "description": "Minimal deterministic fixture for agent reliability gates across app routes, redirects, mockups, static prototypes, screenshots, and offline targets.",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "layout": {
+    "defaultViewMode": "map",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["app", "protected", "prototype"]
+  },
+  "personas": [
+    {
+      "id": "signed-out",
+      "label": "Signed out reviewer"
+    },
+    {
+      "id": "signed-in",
+      "label": "Signed in reviewer"
+    }
+  ],
+  "sections": [
+    {
+      "id": "app",
+      "label": "App"
+    },
+    {
+      "id": "protected",
+      "label": "Protected"
+    },
+    {
+      "id": "prototype",
+      "label": "Prototype"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "section": "app",
+      "purpose": "Stable public app route used by the agent reliability gate.",
+      "personas": ["signed-out", "signed-in"],
+      "authRequirement": "public",
+      "screenshot": "screenshots/golden-agent/home.svg",
+      "expectations": {
+        "selectors": ["main"],
+        "text": ["Golden Agent Home"],
+        "status": 200
+      },
+      "sourceHints": ["packages/demo/public/golden-agent.workflow.json"],
+      "metadata": {
+        "preview": {
+          "liveStatus": "available",
+          "liveMode": "iframe",
+          "limitations": ["intentionally offline target for reliability-gate preview"]
+        }
+      }
+    },
+    {
+      "id": "dashboard",
+      "route": "/dashboard",
+      "label": "Dashboard Boundary",
+      "section": "protected",
+      "purpose": "Protected route used to verify signed-out redirect expectations.",
+      "personas": ["signed-out", "signed-in"],
+      "authRequirement": "signed-in",
+      "expectedRedirects": [
+        {
+          "when": "signed-out",
+          "to": "/login?next=%2Fdashboard",
+          "reason": "Requires an authenticated reviewer session."
+        }
+      ],
+      "expectations": {
+        "signedOutRedirect": "/login?next=%2Fdashboard",
+        "selectors": ["main"]
+      },
+      "sourceHints": ["packages/demo/public/golden-agent.workflow.json"],
+      "metadata": {
+        "preview": {
+          "liveStatus": "available",
+          "liveMode": "iframe",
+          "limitations": ["intentionally offline target for redirect-proof fixtures"]
+        }
+      }
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "checkout-html-mockup",
+      "label": "Checkout HTML Mockup",
+      "type": "html-mockup",
+      "section": "prototype",
+      "purpose": "Local static HTML mockup that Target mode can iframe without a live app.",
+      "screenshot": "screenshots/golden-agent/checkout-mockup.svg",
+      "sourceHints": ["packages/demo/public/mockups/golden-checkout.html"],
+      "metadata": {
+        "preview": {
+          "liveUrl": "/mockups/golden-checkout.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["static fixture", "no real auth", "no backend writes"]
+        }
+      }
+    },
+    {
+      "id": "checkout-static-prototype",
+      "label": "Checkout Static Prototype",
+      "type": "concept-screen",
+      "section": "prototype",
+      "purpose": "Static prototype surface with saved screenshot evidence and no live target.",
+      "screenshot": "screenshots/golden-agent/static-prototype.svg",
+      "sourceHints": ["docs/goals/nav-map-agent-reliability-hardening/goal.md"]
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "dashboard",
+      "action": "Open protected dashboard",
+      "type": "redirect",
+      "personas": ["signed-out"]
+    },
+    {
+      "source": "checkout-static-prototype",
+      "target": "checkout-html-mockup",
+      "action": "Mock up as HTML",
+      "type": "link"
+    },
+    {
+      "source": "checkout-html-mockup",
+      "target": "dashboard",
+      "action": "Promote into protected app route",
+      "type": "link",
+      "personas": ["signed-in"]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Signed-out boundary",
+      "steps": ["home", "dashboard"]
+    },
+    {
+      "name": "Prototype handoff",
+      "steps": ["checkout-static-prototype", "checkout-html-mockup", "dashboard"],
+      "partial": true
+    }
+  ]
+}

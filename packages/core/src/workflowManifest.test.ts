@@ -352,6 +352,120 @@ describe('workflowManifestToGraph', () => {
     });
   });
 
+  it('converts the golden agent fixture into app, mockup, and static prototype nodes', () => {
+    const manifest: WorkflowManifest = {
+      version: 'workflow-atlas/1.0',
+      name: 'Golden Agent Workflow',
+      baseUrl: 'http://127.0.0.1:9',
+      nodes: [
+        {
+          id: 'home',
+          route: '/',
+          label: 'Home',
+          section: 'app',
+          authRequirement: 'public',
+          screenshot: 'screenshots/golden-agent/home.svg',
+        },
+        {
+          id: 'dashboard',
+          route: '/dashboard',
+          label: 'Dashboard Boundary',
+          section: 'protected',
+          authRequirement: 'signed-in',
+          expectedRedirects: [
+            {
+              when: 'signed-out',
+              to: '/login?next=%2Fdashboard',
+              reason: 'Requires an authenticated reviewer session.',
+            },
+          ],
+        },
+      ],
+      surfaces: [
+        {
+          id: 'checkout-html-mockup',
+          label: 'Checkout HTML Mockup',
+          type: 'html-mockup',
+          section: 'prototype',
+          screenshot: 'screenshots/golden-agent/checkout-mockup.svg',
+          metadata: {
+            preview: {
+              liveUrl: '/mockups/golden-checkout.html',
+              liveMode: 'iframe',
+              liveStatus: 'available',
+            },
+          },
+        },
+        {
+          id: 'checkout-static-prototype',
+          label: 'Checkout Static Prototype',
+          type: 'concept-screen',
+          section: 'prototype',
+          screenshot: 'screenshots/golden-agent/static-prototype.svg',
+        },
+      ],
+      edges: [
+        { source: 'home', target: 'dashboard', action: 'Open protected dashboard' },
+        { source: 'checkout-static-prototype', target: 'checkout-html-mockup' },
+        { source: 'checkout-html-mockup', target: 'dashboard' },
+      ],
+      flows: [
+        { name: 'Signed-out boundary', steps: ['home', 'dashboard'] },
+        {
+          name: 'Prototype handoff',
+          steps: ['checkout-static-prototype', 'checkout-html-mockup', 'dashboard'],
+          partial: true,
+        },
+      ],
+    };
+
+    const validation = validateWorkflowManifest(manifest);
+    expect(validation.valid).toBe(true);
+
+    const graph = workflowManifestToGraph(manifest);
+    const home = graph.nodes.find(node => node.id === 'home');
+    const dashboard = graph.nodes.find(node => node.id === 'dashboard');
+    const mockup = graph.nodes.find(node => node.id === 'checkout-html-mockup');
+    const prototype = graph.nodes.find(node => node.id === 'checkout-static-prototype');
+
+    expect(graph.meta.name).toBe('Golden Agent Workflow');
+    expect(graph.meta.baseUrl).toBe('http://127.0.0.1:9');
+    expect(graph.nodes).toHaveLength(4);
+    expect(graph.edges).toHaveLength(3);
+    expect(graph.flows).toHaveLength(2);
+    expect(home).toMatchObject({
+      route: '/',
+      screenshot: 'screenshots/golden-agent/home.svg',
+      metadata: { artifactKind: 'app', section: 'app' },
+    });
+    expect(dashboard?.metadata?.expectedRedirects).toEqual([
+      expect.objectContaining({ when: 'signed-out', to: '/login?next=%2Fdashboard' }),
+    ]);
+    expect(mockup).toMatchObject({
+      route: 'prototype://checkout-html-mockup',
+      screenshot: 'screenshots/golden-agent/checkout-mockup.svg',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'html-mockup',
+        artifactKind: 'mockup',
+        preview: expect.objectContaining({
+          liveUrl: '/mockups/golden-checkout.html',
+          liveMode: 'iframe',
+          liveStatus: 'available',
+        }),
+      },
+    });
+    expect(prototype).toMatchObject({
+      route: 'prototype://checkout-static-prototype',
+      screenshot: 'screenshots/golden-agent/static-prototype.svg',
+      metadata: {
+        kind: 'prototype-surface',
+        surfaceType: 'concept-screen',
+        artifactKind: 'prototype',
+      },
+    });
+  });
+
   it('validates workflow layout hints', () => {
     const result = validateWorkflowManifest({
       version: 'workflow-atlas/1.0',
