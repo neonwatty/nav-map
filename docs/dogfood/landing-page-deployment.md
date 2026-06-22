@@ -27,7 +27,9 @@ Then configure GitHub:
 - Repository variable `LANDING_PAGE_URL`: the deployed URL that should serve the landing page.
 - Repository secret `VERCEL_AUTOMATION_BYPASS_SECRET`: required only when the configured URL is protected by Vercel Authentication or other Deployment Protection.
 
-The deploy smoke workflow uses `pnpm smoke:landing` against `LANDING_PAGE_URL`. When a bypass secret is present, the smoke script sends Vercel's `x-vercel-protection-bypass` header and `x-vercel-set-bypass-cookie: true` for browser checks.
+The `landing-page-deployed-smoke` CI job uses `pnpm smoke:landing` against `LANDING_PAGE_URL` after `quality-checks`, `build`, and `scanner-browser-crawl` pass on a push to `landing-page`. When a bypass secret is present, the smoke script sends Vercel's `x-vercel-protection-bypass` header and `x-vercel-set-bypass-cookie: true` for browser checks.
+
+If `LANDING_PAGE_URL` is not configured, the deployed smoke job is skipped. This keeps branch protection usable until the Vercel production branch or branch URL is intentionally configured.
 
 ## Manual Verification
 
