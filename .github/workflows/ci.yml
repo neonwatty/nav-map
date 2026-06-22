@@ -81,6 +81,7 @@ jobs:
             sleep 1
           done
           DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/demo-smoke.mjs
+          LANDING_SMOKE_URL=http://127.0.0.1:4174 pnpm smoke:landing --artifact-dir .nav-map/artifacts/landing-page
       - name: Build scanner CLI
         run: |
           pnpm --filter @neonwatty/nav-map build
