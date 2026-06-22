@@ -7,6 +7,7 @@
     "build:core": "pnpm --filter @neonwatty/nav-map build",
     "lint": "eslint packages/*/src/",
     "lint:fix": "eslint packages/*/src/ --fix",
+    "max-lines:check": "node scripts/check-max-lines.mjs",
     "test": "pnpm --filter @neonwatty/nav-map test && pnpm --filter @neonwatty/nav-map-scanner test",
     "typecheck": "pnpm -r typecheck",
     "scanner:help": "node packages/scanner/bin/nav-map.js --help",

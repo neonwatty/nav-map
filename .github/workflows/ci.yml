@@ -19,6 +19,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
+      - name: Max lines
+        run: pnpm max-lines:check
       - name: Format check
         run: pnpm format:check
       - name: Build core (scanner imports core types)
