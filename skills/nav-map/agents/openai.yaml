@@ -1,0 +1,4 @@
+interface:
+  display_name: 'NavMap'
+  short_description: 'Map and verify app workflows'
+  default_prompt: 'Use $nav-map to create an agent-ready workflow atlas for this app.'

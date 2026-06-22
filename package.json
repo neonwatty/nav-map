@@ -11,6 +11,7 @@
     "typecheck": "pnpm -r typecheck",
     "scanner:help": "node packages/scanner/bin/nav-map.js --help",
     "reliability:agent": "node scripts/agent-reliability-gate.mjs",
+    "smoke:skill": "node scripts/nav-map-skill-smoke.mjs",
     "smoke:package-consumer": "node scripts/package-consumer-smoke.mjs",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css}\"",
