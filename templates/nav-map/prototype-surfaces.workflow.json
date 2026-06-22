@@ -1,0 +1,91 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "Prototype Surface Atlas",
+  "baseUrl": "http://localhost:3000",
+  "description": "Starter manifest for HTML mockups, static prototypes, screenshots, and their path into app routes.",
+  "layout": {
+    "defaultViewMode": "flow",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["app", "prototype"]
+  },
+  "personas": [
+    {
+      "id": "reviewer",
+      "label": "Product reviewer"
+    }
+  ],
+  "sections": [
+    {
+      "id": "app",
+      "label": "App"
+    },
+    {
+      "id": "prototype",
+      "label": "Prototype"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "section": "app",
+      "purpose": "Current app entry point for comparison with prototype surfaces.",
+      "personas": ["reviewer"],
+      "authRequirement": "public",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      }
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "checkout-html-mockup",
+      "label": "Checkout HTML Mockup",
+      "type": "html-mockup",
+      "section": "prototype",
+      "purpose": "Static HTML mockup that can be previewed without a backend.",
+      "screenshot": "screenshots/prototypes/checkout-html-mockup.png",
+      "sourceHints": ["public/mockups/checkout.html"],
+      "metadata": {
+        "preview": {
+          "liveUrl": "/mockups/checkout.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["static mockup", "no real auth", "no backend writes"]
+        }
+      }
+    },
+    {
+      "id": "checkout-wireframe",
+      "label": "Checkout Wireframe",
+      "type": "concept-screen",
+      "section": "prototype",
+      "purpose": "Saved screenshot evidence for a non-live concept screen.",
+      "screenshot": "screenshots/prototypes/checkout-wireframe.png",
+      "sourceHints": ["docs/product/checkout-wireframe.md"]
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "checkout-wireframe",
+      "action": "Compare current app to concept",
+      "type": "link"
+    },
+    {
+      "source": "checkout-wireframe",
+      "target": "checkout-html-mockup",
+      "action": "Convert concept to HTML mockup",
+      "type": "link"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Prototype review",
+      "steps": ["home", "checkout-wireframe", "checkout-html-mockup"],
+      "partial": true
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "Authenticated Workflow Atlas",
+  "baseUrl": "http://localhost:3000",
+  "description": "Starter manifest for auth-state-safe route verification.",
+  "layout": {
+    "defaultViewMode": "flow",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["public", "protected"]
+  },
+  "personas": [
+    {
+      "id": "signed-out",
+      "label": "Signed out visitor"
+    },
+    {
+      "id": "owner",
+      "label": "Signed in owner"
+    }
+  ],
+  "sections": [
+    {
+      "id": "public",
+      "label": "Public"
+    },
+    {
+      "id": "protected",
+      "label": "Protected"
+    }
+  ],
+  "authStates": [
+    {
+      "id": "owner",
+      "label": "Owner session",
+      "kind": "storage-state",
+      "storageStatePath": ".nav-map/auth/owner.storage.json",
+      "capture": {
+        "mode": "headed-login",
+        "startRoute": "/login",
+        "successRoute": "/dashboard",
+        "successSelector": "main"
+      },
+      "verify": {
+        "route": "/dashboard",
+        "expectStatus": 200,
+        "expectSelector": "main"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "section": "public",
+      "purpose": "Public route available without auth.",
+      "personas": ["signed-out", "owner"],
+      "authRequirement": "public",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      }
+    },
+    {
+      "id": "dashboard",
+      "route": "/dashboard",
+      "label": "Dashboard",
+      "section": "protected",
+      "purpose": "Owner workspace that requires the owner auth-state id.",
+      "personas": ["owner"],
+      "authRequirement": "owner",
+      "expectedRedirects": [
+        {
+          "when": "signed-out",
+          "to": "/login?next=%2Fdashboard",
+          "reason": "Protected dashboard requires an owner session."
+        }
+      ],
+      "expectations": {
+        "selectors": ["main"]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "dashboard",
+      "action": "Open owner dashboard",
+      "type": "link",
+      "personas": ["owner"]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Owner dashboard",
+      "steps": ["home", "dashboard"]
+    }
+  ]
+}

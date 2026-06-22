@@ -1,0 +1,82 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "App Workflow Atlas",
+  "baseUrl": "http://localhost:3000",
+  "description": "Starter manifest for public and protected app routes.",
+  "layout": {
+    "defaultViewMode": "flow",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["public", "app"]
+  },
+  "personas": [
+    {
+      "id": "visitor",
+      "label": "Visitor"
+    },
+    {
+      "id": "member",
+      "label": "Signed in member"
+    }
+  ],
+  "sections": [
+    {
+      "id": "public",
+      "label": "Public"
+    },
+    {
+      "id": "app",
+      "label": "App"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Home",
+      "section": "public",
+      "purpose": "Public entry point and orientation route.",
+      "personas": ["visitor", "member"],
+      "authRequirement": "public",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": ["app/page.tsx"]
+    },
+    {
+      "id": "dashboard",
+      "route": "/dashboard",
+      "label": "Dashboard",
+      "section": "app",
+      "purpose": "Primary signed-in workspace.",
+      "personas": ["member"],
+      "authRequirement": "member",
+      "expectedRedirects": [
+        {
+          "when": "visitor",
+          "to": "/login?next=%2Fdashboard",
+          "reason": "Dashboard requires a signed-in member."
+        }
+      ],
+      "expectations": {
+        "selectors": ["main"]
+      },
+      "sourceHints": ["app/dashboard/page.tsx"]
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "dashboard",
+      "action": "Open dashboard",
+      "type": "link",
+      "personas": ["member"]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Member dashboard",
+      "steps": ["home", "dashboard"]
+    }
+  ]
+}

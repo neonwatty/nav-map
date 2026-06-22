@@ -413,6 +413,9 @@ contents.
 Use `--contract` when an agent needs a stable envelope rather than raw command data. Contract
 JSON includes `schemaVersion`, `kind`, `summary`, `data`, `artifacts`, and `nextActions`.
 
+For agent-ready skill instructions and starter manifests, see `skills/nav-map/SKILL.md`,
+`docs/agents/nav-map-quickstart.md`, and `templates/nav-map/`.
+
 ## NavMap Props
 
 All props are optional.

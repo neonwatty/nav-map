@@ -23,6 +23,10 @@ jobs:
         run: pnpm format:check
       - name: Build core (scanner imports core types)
         run: pnpm --filter @neonwatty/nav-map build
+      - name: Build scanner CLI
+        run: pnpm --filter @neonwatty/nav-map-scanner build
+      - name: Skill smoke
+        run: pnpm smoke:skill
       - name: Typecheck
         run: pnpm typecheck
       - name: Knip
