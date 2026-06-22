@@ -1,0 +1,344 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "NavMap Landing Page Product Site"
+  slug: "landing-page-product-site"
+  kind: specific
+  tranche: "Build, verify, PR, and merge the package landing page tranche into the protected landing-page branch."
+  status: active
+  oracle:
+    signal: "The protected landing-page branch renders a useful NavMap package/product landing page at /, preserves a working interactive demo at /demo, passes required CI, and has a merged PR with local browser/test/CI receipts."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Merged PR targeting landing-page plus receipts for curl/browser checks, screenshots or visual review, relevant pnpm checks, GitHub CI, and demo route functionality."
+  intake:
+    original_request: "Plan the landing-page product-site work using GoalBuddy prep."
+    interpreted_outcome: "Prepare a GoalBuddy board that can execute the landing-page product-site branch safely from implementation through PR merge."
+    input_shape: specific
+    audience: "package users, agents evaluating NavMap, and maintainers reviewing the landing-page branch"
+    authority: approved
+    proof_type: demo
+    completion_proof: "A PR from a codex/ feature branch into landing-page is merged after protected checks pass, with receipts covering local browser verification, smoke/test commands, CI status, and limitations."
+    likely_misfire: "Shipping a nice-looking landing page that breaks the existing demo, smoke scripts, live-mode confidence, or agent-facing prototype workflows."
+    blind_spots_considered:
+      - "Route migration could break scripts or screenshots that expect the demo at /."
+      - "Landing page assets and copy must show real product affordances, not generic marketing filler."
+      - "Branch protection requires PR-based integration and green required checks."
+      - "Local URL handoff requires fresh curl and browser verification."
+      - "Workflow-file pushes may require SSH because HTTPS OAuth may lack workflow scope."
+    existing_plan_facts:
+      - "Use branch codex/landing-page-product-site off landing-page."
+      - "Make / the package landing page."
+      - "Keep the existing interactive demo available at /demo."
+      - "Update smoke/verification if root route semantics change."
+      - "Open PR targeting landing-page and merge when green."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/landing-page-product-site/"
+    command: "npx goalbuddy board docs/goals/landing-page-product-site"
+
+active_task: T005
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "Map the landing-page branch app surface and verification commands needed for a safe route split and product landing page."
+    inputs:
+      - "Current branch and git status"
+      - "README.md"
+      - "package.json"
+      - "packages/demo/app"
+      - "scripts/demo-smoke.mjs"
+      - ".github/workflows/ci.yml"
+      - "docs/goals/landing-page-product-site/goal.md"
+    constraints:
+      - "Read-only."
+      - "Do not inspect or print secrets, env values, tokens, cookies, auth storage, or .nav-map/auth contents."
+      - "Do not edit implementation files."
+      - "Prefer concrete file-path evidence over generic advice."
+    expected_output:
+      - "Current branch/status and whether it is safe to create codex/landing-page-product-site."
+      - "Route map for current / demo behavior and recommended /demo preservation path."
+      - "Smoke/test commands that must be updated or run."
+      - "Asset/screenshot opportunities for the landing page."
+      - "Risks, blockers, and candidate Worker package."
+    receipt:
+      result: done
+      summary: "Current branch is landing-page with only .codex-workers/ and docs/goals/landing-page-product-site/ untracked. The demo currently lives at / with dataset query params; no /demo route exists. A safe route split should preserve the existing demo under /demo, make / the product landing page, and update demo smoke paths."
+      evidence:
+        - "git branch/status: landing-page with untracked .codex-workers/ and docs/goals/landing-page-product-site/"
+        - "README.md: package positioning, demo usage, workflow atlas manifests, screenshot capture, explicit container sizing"
+        - "package.json: dev, build, lint, test, typecheck, smoke:demo, validate scripts"
+        - "packages/demo/app/page.tsx: current / demo using ?dataset="
+        - "packages/demo/app/layout.tsx: metadata is NavMap Demo / Interactive navigation map demo"
+        - "scripts/demo-smoke.mjs: currently targets /?dataset=... and invalid dataset at /?dataset=deckchecker&smoke=invalid"
+        - ".github/workflows/ci.yml: quality, build, scanner-browser-crawl, demo smoke on 127.0.0.1:4174, release only on main"
+        - "packages/demo/public: real nav-map/workflow JSON and screenshot assets for prcard, deckchecker-speaker, bleep, seatify-local, golden-agent"
+      facts:
+        - "Safe feature branch candidate: codex/landing-page-product-site from current landing-page, preserving untracked GoalBuddy and .codex-workers state."
+        - "Recommended preservation path: move current demo behavior into packages/demo/app/demo/page.tsx or a shared DemoPage component rendered by /demo."
+        - "Smoke update needed: route dataset checks from /?dataset=... to /demo?dataset=..., keeping invalid dataset warning coverage."
+        - "Relevant checks: pnpm lint, pnpm max-lines:check, pnpm format:check, pnpm --filter @neonwatty/nav-map build, pnpm typecheck, pnpm knip:production, pnpm test, pnpm --filter demo build, pnpm smoke:demo."
+        - "Landing page should use existing screenshots/workflow assets and preserve agent-useful prototype/live-mode confidence."
+      risks:
+        - "Changing / without updating smoke tests will make CI validate the wrong route."
+        - "Root query URL compatibility needs a Judge decision: redirect old /?dataset=... to /demo?dataset=... or intentionally support only /demo."
+        - "Worker must avoid workflow-file changes unless needed; pull_request targeting landing-page should already trigger CI."
+      candidate_worker_package: "Implement route split plus product landing page in one bounded slice covering packages/demo/app route files, layout metadata/styles if needed, and scripts/demo-smoke.mjs."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the first largest safe implementation package for the landing-page product-site tranche."
+    inputs:
+      - "T001 receipt"
+      - "docs/goals/landing-page-product-site/goal.md"
+      - "docs/goals/landing-page-product-site/state.yaml"
+    constraints:
+      - "Do not implement."
+      - "Reject tiny-task fragmentation unless a tiny task unlocks the implementation package."
+      - "Ensure allowed_files, verify commands, and stop_if conditions are explicit before Worker starts."
+      - "Preserve existing demo and update smoke expectations if routes move."
+    expected_output:
+      - "Decision: approved | blocked | needs_more_scouting"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Deferred tasks, if any"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Approved one vertical implementation slice. Plain / should become the product landing page, /demo should become the canonical interactive demo, and root dataset query URLs like /?dataset=prcard should redirect to /demo?dataset=prcard for compatibility."
+      rationale: "T001 provided enough evidence about branch state, current route behavior, smoke expectations, assets, and CI. A single route-split plus landing-page package is the largest safe useful first slice."
+      evidence:
+        - "T001: current demo lives at / with ?dataset= and no /demo route exists."
+        - "T001: scripts/demo-smoke.mjs currently targets root query URLs."
+        - "Charter: requires / product landing page, /demo demo preservation, and local verification receipts."
+      deferred_tasks:
+        - "T004: fresh curl and browser rendering checks for /, /demo?dataset=prcard, and /?dataset=prcard redirect behavior."
+        - "T005: commit, push, PR, CI monitoring, and merge after local verification exists."
+        - "T999: final audit; full outcome is not complete after T003 alone."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "From landing-page, create or switch to codex/landing-page-product-site only if safe, then implement the route split and landing page: make plain / a polished NavMap package/product landing page using existing repo/demo assets, move or preserve the existing interactive demo at /demo, redirect root dataset query URLs such as /?dataset=prcard to /demo?dataset=prcard, and update demo smoke expectations to use /demo as canonical while retaining one compatibility redirect check."
+    allowed_files:
+      - "packages/demo/app/page.tsx"
+      - "packages/demo/app/demo/page.tsx"
+      - "packages/demo/app/demo/**"
+      - "packages/demo/app/components/**"
+      - "packages/demo/app/_components/**"
+      - "packages/demo/app/layout.tsx"
+      - "packages/demo/app/globals.css"
+      - "scripts/demo-smoke.mjs"
+    verify:
+      - "git status --short"
+      - "pnpm lint"
+      - "pnpm max-lines:check"
+      - "pnpm format:check"
+      - "pnpm typecheck"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "pnpm --filter demo build"
+      - "pnpm smoke:demo"
+    stop_if:
+      - "Current branch is neither landing-page nor codex/landing-page-product-site, or switching/creating the feature branch would require discarding, stashing, or reverting unrelated work."
+      - "Tracked dirty changes overlap allowed_files and are not clearly from the current Worker package."
+      - "Need edits outside allowed_files, including workflow files, package scripts, nav-map core, scanner behavior, manifests, or public workflow data."
+      - "Landing page product direction requires new brand/product decisions not inferable from README, existing screenshots, package behavior, or current demo assets."
+      - "The existing demo cannot be preserved at /demo with dataset query behavior intact."
+      - "Root dataset query redirect cannot be implemented without breaking plain / landing-page rendering."
+      - "Verification fails twice with the same unresolved cause."
+      - "A secret, auth-state file, token, cookie, or raw env value would need to be inspected."
+    receipt:
+      result: done
+      changed_files:
+        - "packages/demo/app/page.tsx"
+        - "packages/demo/app/demo/page.tsx"
+        - "packages/demo/app/components/DemoPage.tsx"
+        - "packages/demo/app/layout.tsx"
+        - "packages/demo/app/globals.css"
+        - "scripts/demo-smoke.mjs"
+      summary: "Created codex/landing-page-product-site from landing-page, moved the existing client demo into a shared DemoPage rendered at /demo, replaced / with a product landing page using existing screenshot assets, preserved root dataset query compatibility via redirect to /demo, and updated smoke coverage to make /demo canonical."
+      commands:
+        - cmd: "git switch -c codex/landing-page-product-site"
+          status: pass
+        - cmd: "pnpm exec prettier --write packages/demo/app/page.tsx packages/demo/app/demo/page.tsx packages/demo/app/components/DemoPage.tsx packages/demo/app/layout.tsx packages/demo/app/globals.css scripts/demo-smoke.mjs"
+          status: pass
+        - cmd: "pnpm lint"
+          status: pass
+          note: "No errors; existing 18 max-lines warnings remain outside this slice."
+        - cmd: "pnpm max-lines:check"
+          status: pass
+        - cmd: "pnpm format:check"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+        - cmd: "pnpm typecheck"
+          status: pass
+          note: "Initial parallel run raced core declaration generation; rerun after core build passed."
+        - cmd: "pnpm test"
+          status: pass
+        - cmd: "pnpm --filter demo build"
+          status: pass
+        - cmd: "DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm smoke:demo"
+          status: pass
+          note: "Production server was started with pnpm --filter demo exec next start -p 4174 and stopped after smoke."
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "git status --short"
+          status: pass
+      warnings:
+        - "Demo smoke passed but recorded expected target-preflight resource warnings for offline/unverified local or external targets."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Run local verification for the landing page and demo, including exact URL curl checks, browser rendering, screenshots or visual review, and relevant pnpm commands."
+    allowed_files:
+      - "docs/goals/landing-page-product-site/state.yaml"
+    verify:
+      - "curl -fsSI http://127.0.0.1:4174/"
+      - "curl -fsSI http://127.0.0.1:4174/demo?dataset=prcard"
+      - "curl -fsSI http://127.0.0.1:4174/?dataset=prcard&smoke=compat"
+      - "Browser render checks for /, /demo?dataset=prcard, and root dataset redirect."
+      - "Screenshot capture or visual review receipt for desktop and mobile landing page."
+    stop_if:
+      - "The local app cannot start without missing dependencies or credentials."
+      - "Browser automation is unavailable."
+      - "Framework/runtime errors appear in the browser."
+      - "Verification fails twice with the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/goals/landing-page-product-site/state.yaml"
+      summary: "Verified the final production build locally with exact curl checks, browser rendering, desktop/mobile screenshots, visual review, final format check, and final demo smoke. The landing page renders at /, the demo renders at /demo?dataset=prcard, and root dataset URLs redirect to /demo."
+      commands:
+        - cmd: "pnpm --filter demo build"
+          status: pass
+          note: "Rebuilt after final CSS adjustments."
+        - cmd: "curl -fsSI http://127.0.0.1:4174/"
+          status: pass
+          note: "HTTP 200."
+        - cmd: "curl -fsSI 'http://127.0.0.1:4174/demo?dataset=prcard'"
+          status: pass
+          note: "HTTP 200."
+        - cmd: "curl -fsSI -L 'http://127.0.0.1:4174/?dataset=prcard&smoke=compat'"
+          status: pass
+          note: "HTTP 307 to /demo?dataset=prcard&smoke=compat, then HTTP 200."
+        - cmd: "Bundled Playwright browser render checks for /, /demo?dataset=prcard, and /?dataset=prcard&smoke=compat"
+          status: pass
+          note: "Desktop 1440x960 and mobile 390x844 landing page renders passed; demo route and redirect final URL passed with no browser console/page errors."
+        - cmd: "Screenshot capture"
+          status: pass
+          note: "Captured /tmp/nav-map-landing-desktop.png and /tmp/nav-map-landing-mobile.png."
+        - cmd: "Visual review"
+          status: pass
+          note: "Desktop has no hero overlap; mobile shows a next-section hint in first viewport and keeps a real product screenshot in the hero."
+        - cmd: "pnpm format:check"
+          status: pass
+        - cmd: "DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm smoke:demo"
+          status: pass
+          note: "Final smoke passed against the rebuilt production server."
+      warnings:
+        - "Demo smoke still records expected target-preflight resource warnings for offline/unverified targets."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "Commit, push, open the PR into landing-page, monitor CI, fix PR/CI issues inside scope, and merge when required checks are green."
+    allowed_files:
+      - "packages/demo/app/page.tsx"
+      - "packages/demo/app/demo/page.tsx"
+      - "packages/demo/app/demo/**"
+      - "packages/demo/app/components/**"
+      - "packages/demo/app/_components/**"
+      - "packages/demo/app/layout.tsx"
+      - "packages/demo/app/globals.css"
+      - "scripts/demo-smoke.mjs"
+      - "docs/goals/landing-page-product-site/state.yaml"
+    verify:
+      - "git status --short"
+      - "gh pr checks --watch"
+    stop_if:
+      - "GitHub auth cannot push or open PR."
+      - "Branch protection blocks merge after green checks."
+      - "CI failure requires files or decisions outside the approved scope."
+      - "A destructive git operation would be needed."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the merged landing-page branch satisfies the original owner outcome for this tranche."
+    inputs:
+      - "All done task receipts"
+      - "Last local verification"
+      - "PR URL and merge status"
+      - "GitHub CI status"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued, active, or blocked without a workaround."
+      - "Reject completion if / is not the product landing page or /demo is not functional."
+      - "Reject completion if no browser/curl verification receipt exists for local URLs."
+      - "Reject completion if required CI checks are not green."
+      - "Reject completion if known limitations materially undermine agent use, prototype use, screenshots, or live mode."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to goal oracle"
+      - "Missing evidence or next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

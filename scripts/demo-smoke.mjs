@@ -44,6 +44,8 @@ page.on('pageerror', error => {
 });
 
 try {
+  await smokeLandingPage();
+  await smokeRootDatasetRedirect();
   await smokePrcard();
   await smokeDeckchecker();
   await smokeBleep();
@@ -232,7 +234,9 @@ async function smokeSeatifyLocal() {
     await openSearchAndSelect('home', 'Home');
     await expectVisibleText(['Live Target', 'Target Preflight']);
     await expectAnyVisibleText(['Unverified External', 'Ready']);
-    pass('Seatify local Target preview reaches the running app or reports iframe-limited reachability');
+    pass(
+      'Seatify local Target preview reaches the running app or reports iframe-limited reachability'
+    );
   } else {
     await waitForTargetSummary(text =>
       ['unverified', 'offline', 'unavailable'].some(word => text.includes(word))
@@ -245,13 +249,34 @@ async function smokeSeatifyLocal() {
 }
 
 async function smokeInvalidDataset() {
-  await goto(`${baseUrl}/?dataset=deckchecker&smoke=invalid`, 'PRcard Workflow Atlas');
+  await goto(`${baseUrl}/demo?dataset=deckchecker&smoke=invalid`, 'PRcard Workflow Atlas');
   await expectVisibleText(['Unknown dataset "deckchecker". Showing PRcard workflow instead.']);
   pass('invalid dataset key shows explicit warning instead of silent fallback');
 }
 
+async function smokeLandingPage() {
+  await goto(`${baseUrl}/`, 'NavMap');
+  await expectVisibleText([
+    'Workflow atlas for agents',
+    'Open demo',
+    'pnpm add @neonwatty/nav-map',
+  ]);
+  pass('landing page renders package positioning and demo entry point');
+}
+
+async function smokeRootDatasetRedirect() {
+  await goto(`${baseUrl}/?dataset=prcard&smoke=compat`, 'PRcard Workflow Atlas');
+  const currentUrl = new URL(page.url());
+  if (currentUrl.pathname !== '/demo' || currentUrl.searchParams.get('dataset') !== 'prcard') {
+    throw new Error(
+      `Expected root dataset URL to redirect to /demo?dataset=prcard. Saw ${page.url()}`
+    );
+  }
+  pass('root dataset URL redirects to canonical /demo route');
+}
+
 async function gotoDataset(dataset, expectedName) {
-  const url = `${baseUrl}/?dataset=${encodeURIComponent(dataset)}&smoke=${encodeURIComponent(
+  const url = `${baseUrl}/demo?dataset=${encodeURIComponent(dataset)}&smoke=${encodeURIComponent(
     dataset
   )}`;
   await goto(url, expectedName);
