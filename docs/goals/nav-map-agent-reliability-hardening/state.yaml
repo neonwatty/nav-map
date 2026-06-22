@@ -1,0 +1,802 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Nav Map Agent Reliability Hardening"
+  slug: "nav-map-agent-reliability-hardening"
+  kind: specific
+  tranche: "Close reliability gaps for agent workflow use with successive safe verified slices."
+  status: done
+  oracle:
+    signal: "The repo exposes a documented, repeatable reliability gate where representative workflow manifests, app routes, HTML mockups, static prototypes, screenshots, auth-state edge cases, and live-target states are validated by passing local commands suitable for CI."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final audit shows passing pnpm validate, demo browser smoke, golden workflow CLI contract checks, probe/diff receipts, auth-state edge-case receipts, package-consumer smoke, and docs that accurately separate preview evidence from audit evidence."
+  intake:
+    original_request: "Plan out a complete GoalBuddy prep board to close the gaps before relying on the tool."
+    interpreted_outcome: "Prepare a GoalBuddy board that can drive nav-map from usable dogfood product to dependable agent workflow tool."
+    input_shape: specific
+    audience: "nav-map maintainers and agents using nav-map for app, mockup, prototype, screenshot, and live workflow review"
+    authority: requested
+    proof_type: test
+    completion_proof: "A final Judge/PM audit maps receipts and verification commands to every identified reliability gap and records full_outcome_complete: true."
+    likely_misfire: "Adding docs or isolated tests while leaving agents without one trusted reliability gate, or treating UI Target mode as audit-grade proof."
+    blind_spots_considered:
+      - "Auth-state missing, expired, and wrong-persona edge cases."
+      - "Screenshot guarantees differ for app nodes and prototype/mockup surfaces."
+      - "External package consumers can fail even when monorepo builds pass."
+      - "Cross-origin and frame policy limits make live preview heuristic."
+      - "Large-file warnings may hide maintainability risk in reliability-critical code."
+    existing_plan_facts:
+      - "Make probe/diff the official reliability gate."
+      - "Add a tiny golden workflow fixture."
+      - "Clarify screenshot guarantees."
+      - "Strengthen auth-state ergonomics and receipts."
+      - "Add external package-consumer smoke."
+      - "Keep live mode framed as preview, not audit."
+      - "Pay down large-file warnings where they threaten reliability work."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-agent-reliability-hardening/"
+    command: "npx goalbuddy board docs/goals/nav-map-agent-reliability-hardening"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map the current reliability baseline and turn the known gap list into concrete acceptance gates."
+    inputs:
+      - "README.md"
+      - "package.json"
+      - "packages/core/package.json"
+      - "packages/scanner/package.json"
+      - "packages/demo/app/page.tsx"
+      - "scripts/demo-smoke.mjs"
+      - "packages/demo/public/*.workflow.json"
+      - "packages/demo/public/*.nav-map.json"
+      - "packages/core/src"
+      - "packages/scanner/src"
+      - "docs/dogfood/seatify-local.md"
+    constraints:
+      - "Read-only."
+      - "Do not inspect or print auth storage, cookies, tokens, env values, localStorage, private keys, OAuth values, webhook secrets, or service-role keys."
+      - "Use concrete file-path and command evidence."
+      - "Separate audit-grade proof from preview-only proof."
+    expected_output:
+      - "Baseline map of existing agent-facing surfaces, CLI commands, UI smoke coverage, fixtures, and docs."
+      - "Acceptance gates for each gap: probe/diff, golden fixture, screenshot guarantees, auth-state edge cases, package-consumer smoke, live-mode framing, and maintainability."
+      - "Risk-ranked notes on what can be implemented locally without credentials or production access."
+      - "Recommended adjustments to queued Worker task scopes if discovery changes the plan."
+    receipt:
+      result: done
+      note: "notes/T001-reliability-baseline.md"
+      summary: "Mapped current agent-facing CLI, fixtures, tests, smoke coverage, and reliability gaps. Current health is green, but official reliability gate, golden fixture, auth-state edge CLI coverage, and package-consumer smoke remain required."
+      evidence:
+        - "README.md"
+        - "package.json"
+        - "scripts/demo-smoke.mjs"
+        - "packages/demo/public/prcard.workflow.json"
+        - "packages/demo/public/deckchecker-speaker.workflow.json"
+        - "packages/demo/public/seatify-local.nav-map.json"
+        - "packages/scanner/src/__tests__/workflow.test.ts"
+        - "packages/scanner/src/__tests__/context.test.ts"
+        - "packages/scanner/src/__tests__/probe.test.ts"
+        - "packages/scanner/src/__tests__/diff.test.ts"
+        - "packages/scanner/src/__tests__/auth-state.test.ts"
+      commands:
+        - cmd: "pnpm -s test"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+        - cmd: "pnpm -s knip:production"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s build"
+          status: pass
+        - cmd: "curl -fsS 'http://localhost:3001/?dataset=prcard'"
+          status: pass
+        - cmd: "pnpm smoke:demo --url http://localhost:3001"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js workflow packages/demo/public/prcard.workflow.json --inspect --contract -o <tmp>/prcard.inspect.json"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js context packages/demo/public/prcard.workflow.json --format json --contract"
+          status: pass
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the Scout baseline and approve or revise the implementation sequence before any product changes."
+    inputs:
+      - "T001 receipt"
+      - "Current state.yaml queued Worker tasks"
+      - "Goal oracle in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Pick the largest safe useful slices."
+      - "Reject vague tasks that cannot be verified."
+      - "Keep all auth-state handling ID-only and secret-safe."
+    expected_output:
+      - "Decision: proceed | revise_board | blocked."
+      - "Approved Worker order."
+      - "Any narrowed allowed_files, verify commands, or stop_if conditions for T003 through T009."
+      - "Explicit notes on any tasks that require owner input or credentials."
+    receipt:
+      result: done
+      decision: "revise_board"
+      full_outcome_complete: false
+      rationale: "Scout evidence shows the official reliability gate needs a deterministic minimal fixture to avoid depending on broad app-specific datasets. Run T004 before T003, then build the gate around the golden fixture. Keep T007 required before final audit; defer T009 unless reliability work touches large files."
+      approved_worker_order:
+        - "T004"
+        - "T003"
+        - "T005"
+        - "T006"
+        - "T007"
+        - "T008"
+        - "T009 only if directly useful after T003-T008"
+      narrowed_scope:
+        T004: "Create a minimal deterministic fixture with local static assets and tests; avoid PRcard/Deckchecker/Seatify coupling."
+        T003: "Use the golden fixture as the first official agent reliability gate target."
+      blocked_tasks: []
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Make probe/diff the official local reliability gate for agent workflow use."
+    allowed_files:
+      - "package.json"
+      - "scripts/**"
+      - "packages/scanner/src/**"
+      - "packages/scanner/bin/nav-map.js"
+      - "packages/scanner/package.json"
+      - "README.md"
+      - "docs/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test"
+      - "pnpm -s lint"
+      - "pnpm -s typecheck"
+      - "node packages/scanner/bin/nav-map.js --help"
+    stop_if:
+      - "The gate would require real credentials, raw env values, or auth storage contents."
+      - "Changes need files outside allowed_files."
+      - "Verification fails twice for different unexplained reasons."
+    constraints:
+      - "Do not make UI Target mode the proof source."
+      - "Receipts must be machine-readable where practical."
+      - "Commands must be suitable for local use and future CI adoption."
+    expected_output:
+      - "A named command or documented command sequence that runs workflow inspect/context/probe/diff as the official reliability gate."
+      - "Contract or receipt output that agents can consume without secrets."
+      - "Docs updated so agents know to use probe/diff for audit evidence."
+    receipt:
+      result: done
+      changed_files:
+        - "scripts/agent-reliability-gate.mjs"
+        - "package.json"
+        - "README.md"
+      summary: "Added pnpm reliability:agent as the official deterministic local reliability gate. The gate starts a throwaway local fixture server for the golden workflow, writes inspect/context/generated-graph/probe/diff/screenshot receipts to a temporary or requested output directory, and fails if probe or diff contain warnings, failures, or unchecked routes."
+      commands:
+        - cmd: "pnpm reliability:agent"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js --help"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+      gate_summary:
+        manifest: "packages/demo/public/golden-agent.workflow.json"
+        routes: 2
+        surfaces: 2
+        flows: 2
+        probe:
+          pass: 2
+          warn: 0
+          fail: 0
+          unchecked: 0
+        diff:
+          total: 2
+          pass: 2
+          warn: 0
+          fail: 0
+          unchecked: 0
+      notes:
+        - "The gate does not require external apps, credentials, auth storage, or environment secrets."
+        - "Use --out-dir <path> when CI or a handoff needs retained artifacts."
+        - "Lint passed with the existing max-lines warnings still present."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a tiny golden workflow fixture covering one app route, one protected redirect, one HTML mockup surface, one static prototype surface, screenshots, and one intentionally offline target."
+    allowed_files:
+      - "packages/demo/public/**"
+      - "packages/scanner/src/__tests__/**"
+      - "packages/scanner/src/**"
+      - "packages/core/src/workflowManifest.test.ts"
+      - "packages/core/src/workflowManifest.ts"
+      - "scripts/**"
+      - "README.md"
+      - "docs/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test"
+      - "pnpm --filter @neonwatty/nav-map test -- workflowManifest"
+      - "node packages/scanner/bin/nav-map.js workflow <golden-manifest> --inspect --contract"
+      - "node packages/scanner/bin/nav-map.js context <golden-manifest> --format json --contract"
+    stop_if:
+      - "The fixture starts depending on PRcard, Deckchecker, Seatify, or any app-specific behavior in core."
+      - "A screenshot or fixture requires private app data."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "Keep the fixture deliberately small and deterministic."
+      - "Static surfaces must remain manifest artifacts, not live screenshot capture targets."
+      - "Any local/offline target behavior must be explicit in expected receipts."
+    expected_output:
+      - "Golden workflow manifest and generated graph or fixture artifacts."
+      - "Tests proving inspect/context/workflow conversion covers the representative fixture."
+      - "Receipt showing surfaces are included in context but skipped for live screenshot capture unless explicitly supported."
+    receipt:
+      result: done
+      changed_files:
+        - "packages/demo/public/golden-agent.workflow.json"
+        - "packages/demo/public/golden-agent.nav-map.json"
+        - "packages/demo/public/mockups/golden-checkout.html"
+        - "packages/demo/public/screenshots/golden-agent/home.svg"
+        - "packages/demo/public/screenshots/golden-agent/checkout-mockup.svg"
+        - "packages/demo/public/screenshots/golden-agent/static-prototype.svg"
+        - "packages/core/src/workflowManifest.test.ts"
+        - "packages/scanner/src/__tests__/workflow.test.ts"
+        - "packages/scanner/src/__tests__/context.test.ts"
+        - "packages/scanner/src/modes/context.ts"
+      summary: "Added a deterministic Golden Agent Workflow fixture with two app nodes, a signed-out protected redirect boundary, one local HTML mockup surface, one static prototype surface, SVG screenshot evidence, and an intentionally offline app base URL. Scanner context now reads surface live preview from metadata.preview, matching existing manifest style."
+      commands:
+        - cmd: "node packages/scanner/bin/nav-map.js workflow packages/demo/public/golden-agent.workflow.json --no-screenshots -o packages/demo/public/golden-agent.nav-map.json"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- workflow context"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map test -- workflowManifest"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js workflow packages/demo/public/golden-agent.workflow.json --inspect --contract -o /tmp/golden-agent.inspect.json"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js context packages/demo/public/golden-agent.workflow.json --format json --contract"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+      notes:
+        - "Workflow receipt reports two route nodes, two skipped surfaces, and no auth state."
+        - "Generated graph preserves app, mockup, and prototype artifact kinds plus signed-out redirect metadata."
+        - "Package-consumer smoke remains unimplemented for T007."
+        - "Lint passed with the existing max-lines warnings still present."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Clarify and enforce screenshot guarantees across app nodes, HTML mockups, prototypes, and generated surfaces."
+    allowed_files:
+      - "packages/scanner/src/modes/workflow.ts"
+      - "packages/scanner/src/__tests__/workflow.test.ts"
+      - "packages/core/src/workflowManifest.ts"
+      - "packages/core/src/workflowManifest.test.ts"
+      - "README.md"
+      - "docs/**"
+      - "packages/demo/public/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- workflow"
+      - "pnpm --filter @neonwatty/nav-map test -- workflowManifest"
+      - "node packages/scanner/bin/nav-map.js workflow <golden-manifest> --no-screenshots -o <tmp-dir>/golden-agent.nav-map.json"
+    stop_if:
+      - "The implementation would silently claim screenshots for surfaces that were not captured."
+      - "Receipt output risks exposing sensitive auth or browser state."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "Every receipt must distinguish captured screenshots from manifest-provided static evidence."
+      - "Docs and CLI output must be impossible to misread on app-node-only capture."
+    expected_output:
+      - "CLI receipts and docs clearly state screenshot capture scope."
+      - "Tests cover app route capture, skipped surface capture, and manifest screenshot evidence."
+      - "Known limitations are represented as warnings, not hidden behavior."
+    receipt:
+      result: done
+      changed_files:
+        - "packages/scanner/src/modes/workflow.ts"
+        - "packages/scanner/src/__tests__/workflow.test.ts"
+        - "README.md"
+      summary: "Workflow generation receipts now explicitly separate newly captured route screenshots, manifest-provided route screenshot evidence, manifest-provided surface screenshot evidence, and surfaces skipped for live capture. Docs and workflow help/summary make clear that app-route capture is live while HTML mockups, prototypes, and generated surfaces remain manifest artifacts."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- workflow"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map test -- workflowManifest"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js workflow packages/demo/public/golden-agent.workflow.json --no-screenshots -o <tmp>/golden-agent.nav-map.json"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+      receipt_summary:
+        route_count: 2
+        captured_node_ids: []
+        manifest_route_screenshot_node_ids:
+          - "home"
+        manifest_surface_screenshot_ids:
+          - "checkout-html-mockup"
+          - "checkout-static-prototype"
+        skipped_surface_ids:
+          - "checkout-html-mockup"
+          - "checkout-static-prototype"
+      notes:
+        - "The prior verify draft used --contract on workflow generation; the CLI intentionally supports --contract only with --inspect, so verification now uses supported generation plus source-level receipt assertions."
+        - "Lint passed with the existing tracked max-lines warnings still present."
+        - "No auth storage, cookie, token, environment, or browser session contents were inspected or printed."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Strengthen auth-state ergonomics and receipts for missing, expired, wrong-persona, and expected-redirect cases."
+    allowed_files:
+      - "packages/scanner/src/modes/auth-state.ts"
+      - "packages/scanner/src/modes/probe.ts"
+      - "packages/scanner/src/modes/agent-contract.ts"
+      - "packages/scanner/src/__tests__/auth-state.test.ts"
+      - "packages/scanner/src/__tests__/probe.test.ts"
+      - "packages/demo/public/**"
+      - "README.md"
+      - "docs/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- auth-state probe"
+      - "node packages/scanner/bin/nav-map.js auth-state --help"
+      - "node packages/scanner/bin/nav-map.js probe --help"
+    stop_if:
+      - "A test or receipt would inspect, print, or snapshot storage-state contents."
+      - "The behavior requires live private credentials."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "Auth state must be referenced by id only."
+      - "Probe/auth receipts must differentiate missing auth config, missing storage file, failed verification, expected redirect, and unexpected redirect."
+      - "Redaction tests must cover sensitive key and value shapes."
+    expected_output:
+      - "Focused tests for auth-state edge cases."
+      - "Contract receipts that give agents next actions without secret exposure."
+      - "Docs explain how agents should handle auth-state blockers."
+    receipt:
+      result: done
+      changed_files:
+        - "packages/scanner/src/modes/auth-state.ts"
+        - "packages/scanner/src/modes/probe.ts"
+        - "packages/scanner/src/__tests__/auth-state.test.ts"
+        - "packages/scanner/src/__tests__/probe.test.ts"
+        - "README.md"
+      summary: "Auth-state verification and probe receipts now classify missing auth ids, missing verify config, missing storage-state paths/files, failed verification, expected redirects, and unexpected redirects with safe reasonCode values. Auth/probe output keeps auth state references id-only and avoids exposing storage-state paths or contents; probe now writes a failed contract receipt for unusable auth states instead of only failing before receipt creation."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- auth-state probe"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js auth-state --help"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js probe --help"
+          status: pass
+        - cmd: "node packages/scanner/bin/nav-map.js probe <tmp>/auth-edge.workflow.json --base-url http://127.0.0.1:9 --auth-state missing-file --out <tmp>/probe.json --screenshots-dir <tmp>/screens --contract"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+      receipt_summary:
+        auth_state_reason_codes:
+          - "missing-auth-state"
+          - "missing-auth-verify"
+          - "missing-storage-state-path"
+          - "missing-storage-state-file"
+          - "verification-failed"
+          - "expected-redirect"
+          - "unexpected-redirect"
+        probe_auth_blocker_contract:
+          kind: "probe-run"
+          reasonCode: "missing-storage-state-file"
+          fail: 1
+          leaks: false
+      notes:
+        - "The CLI smoke intentionally exited nonzero for an unusable auth state but still produced the expected safe contract receipt; the command status is recorded as pass because the verified behavior occurred."
+        - "Lint passed with the existing tracked max-lines warnings still present."
+        - "No auth storage, cookie, token, environment, or browser session contents were inspected or printed."
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add an external package-consumer smoke so monorepo success is not mistaken for installability."
+    allowed_files:
+      - "scripts/**"
+      - "package.json"
+      - "packages/core/package.json"
+      - "packages/scanner/package.json"
+      - "docs/**"
+      - "README.md"
+    verify:
+      - "pnpm -s build"
+      - "pnpm -s typecheck"
+      - "pnpm -s lint"
+      - "pnpm <new-consumer-smoke-command>"
+    stop_if:
+      - "The smoke requires publishing to npm."
+      - "The smoke requires network services beyond normal package manager/cache behavior."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "The smoke must consume built package exports as a downstream app or temp project would."
+      - "It must catch CSS export, ESM/CJS, type declaration, dynamic import, and scanner bin regressions where feasible."
+    expected_output:
+      - "A repeatable package-consumer smoke command."
+      - "Docs or package scripts showing when maintainers and agents should run it."
+      - "Receipt proving it fails usefully when exports are broken."
+    receipt:
+      result: done
+      changed_files:
+        - "scripts/package-consumer-smoke.mjs"
+        - "scripts/copy-core-css.mjs"
+        - "package.json"
+        - "packages/core/package.json"
+        - "README.md"
+      summary: "Added pnpm smoke:package-consumer, which builds and packs the core and scanner packages, installs their tarballs into a throwaway downstream project, and verifies TypeScript declarations, ESM imports, CJS requires, CSS export resolution, dynamic scanner import, and the nav-map bin. The smoke caught and drove a real fix for the exported styles.css path by making the core build copy React Flow CSS into dist/index.css."
+      commands:
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "pnpm -s build"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+        - cmd: "pnpm -s format:check"
+          status: pass
+      smoke_summary:
+        packed_tarballs:
+          - "neonwatty-nav-map-0.1.0.tgz"
+          - "neonwatty-nav-map-scanner-0.1.0.tgz"
+        downstream_checks:
+          - "pnpm install --ignore-workspace"
+          - "pnpm exec tsc --noEmit"
+          - "node esm.mjs"
+          - "node cjs.cjs"
+          - "node scanner.mjs"
+          - "pnpm exec nav-map --help"
+      notes:
+        - "The smoke uses a temporary project and removes it unless --keep is provided."
+        - "The scanner package tarball depends on @neonwatty/nav-map@0.1.0, so the smoke uses a pnpm override to test the paired local core tarball before either package is published."
+        - "Lint passed with the existing tracked max-lines warnings still present."
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Keep live Target mode framed as preview while preserving reliable saved fallbacks and clear UI/CLI guidance."
+    allowed_files:
+      - "packages/core/src/hooks/useLiveReadiness.ts"
+      - "packages/core/src/hooks/useLiveReadiness.test.tsx"
+      - "packages/core/src/utils/artifactPreview.ts"
+      - "packages/core/src/utils/artifactPreview.test.ts"
+      - "packages/core/src/components/**"
+      - "packages/demo/app/page.tsx"
+      - "scripts/demo-smoke.mjs"
+      - "README.md"
+      - "docs/**"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test -- useLiveReadiness artifactPreview"
+      - "pnpm smoke:demo --url http://localhost:<verified-demo-port>"
+      - "pnpm -s lint"
+      - "pnpm -s typecheck"
+    stop_if:
+      - "The task would require claiming cross-origin iframe rendering is fully verified by no-cors fetch."
+      - "The demo smoke cannot be run because no local demo server is available; record blocker and create a PM verification follow-up."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "Saved screenshots/static references must remain visible when live preview is offline, blocked, unverified, or unavailable."
+      - "Labels must distinguish Ready, Unverified External, Offline, Static Reference, Blocked, and No Target."
+      - "Do not introduce in-app prose that over-explains basic UI operation."
+    expected_output:
+      - "Tests and smoke coverage for live readiness states."
+      - "Docs and UI labels consistently position Target as lightweight preflight."
+      - "No regression to saved screenshot review paths."
+    receipt:
+      result: done
+      changed_files:
+        - "README.md"
+      summary: "Verified that live Target mode is already framed and tested as preview/preflight rather than audit evidence. Existing implementation preserves saved screenshot/static fallbacks for offline, unavailable, unverified, blocked, and static targets; labels distinguish Ready, Unverified External, Checking, Offline, Static Reference, Blocked, and No Target."
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map test -- useLiveReadiness artifactPreview"
+          status: pass
+        - cmd: "curl -fsS 'http://127.0.0.1:3007/?dataset=golden-agent'"
+          status: pass
+        - cmd: "pnpm smoke:demo --url http://127.0.0.1:3007"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s lint"
+          status: pass
+      smoke_summary:
+        target_states_verified:
+          - "PRcard: ready, offline, static reference, saved fallback"
+          - "Deckchecker: unverified external and offline"
+          - "Bleep: unverified external"
+          - "Seatify local: offline/reachable local app state"
+        warnings:
+          - "Expected target preflight resource warnings for refused local/external routes were reported by the smoke and did not fail the run."
+      notes:
+        - "No code or docs changes were needed for this slice; existing README and tests already stated the preview-vs-audit distinction."
+        - "The temporary demo server on 127.0.0.1:3007 was stopped after verification."
+        - "Lint passed with the existing tracked max-lines warnings still present."
+
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Pay down large-file maintainability risk only where it directly supports the reliability hardening work."
+    allowed_files:
+      - "packages/core/src/components/NavMap.tsx"
+      - "packages/core/src/components/NavMapShell.tsx"
+      - "packages/core/src/components/panels/ConnectionPanel.tsx"
+      - "packages/core/src/components/panels/WorkflowOverview.tsx"
+      - "packages/core/src/hooks/useLiveReadiness.ts"
+      - "packages/core/src/workflowManifest.ts"
+      - "packages/scanner/src/modes/context.ts"
+      - "packages/scanner/src/modes/probe.ts"
+      - "packages/scanner/src/modes/workflow.ts"
+      - "packages/core/src/**/*.test.ts"
+      - "packages/core/src/**/*.test.tsx"
+      - "packages/scanner/src/__tests__/**"
+    verify:
+      - "pnpm -s lint"
+      - "pnpm -s typecheck"
+      - "pnpm test"
+      - "pnpm smoke:demo --url http://localhost:<verified-demo-port>"
+    stop_if:
+      - "Refactor becomes broad styling or architecture churn unrelated to reliability."
+      - "Tests indicate behavioral drift in graph rendering, target readiness, workflow conversion, or probe receipts."
+      - "Changes need files outside allowed_files."
+    constraints:
+      - "This is optional until earlier reliability gates are complete."
+      - "Prefer extraction that makes tests clearer over churn to satisfy max-lines mechanically."
+      - "Do not change public APIs unless Judge explicitly approves."
+    expected_output:
+      - "One or more reliability-critical files are easier to maintain, or a receipt explains why deferring refactor is safer."
+      - "Warnings reduced where practical without weakening behavior."
+      - "Full verification passes after refactor."
+    receipt:
+      result: done
+      changed_files:
+        - "packages/scanner/src/modes/probe.ts"
+      summary: "Reviewed maintainability risk after the reliability hardening slices and deferred refactor. The largest warning growth is in scanner probe/auth-state receipt logic, which was just behaviorally hardened and is covered by focused tests; extracting it before the mid-goal audit would add churn without a clearer reliability win. The right next step is Judge review of the evidence matrix, then a scoped extraction task only if the judge finds the current large-file risk blocks reliance."
+      commands:
+        - cmd: "pnpm -s lint"
+          status: pass
+        - cmd: "pnpm -s typecheck"
+          status: pass
+        - cmd: "pnpm -s test"
+          status: pass
+        - cmd: "pnpm smoke:demo --url http://127.0.0.1:3007"
+          status: pass
+      decision:
+        refactor_now: false
+        reason: "Deferring is safer than broad extraction because T006 changed auth/probe receipt semantics and the current tests are green. The optional large-file work should be re-opened only after Judge identifies a concrete reliability-maintenance failure."
+      notes:
+        - "Lint passed with the existing tracked max-lines warnings still present."
+        - "The referenced smoke:demo command was run during T008 against a temporary local demo server that was stopped afterward."
+
+  - id: T010
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Mid-goal audit after implementation slices to decide whether more local hardening is needed before final validation."
+    inputs:
+      - "Receipts from T003 through T009"
+      - "Current git diff"
+      - "Latest verification output"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any identified reliability gap lacks evidence."
+      - "Create a follow-up Worker task instead of passing weak proof."
+    expected_output:
+      - "go_final_audit | add_worker_task | blocked"
+      - "Gap-by-gap evidence matrix."
+      - "Any extra Worker task with allowed_files, verify, and stop_if."
+    receipt:
+      result: done
+      decision: "go_final_audit"
+      full_outcome_complete: false
+      summary: "Mid-goal audit accepts the implemented reliability slices and sends the board to final audit. The official reliability gate, deterministic golden fixture, screenshot receipt semantics, auth-state edge receipts, external package-consumer smoke, and live Target preview framing all have passing evidence. No additional Worker task is needed before final validation."
+      evidence_matrix:
+        probe_diff_gate:
+          status: pass
+          evidence:
+            - "pnpm reliability:agent"
+            - "probe pass 2 / warn 0 / fail 0 / unchecked 0"
+            - "diff pass 2 / warn 0 / fail 0 / unchecked 0"
+        golden_fixture:
+          status: pass
+          evidence:
+            - "packages/demo/public/golden-agent.workflow.json"
+            - "packages/demo/public/golden-agent.nav-map.json"
+            - "packages/demo/public/mockups/golden-checkout.html"
+            - "packages/demo/public/screenshots/golden-agent/"
+        screenshot_guarantees:
+          status: pass
+          evidence:
+            - "Workflow receipt distinguishes capturedNodeIds, manifestRouteScreenshotNodeIds, manifestSurfaceScreenshotIds, and skippedSurfaceIds."
+            - "pnpm --filter @neonwatty/nav-map-scanner test -- workflow"
+        auth_state_edges:
+          status: pass
+          evidence:
+            - "Auth/probe reason codes cover missing auth id, missing verify config, missing storage path/file, expected redirect, unexpected redirect, and verification failure."
+            - "pnpm --filter @neonwatty/nav-map-scanner test -- auth-state probe"
+        package_consumer:
+          status: pass
+          evidence:
+            - "pnpm smoke:package-consumer"
+            - "Downstream tarball install verifies TypeScript, ESM, CJS, CSS export, scanner import, and nav-map bin."
+        live_target_framing:
+          status: pass
+          evidence:
+            - "pnpm --filter @neonwatty/nav-map test -- useLiveReadiness artifactPreview"
+            - "pnpm smoke:demo --url http://127.0.0.1:3007"
+            - "README keeps Target mode framed as best-effort preflight, not audit proof."
+        maintainability:
+          status: accepted_with_warning
+          evidence:
+            - "pnpm -s lint passes with 18 existing max-lines warnings."
+            - "T009 deferred broad extraction because tests are green and refactor risk is higher than reliability benefit before final audit."
+      commands:
+        - cmd: "pnpm reliability:agent"
+          status: pass
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agent-reliability-hardening/state.yaml"
+          status: pass
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Final audit: prove nav-map is ready to rely on for controlled agent workflow use or state exactly what remains."
+    inputs:
+      - "All done task receipts"
+      - "Latest pnpm validate result"
+      - "Latest demo browser smoke receipt"
+      - "Latest golden workflow inspect/context/probe/diff receipts"
+      - "Latest package-consumer smoke receipt"
+      - "Current git status and diff"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is queued, active, or blocked without workaround."
+      - "Reject completion if UI Target mode is represented as audit proof."
+      - "Reject completion if any receipt exposes sensitive auth or environment contents."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence matrix for every original gap."
+      - "Residual risks and explicit recommended next task if not complete."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Final audit passes. nav-map now has a documented, repeatable local reliability gate for controlled agent workflow use, deterministic golden fixture coverage, explicit screenshot guarantees, safe auth-state edge receipts, downstream package-consumer smoke, and verified live Target preview framing. Remaining max-lines warnings are accepted as non-blocking maintainability risk with a recorded deferral."
+      commands:
+        - cmd: "pnpm validate"
+          status: pass
+        - cmd: "pnpm -s test"
+          status: pass
+        - cmd: "pnpm reliability:agent"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "pnpm smoke:demo --url http://127.0.0.1:3007"
+          status: pass
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/nav-map-agent-reliability-hardening/state.yaml"
+          status: pass
+      evidence_matrix:
+        official_reliability_gate:
+          status: pass
+          proof: "pnpm reliability:agent passed with routes 2, surfaces 2, flows 2, probe pass 2/warn 0/fail 0/unchecked 0, and diff pass 2/warn 0/fail 0/unchecked 0."
+        golden_fixture:
+          status: pass
+          proof: "Golden Agent Workflow fixture includes app route, protected redirect boundary, HTML mockup, static prototype, screenshots, probe/diff receipts, and context coverage."
+        screenshot_guarantees:
+          status: pass
+          proof: "Workflow receipts and README distinguish fresh route captures from manifest route/surface screenshot evidence and skipped surface live captures."
+        auth_state_edge_cases:
+          status: pass
+          proof: "Auth/probe tests and CLI smoke cover missing auth id, missing verify config, missing storage path/file, expected redirect, unexpected redirect, failed verification, and redaction/id-only output."
+        package_installability:
+          status: pass
+          proof: "Package-consumer smoke installs packed tarballs in a throwaway project and verifies TypeScript declarations, ESM, CJS, CSS export, scanner dynamic import, and nav-map bin."
+        live_mode_truthfulness:
+          status: pass
+          proof: "Live readiness tests and demo smoke verify Target as preview/preflight, with Ready, Unverified External, Offline, Static Reference, Blocked, and No Target states plus saved fallbacks."
+        docs:
+          status: pass
+          proof: "README documents reliability:agent, smoke:package-consumer, screenshot guarantees, auth reasonCode behavior, and Target preview limitations."
+        maintainability:
+          status: accepted_with_warning
+          proof: "Lint passes with 18 max-lines warnings. T009 records why broad extraction was deferred before final audit."
+      residual_risks:
+        - "The tool is ready for controlled local/CI agent workflow use, but live Target mode remains best-effort browser preflight, not route audit proof."
+        - "Package-consumer smoke uses local tarballs and pnpm override for paired unpublished packages; publishing should remove the override need."
+        - "Large-file warnings remain and should be handled in a later focused refactor if future reliability changes make the files harder to reason about."
+      notes:
+        - "No auth storage, cookie, token, environment, OAuth, private key, service-role key, or browser session contents were inspected or printed."
+        - "The temporary demo server used for smoke verification was stopped after the run."
+
+checks:
+  dirty_fingerprint: "main matches origin/main except untracked .codex-workers/ before prep; prep adds docs/goals/nav-map-agent-reliability-hardening."
+  last_verification:
+    result: pass
+    task: "T003"
+    commands:
+      - "pnpm reliability:agent"
+      - "pnpm --filter @neonwatty/nav-map-scanner test"
+      - "pnpm -s lint"
+      - "pnpm -s typecheck"
+      - "pnpm -s format:check"
+      - "node packages/scanner/bin/nav-map.js --help"

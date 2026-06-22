@@ -9,16 +9,28 @@ export interface AuthStateReceipt {
   route?: string;
   finalUrl?: string;
   storageStatePath?: string;
+  reasonCode?: AuthStateReasonCode;
   reason?: string;
   unsafeDebug?: string;
   [key: string]: unknown;
 }
+
+export type AuthStateReasonCode =
+  | 'verified'
+  | 'expected-redirect'
+  | 'missing-auth-state'
+  | 'missing-auth-verify'
+  | 'missing-storage-state-path'
+  | 'missing-storage-state-file'
+  | 'verification-failed'
+  | 'unexpected-redirect';
 
 export interface AuthStateContractData {
   authState: string;
   verified: boolean;
   route?: string;
   finalUrl?: string;
+  reasonCode?: AuthStateReasonCode;
   reason?: string;
 }
 
@@ -39,6 +51,8 @@ export interface CaptureAuthStateOptions {
 export interface WorkflowAuthStateVerify {
   route: string;
   expectStatus?: number;
+  expectFinalUrl?: string;
+  expectRedirect?: string;
   expectText?: string;
   expectSelector?: string;
   expectJson?: Record<string, unknown>;
@@ -69,7 +83,7 @@ export type AuthStateManifest = {
 type PlaywrightModule = typeof import('playwright');
 
 const SENSITIVE_KEY_PATTERN =
-  /(^|[_-])(access[_-]?token|refresh[_-]?token|api[_-]?key|secret|password|token|private[_-]?key|database[_-]?url|authorization|bearer[_-]?auth|webhook[_-]?secret|cookie|cookies|local[_-]?storage)($|[_-])/i;
+  /(^|[_-])(access[_-]?token|refresh[_-]?token|api[_-]?key|secret|password|token|private[_-]?key|database[_-]?url|authorization|bearer[_-]?auth|webhook[_-]?secret|cookie|cookies|local[_-]?storage|storage[_-]?state[_-]?path)($|[_-])/i;
 const SENSITIVE_VALUE_PATTERN =
   /cookie|localStorage|access_token|refresh_token|bearer\s+\S+|api[_-]?key\b|secret\b|database[_-]?url\b|postgres(?:ql)?:\/\/|password\b|token\b|private[_-]?key\b|-----BEGIN [A-Z ]*PRIVATE KEY-----|whsec_/i;
 
@@ -142,6 +156,7 @@ export function buildAuthStateContract(
     verified: receipt.verified,
     route: receipt.route,
     finalUrl: receipt.finalUrl,
+    reasonCode: receipt.reasonCode,
     reason: receipt.reason,
   }) as AuthStateContractData;
 
@@ -174,27 +189,36 @@ export function buildAuthStateContract(
 export async function verifyAuthState(options: VerifyAuthStateOptions): Promise<AuthStateReceipt> {
   const state = findAuthState(options.manifest, options.stateId);
   if (!state) {
-    throw new Error(`Unknown auth state: ${options.stateId}`);
+    return redactAuthStateReceipt({
+      authState: options.stateId,
+      verified: false,
+      reasonCode: 'missing-auth-state',
+      reason: 'Auth state id was not found in the workflow manifest.',
+    });
   }
   if (!state.verify) {
     return redactAuthStateReceipt({
       authState: state.id,
-      verified: true,
-      reason: 'No verification configured',
+      verified: false,
+      reasonCode: 'missing-auth-verify',
+      reason: 'No verification route or expectations are configured for this auth state.',
     });
   }
 
-  const storageState =
-    state.kind === 'storage-state'
-      ? resolveAuthStateStoragePath(options.manifest, state.id)
-      : undefined;
+  const storageStateCheck = resolveVerifyStorageState(options.manifest, state);
+  if (storageStateCheck.receipt) {
+    return redactAuthStateReceipt(storageStateCheck.receipt);
+  }
+
   const { chromium } = await loadPlaywright();
   const browser = await chromium.launch({ headless: true });
   let context: Awaited<ReturnType<typeof browser.newContext>> | undefined;
   let finalUrl: string | undefined;
 
   try {
-    context = await browser.newContext(storageState ? { storageState } : {});
+    context = await browser.newContext(
+      storageStateCheck.storageState ? { storageState: storageStateCheck.storageState } : {}
+    );
     const page = await context.newPage();
     const verifyUrl = new URL(state.verify.route, options.baseUrl).toString();
     const response = await page.goto(verifyUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
@@ -202,6 +226,10 @@ export async function verifyAuthState(options: VerifyAuthStateOptions): Promise<
 
     const statusOk =
       state.verify.expectStatus === undefined || response?.status() === state.verify.expectStatus;
+    const finalUrlOk =
+      !state.verify.expectFinalUrl || finalUrlMatches(finalUrl, state.verify.expectFinalUrl);
+    const expectedRedirectOk =
+      !state.verify.expectRedirect || finalUrlMatches(finalUrl, state.verify.expectRedirect);
     const textOk =
       !state.verify.expectText ||
       (await page
@@ -219,17 +247,33 @@ export async function verifyAuthState(options: VerifyAuthStateOptions): Promise<
     const jsonOk =
       !state.verify.expectJson ||
       (await responseJsonMatches(response, state.verify.expectJson).catch(() => false));
-    const verified = Boolean(statusOk && textOk && selectorOk && jsonOk);
+    const verified = Boolean(
+      statusOk && finalUrlOk && expectedRedirectOk && textOk && selectorOk && jsonOk
+    );
+    const reasonCode = authStateReasonCode({
+      verified,
+      route: state.verify.route,
+      finalUrl,
+      expectRedirect: state.verify.expectRedirect,
+    });
 
     return redactAuthStateReceipt({
       authState: state.id,
       verified,
       route: state.verify.route,
       finalUrl,
-      storageStatePath: storageState,
+      storageStatePath: storageStateCheck.storageState,
+      reasonCode,
       reason: verified
-        ? undefined
-        : verificationFailureReason({ statusOk, textOk, selectorOk, jsonOk }),
+        ? reasonForVerifiedAuthState(reasonCode)
+        : verificationFailureReason({
+            statusOk,
+            finalUrlOk,
+            expectedRedirectOk,
+            textOk,
+            selectorOk,
+            jsonOk,
+          }),
     });
   } finally {
     await context?.close().catch(() => undefined);
@@ -311,6 +355,8 @@ async function responseJsonMatches(
 
 function verificationFailureReason(results: {
   statusOk: boolean;
+  finalUrlOk: boolean;
+  expectedRedirectOk: boolean;
   textOk: boolean;
   selectorOk: boolean;
   jsonOk: boolean;
@@ -319,6 +365,108 @@ function verificationFailureReason(results: {
     .filter(([, ok]) => !ok)
     .map(([name]) => name.replace(/Ok$/, ''));
   return `Verification expectation failed: ${failed.join(', ')}`;
+}
+
+function resolveVerifyStorageState(
+  manifest: AuthStateManifest,
+  state: WorkflowAuthState
+): { storageState?: string; receipt?: AuthStateReceipt } {
+  if (state.kind !== 'storage-state') {
+    return {};
+  }
+  if (!state.storageStatePath) {
+    return {
+      receipt: {
+        authState: state.id,
+        verified: false,
+        reasonCode: 'missing-storage-state-path',
+        reason: 'Auth state is storage-state, but no storageStatePath is configured.',
+      },
+    };
+  }
+
+  const storageState = resolveAuthStateStoragePath(manifest, state.id);
+  if (!fs.existsSync(storageState)) {
+    return {
+      receipt: {
+        authState: state.id,
+        verified: false,
+        reasonCode: 'missing-storage-state-file',
+        reason: 'Configured storage-state file is missing; recapture or choose another auth state.',
+      },
+    };
+  }
+
+  return { storageState };
+}
+
+function authStateReasonCode(options: {
+  verified: boolean;
+  route: string;
+  finalUrl?: string;
+  expectRedirect?: string;
+}): AuthStateReasonCode | undefined {
+  if (options.verified) {
+    return options.expectRedirect ? 'expected-redirect' : 'verified';
+  }
+  if (options.expectRedirect || isUnexpectedRedirect(options.finalUrl, options.route)) {
+    return 'unexpected-redirect';
+  }
+  return 'verification-failed';
+}
+
+function reasonForVerifiedAuthState(
+  reasonCode: AuthStateReasonCode | undefined
+): string | undefined {
+  return reasonCode === 'expected-redirect'
+    ? 'Observed the configured expected redirect.'
+    : undefined;
+}
+
+function isUnexpectedRedirect(finalUrl: string | undefined, route: string): boolean {
+  return Boolean(finalUrl && !finalUrlMatches(finalUrl, route));
+}
+
+function finalUrlMatches(actual: string | undefined, expected: string): boolean {
+  if (!actual) {
+    return false;
+  }
+  const actualCandidates = urlMatchCandidates(actual);
+  const expectedCandidates = urlMatchCandidates(expected);
+
+  for (const actualCandidate of actualCandidates) {
+    for (const expectedCandidate of expectedCandidates) {
+      if (actualCandidate === expectedCandidate || actualCandidate.endsWith(expectedCandidate)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function urlMatchCandidates(value: string): Set<string> {
+  const candidates = new Set<string>([value]);
+  addDecodedCandidate(candidates, value);
+
+  try {
+    const url = new URL(value);
+    const pathValue = `${url.pathname}${url.search}${url.hash}`;
+    candidates.add(pathValue);
+    addDecodedCandidate(candidates, pathValue);
+  } catch {
+    // Relative URLs are already represented by the original value.
+  }
+
+  return candidates;
+}
+
+function addDecodedCandidate(candidates: Set<string>, value: string): void {
+  try {
+    candidates.add(decodeURIComponent(value));
+  } catch {
+    // Keep the original candidate when decoding fails.
+  }
 }
 
 function shellArg(value: string): string {

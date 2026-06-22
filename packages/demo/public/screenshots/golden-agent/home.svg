@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-label="Golden Agent Home screenshot">
+  <rect width="960" height="640" fill="#f6f7f9"/>
+  <rect x="88" y="82" width="784" height="476" rx="8" fill="#ffffff" stroke="#d8dee8"/>
+  <text x="136" y="170" fill="#17202a" font-family="Arial, sans-serif" font-size="48" font-weight="700">Golden Agent Home</text>
+  <text x="136" y="232" fill="#526070" font-family="Arial, sans-serif" font-size="24">Saved app screenshot evidence for the reliability gate.</text>
+  <rect x="136" y="300" width="276" height="72" rx="6" fill="#2563eb"/>
+  <text x="172" y="346" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">Open dashboard</text>
+  <rect x="136" y="412" width="688" height="2" fill="#e5e9f0"/>
+  <text x="136" y="470" fill="#17202a" font-family="Arial, sans-serif" font-size="22">Public route, deterministic fixture, no private data.</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-label="Golden Static Prototype screenshot">
+  <rect width="960" height="640" fill="#eef2f7"/>
+  <rect x="104" y="86" width="752" height="468" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="152" y="166" fill="#17202a" font-family="Arial, sans-serif" font-size="42" font-weight="700">Checkout Static Prototype</text>
+  <text x="152" y="220" fill="#526070" font-family="Arial, sans-serif" font-size="22">Saved reference only. No live target is expected.</text>
+  <rect x="152" y="286" width="240" height="156" rx="6" fill="#f8fafc" stroke="#d8dee8"/>
+  <rect x="424" y="286" width="280" height="34" rx="4" fill="#dbeafe"/>
+  <rect x="424" y="344" width="212" height="28" rx="4" fill="#e5e9f0"/>
+  <rect x="424" y="396" width="160" height="54" rx="6" fill="#2563eb"/>
+  <text x="460" y="431" fill="#ffffff" font-family="Arial, sans-serif" font-size="20" font-weight="700">Review</text>
+</svg>

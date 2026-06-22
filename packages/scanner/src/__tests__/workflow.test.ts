@@ -13,6 +13,10 @@ vi.mock('../screenshots/capture.js', () => ({
 }));
 
 const tempDirs: string[] = [];
+const goldenManifestPath = new URL(
+  '../../../demo/public/golden-agent.workflow.json',
+  import.meta.url
+);
 
 function makeTempDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-workflow-'));
@@ -132,6 +136,8 @@ describe('runWorkflowManifest', () => {
         requested: true,
         routeCount: 1,
         capturedNodeIds: ['speaker-upload'],
+        manifestRouteScreenshotNodeIds: [],
+        manifestSurfaceScreenshotIds: [],
         skippedSurfaceIds: [],
       },
       warnings: [],
@@ -196,6 +202,10 @@ describe('runWorkflowManifest', () => {
       screenshotCount: 1,
     });
     expect(result.receipt.screenshotCapture.skippedSurfaceIds).toEqual(['dashboard-concept']);
+    expect(result.receipt.screenshotCapture.manifestRouteScreenshotNodeIds).toEqual([]);
+    expect(result.receipt.screenshotCapture.manifestSurfaceScreenshotIds).toEqual([
+      'dashboard-concept',
+    ]);
     expect(result.receipt.warnings).toContain(
       'Prototype/mockup/component surfaces are manifest artifacts, not live captures.'
     );
@@ -216,6 +226,55 @@ describe('runWorkflowManifest', () => {
       route: 'prototype://dashboard-concept',
       screenshot: 'screenshots/prototypes/dashboard-concept.png',
       metadata: { kind: 'prototype-surface', surfaceType: 'generated-image' },
+    });
+  });
+
+  it('generates the golden agent fixture with explicit surface screenshot-capture skips', async () => {
+    const dir = makeTempDir();
+    const outputPath = path.join(dir, 'golden-agent.nav-map.json');
+
+    const result = await runWorkflowManifest(goldenManifestPath.pathname, {
+      output: outputPath,
+      screenshots: false,
+      generatedAt: '2026-06-21T00:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      outputPath,
+      nodeCount: 4,
+      edgeCount: 3,
+      groupCount: 3,
+      screenshotCount: 0,
+    });
+    expect(result.receipt.screenshotCapture).toMatchObject({
+      requested: false,
+      routeCount: 2,
+      capturedNodeIds: [],
+      manifestRouteScreenshotNodeIds: ['home'],
+      manifestSurfaceScreenshotIds: ['checkout-html-mockup', 'checkout-static-prototype'],
+      skippedSurfaceIds: ['checkout-html-mockup', 'checkout-static-prototype'],
+    });
+    expect(result.receipt.warnings).toEqual(
+      expect.arrayContaining([
+        'Screenshots were not requested; existing manifest screenshots are unchanged.',
+        'Prototype/mockup/component surfaces are manifest artifacts, not live captures.',
+      ])
+    );
+
+    const graph = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(graph.nodes.map((node: { id: string }) => node.id)).toEqual([
+      'home',
+      'dashboard',
+      'checkout-html-mockup',
+      'checkout-static-prototype',
+    ]);
+    expect(
+      graph.nodes.find((node: { id: string }) => node.id === 'checkout-html-mockup')?.metadata
+        ?.preview
+    ).toMatchObject({
+      liveUrl: '/mockups/golden-checkout.html',
+      liveMode: 'iframe',
+      liveStatus: 'available',
     });
   });
 

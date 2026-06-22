@@ -82,6 +82,10 @@ const manifest = {
     { name: 'Admin event list', steps: ['admin-events'] },
   ],
 } as const;
+const goldenManifestPath = new URL(
+  '../../../demo/public/golden-agent.workflow.json',
+  import.meta.url
+);
 
 describe('renderWorkflowContext', () => {
   const privateKeyBlock = '-----BEGIN ' + 'PRIVATE KEY-----context-----END ' + 'PRIVATE KEY-----';
@@ -165,6 +169,51 @@ describe('renderWorkflowContext', () => {
       'nav-map probe deckchecker-speaker.workflow.json'
     );
     expect(JSON.stringify(parsed)).not.toContain('.nav-map/auth/deckchecker-speaker.storage.json');
+  });
+
+  it('renders golden agent fixture context with routes, surfaces, and mockup live preview', () => {
+    const golden = loadWorkflowManifest(goldenManifestPath.pathname);
+    const output = renderWorkflowContextContract(golden, {
+      format: 'json',
+      focus: [],
+      lineBudget: 250,
+      manifestPath: 'packages/demo/public/golden-agent.workflow.json',
+    });
+
+    const parsed = JSON.parse(output);
+    expect(parsed).toMatchObject({
+      schemaVersion: 'nav-map-agent-contract/v1',
+      kind: 'workflow-context',
+      summary: {
+        app: 'Golden Agent Workflow',
+        routeCount: 2,
+        surfaceCount: 2,
+        flowCount: 2,
+      },
+    });
+    expect(parsed.data.routes.map((route: { id: string }) => route.id)).toEqual([
+      'home',
+      'dashboard',
+    ]);
+    expect(parsed.data.routes[1].expectedRedirects).toEqual([
+      expect.objectContaining({ when: 'signed-out', to: '/login?next=%2Fdashboard' }),
+    ]);
+    expect(parsed.data.surfaces.map((surface: { id: string }) => surface.id)).toEqual([
+      'checkout-html-mockup',
+      'checkout-static-prototype',
+    ]);
+    expect(parsed.data.surfaces[0]).toMatchObject({
+      artifactKind: 'mockup',
+      surfaceType: 'html-mockup',
+      screenshot: 'screenshots/golden-agent/checkout-mockup.svg',
+      livePreview: {
+        liveUrl: '/mockups/golden-checkout.html',
+        liveMode: 'iframe',
+        liveStatus: 'available',
+      },
+      evidence: ['screenshot', 'inspect', 'source-hint'],
+    });
+    expect(parsed.nextActions[0].command).toContain('nav-map probe');
   });
 
   it('filters by auth requirement without exposing auth storage paths', () => {
