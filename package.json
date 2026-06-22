@@ -13,6 +13,7 @@
     "scanner:help": "node packages/scanner/bin/nav-map.js --help",
     "reliability:agent": "node scripts/agent-reliability-gate.mjs",
     "smoke:package-consumer": "node scripts/package-consumer-smoke.mjs",
+    "smoke:landing": "pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/landing-page-smoke.mjs",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css}\"",
     "knip": "knip",

@@ -8,7 +8,7 @@ goal:
   slug: "landing-page-product-site"
   kind: specific
   tranche: "Build, verify, PR, and merge the package landing page tranche into the protected landing-page branch."
-  status: active
+  status: done
   oracle:
     signal: "The protected landing-page branch renders a useful NavMap package/product landing page at /, preserves a working interactive demo at /demo, passes required CI, and has a merged PR with local browser/test/CI receipts."
     cadence: "after each Worker package and at final audit"
@@ -67,7 +67,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/landing-page-product-site/"
     command: "npx goalbuddy board docs/goals/landing-page-product-site"
 
-active_task: T005
+active_task: null
 
 tasks:
   - id: T001
@@ -287,7 +287,7 @@ tasks:
   - id: T005
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Commit, push, open the PR into landing-page, monitor CI, fix PR/CI issues inside scope, and merge when required checks are green."
     allowed_files:
@@ -308,12 +308,41 @@ tasks:
       - "Branch protection blocks merge after green checks."
       - "CI failure requires files or decisions outside the approved scope."
       - "A destructive git operation would be needed."
-    receipt: null
+    receipt:
+      result: done
+      changed_files:
+        - "docs/goals/landing-page-product-site/state.yaml"
+      summary: "Committed, pushed, opened PR #160 into landing-page, monitored CI, and merged once required checks were green."
+      commands:
+        - cmd: 'git commit -m "feat: add NavMap landing page"'
+          status: pass
+          note: "Commit 43aad8a. Pre-commit lint/typecheck passed; lint retained the known 18 max-lines warnings."
+        - cmd: "git push git@github.com:neonwatty/nav-map.git codex/landing-page-product-site"
+          status: pass
+        - cmd: 'gh pr create --base landing-page --head codex/landing-page-product-site --title "Add NavMap package landing page"'
+          status: pass
+          note: "PR https://github.com/neonwatty/nav-map/pull/160"
+        - cmd: "gh pr checks 160 --watch"
+          status: pass
+          note: "quality-checks, build, scanner-browser-crawl, Vercel, and Vercel Preview Comments passed; release skipped as expected."
+        - cmd: "gh pr merge 160 --merge --delete-branch"
+          status: pass
+          note: "Merged at 2026-06-22T15:42:45Z with merge commit 17a93ddc3ae22daf63d18a7f48a650a5a8bfc070."
+        - cmd: "git status --short --branch"
+          status: pass
+          note: "landing-page is synced with origin/landing-page; only .codex-workers/ is untracked before final local board receipt update."
+      pr:
+        url: "https://github.com/neonwatty/nav-map/pull/160"
+        state: MERGED
+        base: landing-page
+        head: codex/landing-page-product-site
+        merge_commit: "17a93ddc3ae22daf63d18a7f48a650a5a8bfc070"
+        merged_at: "2026-06-22T15:42:45Z"
 
   - id: T999
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit whether the merged landing-page branch satisfies the original owner outcome for this tranche."
     inputs:
@@ -334,11 +363,44 @@ tasks:
       - "full_outcome_complete: true | false"
       - "Evidence mapped to goal oracle"
       - "Missing evidence or next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Final audit passes. The protected landing-page branch now has a product landing page at /, preserves the interactive demo at /demo, redirects root dataset URLs for compatibility, has passing local curl/browser/smoke receipts, and merged PR #160 after required checks passed."
+      evidence:
+        - "packages/demo/app/page.tsx: product landing page at / with root dataset redirect."
+        - "packages/demo/app/demo/page.tsx and packages/demo/app/components/DemoPage.tsx: preserved interactive demo under /demo."
+        - "scripts/demo-smoke.mjs: verifies / landing page, /demo dataset routes, invalid dataset warning, and root dataset redirect."
+        - "Local curl: / returned 200, /demo?dataset=prcard returned 200, root dataset URL returned 307 then 200."
+        - "Bundled Playwright: / rendered at 1440x960 and 390x844; /demo?dataset=prcard rendered; root dataset redirect final URL was /demo?dataset=prcard&smoke=compat."
+        - "Screenshots: /tmp/nav-map-landing-desktop.png and /tmp/nav-map-landing-mobile.png reviewed; no overlap, mobile first viewport shows the next section, and both use real product screenshots."
+        - "Local verification: pnpm lint, pnpm max-lines:check, pnpm format:check, pnpm --filter @neonwatty/nav-map build, pnpm typecheck, pnpm test, pnpm --filter demo build, and DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm smoke:demo passed."
+        - "GitHub CI for PR #160: quality-checks, build, and scanner-browser-crawl passed; Vercel passed; release skipped."
+        - "PR #160 merged into landing-page at merge commit 17a93ddc3ae22daf63d18a7f48a650a5a8bfc070."
+      residual_risks:
+        - "Lint still reports the known 18 max-lines warnings, which are covered by the baseline max-lines gate and were not introduced by this slice."
+        - "Demo smoke still records expected target-preflight resource warnings for offline/unverified live targets."
+      notes:
+        - "No auth storage, cookies, tokens, environment values, private keys, OAuth values, service-role keys, or browser session contents were inspected or printed."
+        - "The local production demo server was stopped after verification."
 
 checks:
-  dirty_fingerprint: unknown
+  dirty_fingerprint: "landing-page matches origin/landing-page at merge commit 17a93dd except local final board receipt update and untracked .codex-workers/."
   last_verification:
-    result: unknown
-    task: null
-    commands: []
+    result: pass
+    task: "T999"
+    commands:
+      - "pnpm lint"
+      - "pnpm max-lines:check"
+      - "pnpm format:check"
+      - "pnpm --filter @neonwatty/nav-map build"
+      - "pnpm typecheck"
+      - "pnpm test"
+      - "pnpm --filter demo build"
+      - "DEMO_SMOKE_URL=http://127.0.0.1:4174 pnpm smoke:demo"
+      - "curl -fsSI http://127.0.0.1:4174/"
+      - "curl -fsSI 'http://127.0.0.1:4174/demo?dataset=prcard'"
+      - "curl -fsSI -L 'http://127.0.0.1:4174/?dataset=prcard&smoke=compat'"
+      - "Bundled Playwright browser render checks"
+      - "gh pr checks 160 --watch"
