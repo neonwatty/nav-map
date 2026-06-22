@@ -14,6 +14,7 @@ const artifactDir = path.resolve(
   rootDir,
   readOption('--artifact-dir') ?? process.env.LANDING_SMOKE_ARTIFACT_DIR ?? '.nav-map/artifacts'
 );
+const deploymentHeaders = readDeploymentHeaders();
 
 const receipt = {
   name: 'nav-map-landing-page-smoke',
@@ -101,7 +102,7 @@ async function smokeRootDatasetRedirect() {
 }
 
 async function openPage(pathname, viewport) {
-  const page = await browser.newPage({ viewport });
+  const page = await browser.newPage({ viewport, extraHTTPHeaders: deploymentHeaders });
   page.on('console', message => {
     if (message.type() === 'error') {
       browserErrors.push(`${pathname} console error: ${message.text()}`);
@@ -180,7 +181,7 @@ async function screenshot(page, fileName) {
 async function assertServerReady() {
   let response;
   try {
-    response = await fetch(baseUrl);
+    response = await fetch(baseUrl, { headers: deploymentHeaders });
   } catch (error) {
     throw new Error(
       `Landing smoke server is not reachable at ${baseUrl}. Start it first or set LANDING_SMOKE_URL. ${String(
@@ -223,4 +224,14 @@ function readOption(name) {
 
 function normalizeBaseUrl(value) {
   return value.replace(/\/$/, '');
+}
+
+function readDeploymentHeaders() {
+  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (!bypassSecret) return {};
+
+  return {
+    'x-vercel-protection-bypass': bypassSecret,
+    'x-vercel-set-bypass-cookie': 'true',
+  };
 }

@@ -1,0 +1,48 @@
+name: Landing Page Deploy Smoke
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [landing-page]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Deployed landing-page URL to verify. Defaults to repository variable LANDING_PAGE_URL.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deployed-smoke:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && (inputs.url != '' || vars.LANDING_PAGE_URL != '')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && vars.LANDING_PAGE_URL != '')
+    runs-on: ubuntu-latest
+    env:
+      LANDING_SMOKE_URL: ${{ inputs.url || vars.LANDING_PAGE_URL }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      LANDING_SMOKE_ARTIFACT_DIR: .nav-map/artifacts/deployed-landing-page
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: landing-page
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @neonwatty/nav-map-scanner exec playwright install --with-deps chromium
+      - name: Smoke deployed landing page
+        run: pnpm smoke:landing
+      - name: Upload landing smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-landing-page-smoke
+          path: .nav-map/artifacts/deployed-landing-page/
+          if-no-files-found: warn
