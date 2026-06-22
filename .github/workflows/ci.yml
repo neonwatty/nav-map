@@ -133,6 +133,34 @@ jobs:
           path: .nav-map/artifacts/
           if-no-files-found: warn
 
+  landing-page-deployed-smoke:
+    needs: [quality-checks, build, scanner-browser-crawl]
+    if: github.ref == 'refs/heads/landing-page' && github.event_name == 'push' && vars.LANDING_PAGE_URL != ''
+    runs-on: ubuntu-latest
+    env:
+      LANDING_SMOKE_URL: ${{ vars.LANDING_PAGE_URL }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      LANDING_SMOKE_ARTIFACT_DIR: .nav-map/artifacts/deployed-landing-page
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @neonwatty/nav-map-scanner exec playwright install --with-deps chromium
+      - name: Smoke deployed landing page
+        run: pnpm smoke:landing
+      - name: Upload landing smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-landing-page-smoke
+          path: .nav-map/artifacts/deployed-landing-page/
+          if-no-files-found: warn
+
   release:
     needs: [quality-checks, build, scanner-browser-crawl]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
