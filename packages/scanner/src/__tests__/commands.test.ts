@@ -301,6 +301,7 @@ describe('scanner command registration', () => {
       '--flow <name>',
       '--nodes <ids>',
       '--out <path>',
+      '--output <path>',
       '--screenshots-dir <dir>',
       '--contract',
     ]);

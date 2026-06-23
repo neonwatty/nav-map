@@ -254,10 +254,48 @@ export async function runProbe(options: {
           options.manifest.routeVariables ?? {}
         );
         const targetUrl = new URL(concreteRoute, options.baseUrl).toString();
-        const response = await page.goto(targetUrl, {
-          waitUntil: 'domcontentloaded',
-          timeout: 30_000,
-        });
+        const response = await page
+          .goto(targetUrl, {
+            waitUntil: 'domcontentloaded',
+            timeout: 30_000,
+          })
+          .catch((error: unknown) => {
+            const reason = sanitizeProbeString(
+              `Navigation failed: ${error instanceof Error ? error.message : String(error)}`
+            );
+            const observed: ProbeNodeObserved = {
+              finalUrl: sanitizeProbeString(page.url()),
+              matchedText: [],
+              matchedSelectors: [],
+              consoleErrors: [...consoleErrors],
+              failedRequests: [...failedRequests, reason],
+            };
+            results.push({
+              nodeId,
+              route: sanitizeProbeString(node.route),
+              concreteRoute: sanitizeProbeString(concreteRoute),
+              finalUrl: observed.finalUrl,
+              status: 'fail',
+              reason,
+              expected: node.expectations
+                ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
+                : undefined,
+              observed,
+              checks: [
+                {
+                  name: 'navigation',
+                  status: 'fail',
+                  expected: sanitizeProbeString(targetUrl),
+                  observed: observed.finalUrl,
+                  reason,
+                },
+              ],
+              consoleErrors: observed.consoleErrors,
+              failedRequests: observed.failedRequests,
+            });
+            return null;
+          });
+        if (!response) continue;
         await waitForProbeExpectations(page, node.expectations, authState.kind);
         const matchedText = await collectMatchedText(page, node.expectations?.text ?? []);
         const matchedSelectors = await collectMatchedSelectors(
