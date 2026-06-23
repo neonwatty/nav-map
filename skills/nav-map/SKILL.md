@@ -25,7 +25,7 @@ NavMap has two installable pieces:
 ## Pick The Workflow
 
 - **Existing app routes**: create a workflow manifest with `nodes`, `edges`, and `flows`, then run `context`, `probe`, `diff`, and `workflow`.
-- **HTML mockups or prototype screens**: add them as `surfaces`; keep screenshots or live HTML paths in manifest metadata.
+- **HTML mockups or prototype screens**: add them as `surfaces`; keep screenshots or live HTML paths in manifest metadata. Use the schema-supported surface types: `screenshot`, `generated-image`, `html-mockup`, `video`, `keyframe`, `component`, and `concept-screen`.
 - **Screenshots only**: attach `screenshot` paths to route nodes or surfaces, then generate `nav-map.json` without live capture.
 - **Live app QA**: run `probe --contract`, then `diff` against the manifest.
 - **Authenticated app QA**: define `authStates` with ids and verification routes. Verify with `auth-state verify --contract` before probing.

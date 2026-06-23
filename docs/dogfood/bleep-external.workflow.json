@@ -1,0 +1,325 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "Bleep External Workflow Atlas",
+  "baseUrl": "http://127.0.0.1:9",
+  "description": "Read-only external dogfood manifest for Bleep routes, studio flows, screenshots, and HTML mockup surfaces. The base URL is intentionally unavailable unless a Bleep local app is supplied at probe time.",
+  "layout": {
+    "defaultViewMode": "flow",
+    "defaultTreeRootId": "home",
+    "sectionOrder": ["marketing", "browser-tool", "studio", "trust", "promo"]
+  },
+  "personas": [
+    {
+      "id": "visitor",
+      "label": "Visitor"
+    },
+    {
+      "id": "creator",
+      "label": "Creator"
+    },
+    {
+      "id": "studio-member",
+      "label": "Studio member"
+    }
+  ],
+  "sections": [
+    {
+      "id": "marketing",
+      "label": "Marketing"
+    },
+    {
+      "id": "browser-tool",
+      "label": "Browser Tool"
+    },
+    {
+      "id": "studio",
+      "label": "Studio"
+    },
+    {
+      "id": "trust",
+      "label": "Trust"
+    },
+    {
+      "id": "promo",
+      "label": "Promo Evidence"
+    }
+  ],
+  "routeVariables": {
+    "projectId": "demo-project"
+  },
+  "nodes": [
+    {
+      "id": "home",
+      "route": "/",
+      "label": "Landing",
+      "section": "marketing",
+      "purpose": "Public entry point for Bleep marketing and conversion paths.",
+      "personas": ["visitor", "creator"],
+      "authRequirement": "public",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/01-hero-landing.png",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/page.tsx"]
+    },
+    {
+      "id": "bleep-tool",
+      "route": "/bleep",
+      "label": "Browser Bleep Tool",
+      "section": "browser-tool",
+      "purpose": "Unauthenticated client-side upload, transcript review, word selection, and download workflow.",
+      "personas": ["visitor", "creator"],
+      "authRequirement": "public",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/06-bleep-upload.png",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": [
+        "../bleep-that-shit/app/bleep/page.tsx",
+        "../bleep-that-shit/docs/user-flows.md"
+      ]
+    },
+    {
+      "id": "premium",
+      "route": "/premium",
+      "label": "Pricing",
+      "section": "marketing",
+      "purpose": "Upgrade path and paid-plan explanation for users who need cloud/studio limits.",
+      "personas": ["visitor", "creator"],
+      "authRequirement": "public",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/05-pricing.png",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/premium/page.tsx"]
+    },
+    {
+      "id": "for-educators",
+      "route": "/for-educators",
+      "label": "Educators",
+      "section": "marketing",
+      "purpose": "Vertical landing page for educator use cases.",
+      "personas": ["visitor"],
+      "authRequirement": "public",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/04-for-educators.png",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/for-educators/page.tsx"]
+    },
+    {
+      "id": "privacy",
+      "route": "/privacy",
+      "label": "Privacy",
+      "section": "trust",
+      "purpose": "Privacy policy and trust evidence for reviewers.",
+      "personas": ["visitor", "creator"],
+      "authRequirement": "public",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/03-privacy-section.png",
+      "expectations": {
+        "status": 200,
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/privacy/page.tsx"]
+    },
+    {
+      "id": "studio",
+      "route": "/studio",
+      "label": "Studio Dashboard",
+      "section": "studio",
+      "purpose": "Cloud project dashboard and premium workflow entry point.",
+      "personas": ["studio-member"],
+      "authRequirement": "signed-in",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/09-studio-dashboard.png",
+      "expectedRedirects": [
+        {
+          "when": "visitor",
+          "to": "/auth/login?redirect=%2Fstudio",
+          "reason": "Studio is protected by auth middleware."
+        }
+      ],
+      "expectations": {
+        "signedOutRedirect": "/auth/login?redirect=%2Fstudio",
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/studio/page.tsx", "../bleep-that-shit/middleware.ts"]
+    },
+    {
+      "id": "studio-project",
+      "route": "/studio/[projectId]",
+      "label": "Studio Project",
+      "section": "studio",
+      "purpose": "Individual cloud project review, matching, bleeping, and download surface.",
+      "personas": ["studio-member"],
+      "authRequirement": "signed-in",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/12-studio-project-complete.png",
+      "expectations": {
+        "selectors": ["main"]
+      },
+      "sourceHints": [
+        "../bleep-that-shit/app/studio/[projectId]/page.tsx",
+        "../bleep-that-shit/docs/user-flows.md"
+      ]
+    },
+    {
+      "id": "studio-settings",
+      "route": "/studio/settings",
+      "label": "Studio Settings",
+      "section": "studio",
+      "purpose": "Account, billing, usage, and wordset settings.",
+      "personas": ["studio-member"],
+      "authRequirement": "signed-in",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/11-studio-settings.png",
+      "expectations": {
+        "selectors": ["main"]
+      },
+      "sourceHints": ["../bleep-that-shit/app/studio/settings/page.tsx"]
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "promo-how-it-works-html",
+      "label": "How It Works HTML Demo",
+      "type": "html-mockup",
+      "section": "promo",
+      "purpose": "Standalone HTML promo demo for marketing review without a running app.",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/02-how-it-works.png",
+      "sourceHints": ["../bleep-that-shit/assets/promo/html-demos/01-how-it-works.html"],
+      "metadata": {
+        "preview": {
+          "liveUrl": "../bleep-that-shit/assets/promo/html-demos/01-how-it-works.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["static HTML demo", "no backend writes", "sibling repo path"]
+        }
+      }
+    },
+    {
+      "id": "promo-before-after-html",
+      "label": "Before/After Bleep HTML Demo",
+      "type": "html-mockup",
+      "section": "promo",
+      "purpose": "Static before/after demo for the bleep interaction concept.",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/07-bleep-tool.png",
+      "sourceHints": ["../bleep-that-shit/assets/promo/html-demos/02-before-after-bleep.html"],
+      "metadata": {
+        "preview": {
+          "liveUrl": "../bleep-that-shit/assets/promo/html-demos/02-before-after-bleep.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["static HTML demo", "no media processing"]
+        }
+      }
+    },
+    {
+      "id": "studio-walkthrough-html",
+      "label": "Studio Walkthrough Hyperframe",
+      "type": "html-mockup",
+      "section": "promo",
+      "purpose": "Generated hyperframe walkthrough for studio UX review.",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/15-studio-timeline.png",
+      "sourceHints": ["../bleep-that-shit/assets/promo/hyperframes/studio-walkthrough/index.html"],
+      "metadata": {
+        "preview": {
+          "liveUrl": "../bleep-that-shit/assets/promo/hyperframes/studio-walkthrough/index.html",
+          "liveMode": "iframe",
+          "liveStatus": "available",
+          "limitations": ["static walkthrough", "not connected to auth or storage"]
+        }
+      }
+    },
+    {
+      "id": "studio-upload-error-screenshot",
+      "label": "Studio Upload Error Screenshot",
+      "type": "concept-screen",
+      "section": "promo",
+      "purpose": "Saved screenshot evidence for an upload error state.",
+      "screenshot": "../bleep-that-shit/assets/promo/screenshots/desktop/studio-upload-error.png",
+      "sourceHints": ["../bleep-that-shit/app/studio/[projectId]/components/StepUpload.tsx"]
+    }
+  ],
+  "edges": [
+    {
+      "source": "home",
+      "target": "bleep-tool",
+      "action": "Start browser bleeping",
+      "type": "link",
+      "personas": ["visitor", "creator"]
+    },
+    {
+      "source": "home",
+      "target": "premium",
+      "action": "Compare plans",
+      "type": "link",
+      "personas": ["visitor", "creator"]
+    },
+    {
+      "source": "premium",
+      "target": "studio",
+      "action": "Upgrade into Studio",
+      "type": "redirect",
+      "personas": ["studio-member"]
+    },
+    {
+      "source": "studio",
+      "target": "studio-project",
+      "action": "Open cloud project",
+      "type": "link",
+      "personas": ["studio-member"]
+    },
+    {
+      "source": "studio-project",
+      "target": "studio-settings",
+      "action": "Review account settings",
+      "type": "link",
+      "personas": ["studio-member"]
+    },
+    {
+      "source": "promo-how-it-works-html",
+      "target": "bleep-tool",
+      "action": "Promote static demo into app route",
+      "type": "link"
+    },
+    {
+      "source": "studio-walkthrough-html",
+      "target": "studio-project",
+      "action": "Compare walkthrough to project UI",
+      "type": "link"
+    },
+    {
+      "source": "studio-upload-error-screenshot",
+      "target": "studio-project",
+      "action": "Validate error state against project UI",
+      "type": "link"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Browser bleep conversion",
+      "steps": ["home", "bleep-tool", "premium"]
+    },
+    {
+      "name": "Studio project lifecycle",
+      "steps": ["home", "premium", "studio", "studio-project", "studio-settings"],
+      "partial": true
+    },
+    {
+      "name": "Promo evidence review",
+      "steps": [
+        "promo-how-it-works-html",
+        "promo-before-after-html",
+        "studio-walkthrough-html",
+        "studio-upload-error-screenshot"
+      ],
+      "partial": true
+    },
+    {
+      "name": "Trust review",
+      "steps": ["home", "for-educators", "privacy"]
+    }
+  ]
+}
