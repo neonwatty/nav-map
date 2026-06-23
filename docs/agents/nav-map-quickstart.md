@@ -41,6 +41,17 @@ nav-map diff ./workflow.nav-map.json --probe .nav-map/probe-runs/latest.json --f
 ```
 
 Use probe and diff receipts as evidence. UI Target mode is only a lightweight reachability preflight.
+Use `--out <path>` or `--output <path>` to keep probe receipts at a stable path for handoff.
+
+If no live app or browser automation is available, do not invent probe evidence. Complete the offline checks instead:
+
+```bash
+nav-map workflow ./workflow.nav-map.json --inspect --contract
+nav-map context ./workflow.nav-map.json --format json --contract
+nav-map workflow ./workflow.nav-map.json --no-screenshots -o public/nav-map.json
+```
+
+Inside the NavMap repo, run `pnpm reliability:agent` for a deterministic probe/diff loop with its own local fixture server.
 
 ## 5. Auth-Safe Verification
 

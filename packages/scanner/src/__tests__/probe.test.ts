@@ -414,6 +414,54 @@ describe('probe helpers', () => {
     expect(JSON.stringify(receipt)).not.toMatch(/token=secret-value|cookie|localStorage/i);
   });
 
+  it('writes a failed receipt when route navigation fails before rendering', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-probe-'));
+    const outputPath = path.join(tempDir, 'receipt.json');
+    const screenshotsDir = path.join(tempDir, 'screenshots');
+    mocks.gotoMock.mockRejectedValueOnce(new Error('net::ERR_UNSAFE_PORT'));
+
+    const run = await runProbe({
+      manifest: {
+        version: 'workflow-atlas/1.0',
+        name: 'Golden Agent Workflow',
+        nodes: [
+          {
+            id: 'home',
+            route: '/',
+            label: 'Home',
+            expectations: { status: 200, text: ['Home'] },
+          },
+        ],
+      },
+      baseUrl: 'http://127.0.0.1:9',
+      outputPath,
+      screenshotsDir,
+      contract: true,
+    });
+
+    expect(run.results).toHaveLength(1);
+    expect(run.results[0]).toMatchObject({
+      nodeId: 'home',
+      status: 'fail',
+      reason: expect.stringContaining('Navigation failed'),
+      checks: [expect.objectContaining({ name: 'navigation', status: 'fail' })],
+    });
+    expect(mocks.screenshotMock).not.toHaveBeenCalled();
+    expect(mocks.contextCloseMock).toHaveBeenCalledOnce();
+    expect(mocks.browserCloseMock).toHaveBeenCalledOnce();
+
+    const receipt = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+    expect(receipt).toMatchObject({
+      kind: 'probe-run',
+      summary: {
+        app: 'Golden Agent Workflow',
+        total: 1,
+        fail: 1,
+      },
+    });
+    expect(JSON.stringify(receipt)).toContain('net::ERR_UNSAFE_PORT');
+  });
+
   it('writes a safe failed receipt when auth-state storage is not usable', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-probe-'));
     const outputPath = path.join(tempDir, 'receipt.json');

@@ -11,6 +11,7 @@ export function createProbeCommand(): Command {
     .option('--flow <name>', 'Flow name to probe')
     .option('--nodes <ids>', 'Comma-separated node ids to probe')
     .option('--out <path>', 'Probe output JSON path', '.nav-map/probe-runs/latest.json')
+    .option('--output <path>', 'Alias for --out')
     .option(
       '--screenshots-dir <dir>',
       'Screenshot output directory',
@@ -31,13 +32,13 @@ export function createProbeCommand(): Command {
                 .filter(Boolean)
             : undefined,
           manifestPath,
-          outputPath: opts.out,
+          outputPath: opts.output ?? opts.out,
           screenshotsDir: opts.screenshotsDir,
           contract: Boolean(opts.contract),
         });
         const failed = run.results.filter(result => result.status === 'fail').length;
         const warned = run.results.filter(result => result.status === 'warn').length;
-        console.log(`Wrote ${opts.out}`);
+        console.log(`Wrote ${opts.output ?? opts.out}`);
         console.log(`Results: ${run.results.length} routes, ${failed} failed, ${warned} warned`);
         console.log(
           `Receipt: ${run.selection?.nodeIds.length ?? run.results.length} selected nodes, ${run.selection?.routeVariableKeys.length ?? 0} route variable keys, ${run.screenshotSummary?.captured ?? run.results.filter(result => result.screenshot).length} screenshots, auth state ${run.authState ?? 'none'}`

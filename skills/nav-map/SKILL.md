@@ -46,6 +46,8 @@ nav-map probe <manifest> --base-url <url> --contract
 nav-map diff <manifest> --probe .nav-map/probe-runs/latest.json --format json
 ```
 
+Use `--out <path>` or `--output <path>` when a probe receipt needs a stable handoff path.
+
 For auth-gated routes:
 
 ```bash
@@ -63,6 +65,8 @@ nav-map workflow <manifest> \
 ```
 
 Use `--no-screenshots` when a manifest is screenshot-backed or prototype-only and no live app should be loaded.
+
+If browser automation or a live app is unavailable, do not fabricate probe/diff evidence. Finish the offline path with `workflow --inspect`, `context`, and `workflow --no-screenshots`, then report the browser limitation. Inside the NavMap repo, use `pnpm reliability:agent` for a deterministic local probe/diff loop that starts its own fixture server.
 
 ## Templates
 

@@ -45,6 +45,10 @@ function validateSkill() {
     'skill must include inspect command'
   );
   assert(
+    skill.includes('pnpm reliability:agent'),
+    'skill must include deterministic reliability gate'
+  );
+  assert(
     skill.includes('Do not inspect, print, commit, or summarize'),
     'skill must include auth storage safety'
   );
@@ -89,6 +93,12 @@ function validateCliHelp() {
   for (const command of requiredCommands) {
     assert(help.includes(command), `nav-map --help should include ${command}`);
   }
+
+  const probeHelp = execFileSync('node', [scannerBin, 'probe', '--help'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  assert(probeHelp.includes('--output <path>'), 'probe help should include --output alias');
 }
 
 function validateTemplateContracts() {
