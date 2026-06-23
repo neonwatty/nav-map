@@ -26,6 +26,7 @@ Use the contract output to decide which routes, surfaces, screenshots, and auth 
 ## 3. Prototype And Screenshot Work
 
 Represent static HTML mockups, concept screens, and component previews as `surfaces`.
+Use only schema-supported surface types: `screenshot`, `generated-image`, `html-mockup`, `video`, `keyframe`, `component`, and `concept-screen`.
 
 ```bash
 nav-map workflow ./prototype.workflow.json --no-screenshots -o public/nav-map.json
