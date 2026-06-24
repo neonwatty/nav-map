@@ -186,6 +186,7 @@ body {
 
 .band-copy p,
 .section-heading p,
+.proof-card p,
 .workflow-card p {
   color: #554f42;
   line-height: 1.55;
@@ -199,12 +200,20 @@ body {
   color: #f3f7f4;
   padding: 18px;
   font-size: 0.95rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .workflow-section {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
   padding: clamp(42px, 7vw, 86px) 0;
+}
+
+.proof-section {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 20px;
 }
 
 .section-heading {
@@ -214,10 +223,26 @@ body {
   margin-bottom: 24px;
 }
 
+.proof-grid,
 .workflow-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.proof-grid,
+.workflow-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.proof-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 160px;
+  border: 1px solid #d5ded8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
 }
 
 .workflow-card {
@@ -236,6 +261,7 @@ body {
   border: 1px solid #dce6e0;
 }
 
+.proof-card h3,
 .workflow-card h3 {
   margin-bottom: 6px;
   font-size: 1.05rem;
@@ -244,6 +270,7 @@ body {
 @media (max-width: 900px) {
   .landing-hero,
   .landing-band,
+  .proof-grid,
   .workflow-grid {
     grid-template-columns: 1fr;
   }

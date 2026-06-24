@@ -7,26 +7,53 @@ type HomePageProps = {
 };
 
 const metrics = [
-  { value: '4', label: 'workflow datasets' },
-  { value: '3', label: 'review modes' },
-  { value: '1', label: 'agent-readable atlas' },
+  { value: '4', label: 'dogfood atlases' },
+  { value: '5', label: 'receipt types' },
+  { value: '1', label: 'agent loop' },
 ];
 
 const workflows = [
   {
     name: 'PRcard',
-    detail: 'App routes, HTML mockups, prototypes, target preflight, and audit issues in one map.',
+    detail:
+      'App routes, HTML mockups, prototypes, target preflight, and audit issues in one atlas.',
     image: '/screenshots/prcard/quick-setup.webp',
   },
   {
-    name: 'Deckchecker',
-    detail: 'Speaker workflow screenshots with saved previews and route-level affordances.',
-    image: '/screenshots/deckchecker-speaker/upload.png',
+    name: 'Bleep',
+    detail:
+      'Real external app evidence across marketing, browser tool, studio, screenshots, and mockups.',
+    image: '/screenshots/bleep.jpeg',
   },
   {
     name: 'Seatify Local',
     detail: 'Local dogfood coverage across marketing, auth, protected routes, and demo flows.',
     image: '/screenshots/seatify-local/home.png',
+  },
+  {
+    name: 'Golden Agent',
+    detail:
+      'Deterministic reliability gate for inspect, context, probe, diff, and screenshot receipts.',
+    image: '/screenshots/golden-agent/home.svg',
+  },
+];
+
+const proof = [
+  {
+    title: 'Manifests',
+    detail: 'Describe routes, personas, flows, screenshots, HTML mockups, redirects, and auth ids.',
+  },
+  {
+    title: 'Context',
+    detail: 'Export compact JSON contracts so agents can reason before touching a browser.',
+  },
+  {
+    title: 'Probe and diff',
+    detail: 'Turn live route checks, failures, redirects, and screenshots into auditable receipts.',
+  },
+  {
+    title: 'Viewer',
+    detail: 'Render the atlas in React with flow, map, screenshots, Target, and workflow filters.',
   },
 ];
 
@@ -41,15 +68,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <p className="eyebrow">Workflow atlas for agents</p>
           <h1 id="hero-title">NavMap</h1>
           <p className="hero-lede">
-            Turn routes, mockups, screenshots, live targets, and product flows into a navigable
-            review surface that agents can inspect without losing the shape of the app.
+            Map routes, mockups, screenshots, live targets, and product flows into one review
+            surface. Agents get receipts they can trust; humans get the app shape at a glance.
           </p>
           <div className="hero-actions" aria-label="Primary actions">
             <a className="primary-action" href="/demo">
               Open demo
             </a>
             <a className="secondary-action" href="https://www.npmjs.com/package/@neonwatty/nav-map">
-              Package
+              Install package
             </a>
           </div>
           <dl className="hero-metrics">
@@ -70,7 +97,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
           <div className="preview-strip" aria-hidden="true">
             <img src="/screenshots/prcard/quick-setup.webp" alt="" />
-            <img src="/screenshots/seatify-local/demo-lab.png" alt="" />
+            <img src="/screenshots/bleep.jpeg" alt="" />
           </div>
         </div>
       </section>
@@ -80,19 +107,44 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <p className="eyebrow">Install</p>
           <h2 id="install-title">Drop a workflow map into any React surface.</h2>
           <p>
-            NavMap ships the visual component, scanner outputs, workflow manifests, screenshot
-            receipts, and review affordances that make app structure legible to humans and agents.
+            NavMap ships the visual component, scanner CLI, workflow manifests, screenshot receipts,
+            probe/diff contracts, and skill-ready templates that make app structure legible to
+            humans and agents.
           </p>
         </div>
         <pre className="install-command" aria-label="Install command">
-          <code>pnpm add @neonwatty/nav-map</code>
+          <code>{`pnpm add @neonwatty/nav-map
+pnpm dlx @neonwatty/nav-map-scanner workflow app.workflow.json --inspect --contract`}</code>
         </pre>
+      </section>
+
+      <section className="proof-section" aria-labelledby="proof-title">
+        <div className="section-heading">
+          <p className="eyebrow">Agent loop</p>
+          <h2 id="proof-title">Inspect first. Verify next. Keep the receipt.</h2>
+          <p>
+            The package is built around repeatable proof: workflow inspect, context contracts,
+            generated graphs, route probes, and expected-vs-observed diffs.
+          </p>
+        </div>
+        <div className="proof-grid">
+          {proof.map(item => (
+            <article className="proof-card" key={item.title}>
+              <h3>{item.title}</h3>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="workflow-section" aria-labelledby="workflow-title">
         <div className="section-heading">
-          <p className="eyebrow">Examples</p>
+          <p className="eyebrow">Dogfood proof</p>
           <h2 id="workflow-title">Prototype, live app, and HTML mockup review in one place.</h2>
+          <p>
+            NavMap is already carrying real workflow maps for product demos and external app
+            dogfood, including unavailable-target receipts that still diff cleanly.
+          </p>
         </div>
         <div className="workflow-grid">
           {workflows.map(workflow => (
