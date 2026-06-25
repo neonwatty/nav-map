@@ -14,7 +14,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Lint
@@ -39,7 +39,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build core
@@ -51,16 +51,16 @@ jobs:
 
   scanner-browser-crawl:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Install Chromium
-        run: pnpm --filter @neonwatty/nav-map-scanner exec playwright install --with-deps chromium
       - name: Run browser crawl tests
         env:
           NAV_MAP_BROWSER_TESTS: '1'
@@ -137,6 +137,8 @@ jobs:
     needs: [quality-checks, build, scanner-browser-crawl]
     if: github.ref == 'refs/heads/landing-page' && github.event_name == 'push' && vars.LANDING_PAGE_URL != ''
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     env:
       LANDING_SMOKE_URL: ${{ vars.LANDING_PAGE_URL }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
@@ -146,11 +148,9 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Install Chromium
-        run: pnpm --filter @neonwatty/nav-map-scanner exec playwright install --with-deps chromium
       - name: Smoke deployed landing page
         run: pnpm smoke:landing
       - name: Upload landing smoke artifacts
@@ -176,7 +176,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @neonwatty/nav-map build
