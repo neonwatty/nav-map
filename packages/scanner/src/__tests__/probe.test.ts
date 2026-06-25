@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   browserCloseMock: vi.fn(),
   newContextMock: vi.fn(),
   newPageMock: vi.fn(),
+  pageCloseMock: vi.fn(),
   screenshotMock: vi.fn(),
   gotoMock: vi.fn(),
   pageOnMock: vi.fn(),
@@ -38,6 +39,7 @@ describe('probe helpers', () => {
     mocks.browserCloseMock.mockReset();
     mocks.newContextMock.mockReset();
     mocks.newPageMock.mockReset();
+    mocks.pageCloseMock.mockReset();
     mocks.screenshotMock.mockReset();
     mocks.gotoMock.mockReset();
     mocks.pageOnMock.mockReset();
@@ -78,6 +80,7 @@ describe('probe helpers', () => {
             },
       screenshot: mocks.screenshotMock,
       on: mocks.pageOnMock,
+      close: mocks.pageCloseMock,
     });
     mocks.newContextMock.mockResolvedValue({
       newPage: mocks.newPageMock,
@@ -609,6 +612,76 @@ describe('probe helpers', () => {
     expect(receipt).not.toMatch(
       /secret-value|access_token":"secret|refresh_token: secret|Basic abc123/i
     );
+  });
+
+  it('isolates failed request observations between probed routes', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-map-probe-'));
+    const outputPath = path.join(tempDir, 'receipt.json');
+    const screenshotsDir = path.join(tempDir, 'screenshots');
+    const handlers: Array<Record<string, (payload: unknown) => void>> = [];
+    let pageIndex = 0;
+
+    mocks.newPageMock.mockImplementation(async () => {
+      const currentIndex = pageIndex++;
+      const pageHandlers: Record<string, (payload: unknown) => void> = {};
+      handlers[currentIndex] = pageHandlers;
+      return {
+        goto: mocks.gotoMock,
+        url: () => `http://localhost:3000/route-${currentIndex + 1}`,
+        getByText: () => ({
+          first: () => ({ isVisible: mocks.textVisibleMock, waitFor: mocks.textWaitForMock }),
+        }),
+        locator: (selector: string) =>
+          selector === 'body'
+            ? {
+                innerText: mocks.bodyInnerTextMock,
+                first: () => ({
+                  isVisible: mocks.selectorVisibleMock,
+                  waitFor: mocks.selectorWaitForMock,
+                }),
+              }
+            : {
+                first: () => ({
+                  isVisible: mocks.selectorVisibleMock,
+                  waitFor: mocks.selectorWaitForMock,
+                }),
+              },
+        screenshot: mocks.screenshotMock,
+        on: (event: string, handler: (payload: unknown) => void) => {
+          pageHandlers[event] = handler;
+        },
+        close: mocks.pageCloseMock,
+      };
+    });
+    mocks.gotoMock.mockImplementation(async () => {
+      if (pageIndex === 2) {
+        handlers[0]?.requestfailed?.({
+          method: () => 'GET',
+          url: () => 'http://localhost:3000/api/slow',
+          failure: () => ({ errorText: 'net::ERR_ABORTED' }),
+        });
+      }
+      return { status: () => 200 };
+    });
+
+    const run = await runProbe({
+      manifest: {
+        version: 'workflow-atlas/1.0',
+        name: 'SPA Probe',
+        nodes: [
+          { id: 'first', route: '/first', label: 'First', expectations: { status: 200 } },
+          { id: 'second', route: '/second', label: 'Second', expectations: { status: 200 } },
+        ],
+      },
+      baseUrl: 'http://localhost:3000',
+      outputPath,
+      screenshotsDir,
+    });
+
+    expect(run.results.map(result => result.status)).toEqual(['pass', 'pass']);
+    expect(run.results[1].failedRequests).toEqual([]);
+    expect(mocks.newPageMock).toHaveBeenCalledTimes(2);
+    expect(mocks.pageCloseMock).toHaveBeenCalledTimes(2);
   });
 
   it('runs explicit node ids over flow selection and all nodes when no selection is provided', async () => {

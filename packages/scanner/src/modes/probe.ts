@@ -227,115 +227,118 @@ export async function runProbe(options: {
       authState.storageState ? { storageState: authState.storageState } : {}
     );
     try {
-      const page = await context.newPage();
-      const consoleErrors: string[] = [];
-      const failedRequests: string[] = [];
-
-      page.on('console', message => {
-        if (message.type() === 'error') {
-          consoleErrors.push(sanitizeProbeString(message.text()));
-        }
-      });
-      page.on('requestfailed', request => {
-        failedRequests.push(
-          sanitizeProbeString(
-            `${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`.trim()
-          )
-        );
-      });
-
       fs.mkdirSync(options.screenshotsDir, { recursive: true });
       for (const node of selectedNodes) {
-        consoleErrors.length = 0;
-        failedRequests.length = 0;
+        const page = await context.newPage();
+        const consoleErrors: string[] = [];
+        const failedRequests: string[] = [];
         const nodeId = node.id ?? routeToId(node.route);
         const concreteRoute = resolveRouteTemplate(
           node.route,
           options.manifest.routeVariables ?? {}
         );
         const targetUrl = new URL(concreteRoute, options.baseUrl).toString();
-        const response = await page
-          .goto(targetUrl, {
-            waitUntil: 'domcontentloaded',
-            timeout: 30_000,
-          })
-          .catch((error: unknown) => {
-            const reason = sanitizeProbeString(
-              `Navigation failed: ${error instanceof Error ? error.message : String(error)}`
-            );
-            const observed: ProbeNodeObserved = {
-              finalUrl: sanitizeProbeString(page.url()),
-              matchedText: [],
-              matchedSelectors: [],
-              consoleErrors: [...consoleErrors],
-              failedRequests: [...failedRequests, reason],
-            };
-            results.push({
-              nodeId,
-              route: sanitizeProbeString(node.route),
-              concreteRoute: sanitizeProbeString(concreteRoute),
-              finalUrl: observed.finalUrl,
-              status: 'fail',
-              reason,
-              expected: node.expectations
-                ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
-                : undefined,
-              observed,
-              checks: [
-                {
-                  name: 'navigation',
-                  status: 'fail',
-                  expected: sanitizeProbeString(targetUrl),
-                  observed: observed.finalUrl,
-                  reason,
-                },
-              ],
-              consoleErrors: observed.consoleErrors,
-              failedRequests: observed.failedRequests,
+        page.on('console', message => {
+          if (message.type() === 'error') {
+            consoleErrors.push(sanitizeProbeString(message.text()));
+          }
+        });
+        page.on('requestfailed', request => {
+          failedRequests.push(
+            sanitizeProbeString(
+              `${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`.trim()
+            )
+          );
+        });
+
+        try {
+          const response = await page
+            .goto(targetUrl, {
+              waitUntil: 'domcontentloaded',
+              timeout: 30_000,
+            })
+            .catch((error: unknown) => {
+              const reason = sanitizeProbeString(
+                `Navigation failed: ${error instanceof Error ? error.message : String(error)}`
+              );
+              const observed: ProbeNodeObserved = {
+                finalUrl: sanitizeProbeString(page.url()),
+                matchedText: [],
+                matchedSelectors: [],
+                consoleErrors: [...consoleErrors],
+                failedRequests: [...failedRequests, reason],
+              };
+              results.push({
+                nodeId,
+                route: sanitizeProbeString(node.route),
+                concreteRoute: sanitizeProbeString(concreteRoute),
+                finalUrl: observed.finalUrl,
+                status: 'fail',
+                reason,
+                expected: node.expectations
+                  ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
+                  : undefined,
+                observed,
+                checks: [
+                  {
+                    name: 'navigation',
+                    status: 'fail',
+                    expected: sanitizeProbeString(targetUrl),
+                    observed: observed.finalUrl,
+                    reason,
+                  },
+                ],
+                consoleErrors: observed.consoleErrors,
+                failedRequests: observed.failedRequests,
+              });
+              return null;
             });
-            return null;
+          if (!response) continue;
+          await waitForProbeExpectations(page, node.expectations, authState.kind);
+          const matchedText = await collectMatchedText(page, node.expectations?.text ?? []);
+          const matchedSelectors = await collectMatchedSelectors(
+            page,
+            node.expectations?.selectors ?? []
+          );
+          const screenshot = path.join(options.screenshotsDir, `${nodeId}.png`);
+          await page.screenshot({ path: screenshot, fullPage: false });
+
+          const observed: ProbeNodeObserved = {
+            status: response?.status(),
+            finalUrl: sanitizeProbeString(page.url()),
+            matchedText,
+            matchedSelectors,
+            consoleErrors: [...consoleErrors],
+            failedRequests: [...failedRequests],
+          };
+          const evaluation = evaluateProbeNode({
+            nodeId,
+            authStateKind: authState.kind,
+            expected: node.expectations,
+            observed,
           });
-        if (!response) continue;
-        await waitForProbeExpectations(page, node.expectations, authState.kind);
-        const matchedText = await collectMatchedText(page, node.expectations?.text ?? []);
-        const matchedSelectors = await collectMatchedSelectors(
-          page,
-          node.expectations?.selectors ?? []
-        );
-        const screenshot = path.join(options.screenshotsDir, `${nodeId}.png`);
-        await page.screenshot({ path: screenshot, fullPage: false });
 
-        const observed: ProbeNodeObserved = {
-          status: response?.status(),
-          finalUrl: sanitizeProbeString(page.url()),
-          matchedText,
-          matchedSelectors,
-          consoleErrors: [...consoleErrors],
-          failedRequests: [...failedRequests],
-        };
-        const evaluation = evaluateProbeNode({
-          nodeId,
-          authStateKind: authState.kind,
-          expected: node.expectations,
-          observed,
-        });
-
-        results.push({
-          nodeId,
-          route: sanitizeProbeString(node.route),
-          concreteRoute: sanitizeProbeString(concreteRoute),
-          finalUrl: observed.finalUrl,
-          status: evaluation.status,
-          reason: evaluation.reason ? sanitizeProbeString(evaluation.reason) : undefined,
-          screenshot,
-          expected: node.expectations
-            ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
-            : undefined,
-          observed,
-          checks: buildProbeChecks(node.expectations, observed, authState.kind),
-          consoleErrors: observed.consoleErrors,
-          failedRequests: observed.failedRequests,
-        });
+          results.push({
+            nodeId,
+            route: sanitizeProbeString(node.route),
+            concreteRoute: sanitizeProbeString(concreteRoute),
+            finalUrl: observed.finalUrl,
+            status: evaluation.status,
+            reason: evaluation.reason ? sanitizeProbeString(evaluation.reason) : undefined,
+            screenshot,
+            expected: node.expectations
+              ? (sanitizeProbeValue(node.expectations) as ProbeNodeExpectations)
+              : undefined,
+            observed,
+            checks: buildProbeChecks(node.expectations, observed, authState.kind),
+            consoleErrors: observed.consoleErrors,
+            failedRequests: observed.failedRequests,
+          });
+        } finally {
+          await Promise.resolve((page as { close?: () => Promise<void> }).close?.()).catch(
+            () => undefined
+          );
+        }
       }
     } finally {
       await Promise.resolve(context.close()).catch(() => undefined);
