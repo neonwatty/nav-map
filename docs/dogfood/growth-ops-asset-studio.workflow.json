@@ -1,0 +1,188 @@
+{
+  "version": "workflow-atlas/1.0",
+  "name": "Growth Ops Asset Studio Dogfood",
+  "baseUrl": "http://127.0.0.1:5173",
+  "description": "Read-only NavMap dogfood manifest for the Growth Ops Asset Studio local app. Treat write-capable controls as unsafe for blind interaction crawling.",
+  "generatedAt": "2026-06-25T00:00:00.000Z",
+  "layout": {
+    "defaultViewMode": "flow",
+    "defaultTreeRootId": "asset-studio",
+    "sectionOrder": ["app", "api", "safety"]
+  },
+  "personas": [
+    {
+      "id": "agent-reviewer",
+      "label": "Agent reviewer",
+      "description": "Agent inspecting the local Asset Studio without credentials, live S3 sync, or write actions."
+    },
+    {
+      "id": "human-operator",
+      "label": "Human operator",
+      "description": "Human growth operator who can intentionally approve writes outside this read-only dogfood pass."
+    }
+  ],
+  "sections": [
+    {
+      "id": "app",
+      "label": "Asset Studio App",
+      "routePrefix": "/"
+    },
+    {
+      "id": "api",
+      "label": "Read-only API",
+      "routePrefix": "/api"
+    },
+    {
+      "id": "safety",
+      "label": "Agent Safety Boundaries"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "asset-studio",
+      "route": "/",
+      "label": "Asset Studio Board",
+      "section": "app",
+      "purpose": "Main local app shell for browsing catalog assets, filters, project summary, inspector, and the lineage workspace entry.",
+      "personas": ["agent-reviewer", "human-operator"],
+      "authRequirement": "public-local",
+      "health": "healthy",
+      "inspect": {
+        "selector": "#root",
+        "notes": "Safe for read-only page load and screenshot capture. Do not use blind click interaction crawling because visible controls include write-capable actions."
+      },
+      "expectations": {
+        "selectors": ["#root"],
+        "text": ["Asset Studio", "Assets", "Lineage", "Sync S3"],
+        "status": 200
+      },
+      "sourceHints": [
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/App.tsx",
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/server.ts"
+      ]
+    },
+    {
+      "id": "projects-api",
+      "route": "/api/projects",
+      "label": "Projects API",
+      "section": "api",
+      "purpose": "Read-only project inventory used by the Asset Studio sidebar.",
+      "personas": ["agent-reviewer"],
+      "authRequirement": "public-local",
+      "health": "healthy",
+      "inspect": {
+        "selector": "body",
+        "notes": "Expected to return JSON without requiring Doppler or AWS credentials."
+      },
+      "expectations": {
+        "text": ["bleep-that-shit"],
+        "status": 200
+      },
+      "sourceHints": ["/Users/neonwatty/Desktop/growth-ops/asset-studio/server.ts"]
+    },
+    {
+      "id": "catalog-api-local",
+      "route": "/api/assets?project=bleep-that-shit&page=1&pageSize=2&live=false&source=local",
+      "label": "Local Catalog API",
+      "section": "api",
+      "purpose": "Read-only local catalog response for agent-safe inventory checks without S3 live sync.",
+      "personas": ["agent-reviewer"],
+      "authRequirement": "public-local",
+      "health": "healthy",
+      "inspect": {
+        "selector": "body",
+        "notes": "Keep live=false so the endpoint reads local catalog metadata only."
+      },
+      "expectations": {
+        "text": ["assets", "catalog"],
+        "status": 200
+      },
+      "sourceHints": [
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/server.ts",
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/server/assetCore.ts"
+      ]
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "lineage-workbench-state",
+      "label": "Lineage Workbench State",
+      "type": "component",
+      "section": "app",
+      "purpose": "Internal UI state reached by the Lineage tab, not a separate route. Agents need context before deciding whether a manual browser pass is safe.",
+      "sourceHints": [
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/components/LineageView.tsx",
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/components/LineageHandoffPanel.tsx"
+      ],
+      "metadata": {
+        "preview": {
+          "liveStatus": "blocked",
+          "liveMode": "manual",
+          "limitations": [
+            "same route as Asset Studio Board",
+            "contains write-capable lineage actions"
+          ]
+        }
+      }
+    },
+    {
+      "id": "write-controls-boundary",
+      "label": "Write Controls Boundary",
+      "type": "concept-screen",
+      "section": "safety",
+      "purpose": "Documents why this app should default to read-only crawl and manifest-guided manual review instead of blind interaction discovery.",
+      "sourceHints": [
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/App.tsx",
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/components/LineageView.tsx",
+        "/Users/neonwatty/Desktop/growth-ops/asset-studio/src/components/UploadDrawer.tsx"
+      ],
+      "metadata": {
+        "preview": {
+          "liveStatus": "static",
+          "liveMode": "none",
+          "limitations": [
+            "Archive, promote, placement, review, and lineage controls intentionally send write-confirmed requests",
+            "Use --no-interactions for crawl unless a human has approved a scoped action plan"
+          ]
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "projects-api",
+      "target": "asset-studio",
+      "action": "Populate project selector",
+      "type": "data"
+    },
+    {
+      "source": "catalog-api-local",
+      "target": "asset-studio",
+      "action": "Populate local asset board",
+      "type": "data"
+    },
+    {
+      "source": "asset-studio",
+      "target": "lineage-workbench-state",
+      "action": "Switch to Lineage tab",
+      "type": "component-state"
+    },
+    {
+      "source": "asset-studio",
+      "target": "write-controls-boundary",
+      "action": "Review safety boundary before interactions",
+      "type": "boundary"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Read-only catalog review",
+      "steps": ["projects-api", "catalog-api-local", "asset-studio"]
+    },
+    {
+      "name": "Agent safety boundary",
+      "steps": ["asset-studio", "lineage-workbench-state", "write-controls-boundary"],
+      "partial": true
+    }
+  ]
+}
