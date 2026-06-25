@@ -8,12 +8,14 @@ The `landing-page` branch is the package-site branch for NavMap. It must keep:
 
 ## Current Vercel State
 
-As of June 22, 2026:
+As of June 25, 2026:
 
 - GitHub CI protects `landing-page` with `quality-checks`, `build`, and `scanner-browser-crawl`.
 - The Vercel GitHub status reports successful deployments, but the status target is a Vercel dashboard URL rather than the public app URL.
 - The conventional branch alias `https://nav-map-git-landing-page-jermwatts-projects.vercel.app/` exists but returns Vercel Authentication (`401`) without an automation bypass.
 - The public production URL `https://nav-map.vercel.app/` still serves the old root demo, so production is not yet pointed at `landing-page`.
+- GitHub repository variable `LANDING_PAGE_URL` is configured to the protected branch alias.
+- GitHub repository secret `VERCEL_AUTOMATION_BYPASS_SECRET` is configured so deployed smoke can bypass Vercel protection.
 
 ## Required Vercel Setup
 
