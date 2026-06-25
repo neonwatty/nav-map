@@ -183,10 +183,12 @@ async function assertServerReady() {
   try {
     response = await fetch(baseUrl, { headers: deploymentHeaders });
   } catch (error) {
+    const cause =
+      error instanceof Error && error.cause instanceof Error ? ` ${error.cause.message}` : '';
     throw new Error(
       `Landing smoke server is not reachable at ${baseUrl}. Start it first or set LANDING_SMOKE_URL. ${String(
         error
-      )}`
+      )}${cause}`
     );
   }
 
@@ -227,7 +229,7 @@ function normalizeBaseUrl(value) {
 }
 
 function readDeploymentHeaders() {
-  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
   if (!bypassSecret) return {};
 
   return {
