@@ -14,7 +14,8 @@ const artifactDir = path.resolve(
   rootDir,
   readOption('--artifact-dir') ?? process.env.LANDING_SMOKE_ARTIFACT_DIR ?? '.nav-map/artifacts'
 );
-const deploymentHeaders = readDeploymentHeaders();
+const deploymentBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+const deploymentHeaders = readDeploymentHeaders(deploymentBypassSecret);
 
 const receipt = {
   name: 'nav-map-landing-page-smoke',
@@ -46,7 +47,7 @@ try {
   process.stdout.write(`${JSON.stringify(receipt, null, 2)}\n`);
 } catch (error) {
   receipt.status = 'fail';
-  receipt.error = error instanceof Error ? error.message : String(error);
+  receipt.error = redactBypassUrl(error instanceof Error ? error.message : String(error));
   process.stderr.write(`${JSON.stringify(receipt, null, 2)}\n`);
   process.exitCode = 1;
 } finally {
@@ -94,7 +95,9 @@ async function smokeRootDatasetRedirect() {
   const finalUrl = new URL(page.url());
   if (finalUrl.pathname !== '/demo' || finalUrl.searchParams.get('dataset') !== 'prcard') {
     throw new Error(
-      `Expected root dataset URL to redirect to /demo?dataset=prcard. Saw ${page.url()}`
+      `Expected root dataset URL to redirect to /demo?dataset=prcard. Saw ${redactBypassUrl(
+        page.url()
+      )}`
     );
   }
   await page.close();
@@ -112,11 +115,15 @@ async function openPage(pathname, viewport) {
     browserErrors.push(`${pathname} page error: ${error.message}`);
   });
 
-  const url = `${baseUrl}${pathname}`;
-  receipt.routes.push(url);
-  const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
+  const publicUrl = `${baseUrl}${pathname}`;
+  receipt.routes.push(publicUrl);
+  const response = await page.goto(withDeploymentBypass(publicUrl), {
+    waitUntil: 'domcontentloaded',
+  });
   if (!response?.ok()) {
-    throw new Error(`Expected ${url} to return 2xx. Saw ${response?.status() ?? 'no response'}`);
+    throw new Error(
+      `Expected ${publicUrl} to return 2xx. Saw ${response?.status() ?? 'no response'}`
+    );
   }
   await page.locator('body').waitFor({ state: 'visible', timeout: 10000 });
   return page;
@@ -181,7 +188,7 @@ async function screenshot(page, fileName) {
 async function assertServerReady() {
   let response;
   try {
-    response = await fetch(baseUrl, { headers: deploymentHeaders });
+    response = await fetch(withDeploymentBypass(baseUrl), { headers: deploymentHeaders });
   } catch (error) {
     const cause =
       error instanceof Error && error.cause instanceof Error ? ` ${error.cause.message}` : '';
@@ -228,12 +235,25 @@ function normalizeBaseUrl(value) {
   return value.replace(/\/$/, '');
 }
 
-function readDeploymentHeaders() {
-  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+function readDeploymentHeaders(bypassSecret) {
   if (!bypassSecret) return {};
 
   return {
     'x-vercel-protection-bypass': bypassSecret,
     'x-vercel-set-bypass-cookie': 'true',
   };
+}
+
+function withDeploymentBypass(url) {
+  if (!deploymentBypassSecret) return url;
+
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set('x-vercel-protection-bypass', deploymentBypassSecret);
+  nextUrl.searchParams.set('x-vercel-set-bypass-cookie', 'true');
+  return nextUrl.toString();
+}
+
+function redactBypassUrl(value) {
+  if (!deploymentBypassSecret) return value;
+  return value.replaceAll(deploymentBypassSecret, '[redacted-vercel-bypass]');
 }
