@@ -33,6 +33,8 @@ The `landing-page-deployed-smoke` CI job uses `pnpm smoke:landing` against `LAND
 
 If `LANDING_PAGE_URL` is not configured, the deployed smoke job is skipped. This keeps branch protection usable until the Vercel production branch or branch URL is intentionally configured.
 
+When the Vercel automation bypass secret is regenerated, redeploy `landing-page` before rerunning the deployed smoke job so the protected branch deployment recognizes the current bypass token.
+
 ## Manual Verification
 
 Run the deployed smoke manually with:
