@@ -127,7 +127,7 @@ jobs:
           fi
       - name: Upload crawl diagnostics artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scanner-crawl-diagnostics
           path: .nav-map/artifacts/
@@ -155,7 +155,7 @@ jobs:
         run: pnpm smoke:landing
       - name: Upload landing smoke artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: deployed-landing-page-smoke
           path: .nav-map/artifacts/deployed-landing-page/
