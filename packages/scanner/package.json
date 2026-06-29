@@ -42,7 +42,7 @@
   "dependencies": {
     "@neonwatty/nav-map": "workspace:*",
     "adm-zip": "^0.5.17",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "glob": "^11.0.0",
     "playwright": "^1.59.1",
     "sharp": "^0.34.5",
