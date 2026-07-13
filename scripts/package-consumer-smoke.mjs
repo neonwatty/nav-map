@@ -28,6 +28,9 @@ try {
   run('node', ['cjs.cjs'], consumerDir);
   run('node', ['scanner.mjs'], consumerDir);
   run('pnpm', ['exec', 'nav-map', '--help'], consumerDir);
+  run('pnpm', ['exec', 'nav-map', 'init', '--help'], consumerDir);
+  run('pnpm', ['exec', 'nav-map', 'sync', '--help'], consumerDir);
+  run('pnpm', ['exec', 'nav-map', 'open', '--help'], consumerDir);
 
   console.log(
     JSON.stringify(
@@ -148,9 +151,21 @@ function writeConsumerProject(coreTarball, scannerTarball) {
   fs.writeFileSync(
     path.join(consumerDir, 'scanner.mjs'),
     [
+      "import fs from 'node:fs';",
+      "import path from 'node:path';",
+      "import { fileURLToPath } from 'node:url';",
       "const scanner = await import('@neonwatty/nav-map-scanner');",
       "if (typeof scanner.scanRepo !== 'function') throw new Error('scanRepo export missing');",
       "if (typeof scanner.crawlUrl !== 'function') throw new Error('crawlUrl export missing');",
+      "if (typeof scanner.startServer !== 'function') throw new Error('startServer export missing');",
+      "if (typeof scanner.initProject !== 'function') throw new Error('initProject export missing');",
+      "if (typeof scanner.loadProject !== 'function') throw new Error('loadProject export missing');",
+      "if (typeof scanner.resolveOpenTarget !== 'function') throw new Error('resolveOpenTarget export missing');",
+      "if (typeof scanner.syncProject !== 'function') throw new Error('syncProject export missing');",
+      "const scannerEntry = fileURLToPath(import.meta.resolve('@neonwatty/nav-map-scanner'));",
+      "const viewerDir = path.join(path.dirname(scannerEntry), 'viewer');",
+      "if (!fs.existsSync(path.join(viewerDir, 'app.js'))) throw new Error('viewer JavaScript missing from scanner package');",
+      "if (!fs.existsSync(path.join(viewerDir, 'app.css'))) throw new Error('viewer stylesheet missing from scanner package');",
     ].join('\n')
   );
 }

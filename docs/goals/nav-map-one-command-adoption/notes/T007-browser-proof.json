@@ -1,0 +1,132 @@
+{
+  "version": "nav-map-adoption-browser-proof/1.0",
+  "date": "2026-07-13",
+  "authStateIds": [],
+  "screenshotsCaptured": 0,
+  "screenshotNote": "All runs intentionally used --no-screenshots to prove the safe offline adoption path; browser DOM and console evidence verified the rendered viewer.",
+  "projects": [
+    {
+      "id": "nav-map-fresh-proof",
+      "kind": "clean-fixture",
+      "source": "repo",
+      "commands": [
+        "nav-map init /tmp/nav-map-one-command-proof/fresh --json",
+        "nav-map sync /tmp/nav-map-one-command-proof/fresh --no-screenshots --json",
+        "add /about route",
+        "nav-map sync /tmp/nav-map-one-command-proof/fresh --no-screenshots --json",
+        "nav-map open /tmp/nav-map-one-command-proof/fresh --no-browser --host 127.0.0.1 --port 3340"
+      ],
+      "routesProcessedBefore": 1,
+      "routesProcessedAfter": 2,
+      "routesVerified": ["/", "/about"],
+      "url": "http://127.0.0.1:3340/",
+      "http": "pass",
+      "browser": "pass",
+      "viewerEvidence": [
+        "Hierarchy",
+        "Map",
+        "Flow",
+        "Tree",
+        "Saved",
+        "Target",
+        "Audit",
+        "Search",
+        "Home",
+        "About"
+      ],
+      "browserWarnings": [],
+      "browserErrors": [],
+      "serverStopped": true
+    },
+    {
+      "id": "prcard",
+      "kind": "dogfood-curated-workflow",
+      "source": "packages/demo/public/prcard.workflow.json via a disposable project root",
+      "commands": [
+        "nav-map init /tmp/nav-map-one-command-proof/prcard --id prcard --name PRcard --manifest workflow.json --json",
+        "nav-map sync /tmp/nav-map-one-command-proof/prcard --no-screenshots --json",
+        "nav-map open /tmp/nav-map-one-command-proof/prcard --no-browser --host 127.0.0.1 --port 3341"
+      ],
+      "routesProcessed": 17,
+      "flowsProcessed": 4,
+      "url": "http://127.0.0.1:3341/",
+      "http": "pass",
+      "browser": "pass",
+      "viewerEvidence": [
+        "complete toolbar",
+        "flow selector",
+        "four named flows",
+        "workflow overview",
+        "personas",
+        "auth",
+        "health",
+        "evidence filters"
+      ],
+      "warnings": [
+        "Live screenshots were intentionally skipped; existing manifest evidence remained referenced."
+      ],
+      "browserWarnings": [],
+      "browserErrors": [],
+      "serverStopped": true
+    },
+    {
+      "id": "bleep",
+      "kind": "dogfood-scan-only",
+      "source": "/Users/neonwatty/Desktop/bleep-that-shit exposed read-only through a disposable symlink overlay",
+      "commands": [
+        "nav-map init /tmp/nav-map-one-command-proof/bleep --id bleep --name Bleep --json",
+        "nav-map sync /tmp/nav-map-one-command-proof/bleep --no-screenshots --json",
+        "nav-map open /tmp/nav-map-one-command-proof/bleep --no-browser --host 127.0.0.1 --port 3342"
+      ],
+      "routesProcessed": 37,
+      "edgesProcessed": 33,
+      "url": "http://127.0.0.1:3342/",
+      "http": "pass",
+      "browser": "pass",
+      "viewerEvidence": [
+        "complete toolbar",
+        "six route groups",
+        "Bleep",
+        "Studio",
+        "Auth",
+        "Audit",
+        "Search"
+      ],
+      "browserWarnings": [],
+      "browserErrors": [],
+      "serverStopped": true
+    },
+    {
+      "id": "seatify",
+      "kind": "dogfood-local-environment",
+      "source": "/Users/neonwatty/Desktop/seatify exposed read-only through a disposable symlink overlay",
+      "commands": [
+        "nav-map init /tmp/nav-map-one-command-proof/seatify --id seatify --name Seatify --base-url http://localhost:3002 --json",
+        "nav-map sync /tmp/nav-map-one-command-proof/seatify --environment local --no-screenshots --json",
+        "nav-map open /tmp/nav-map-one-command-proof/seatify --no-browser --host 127.0.0.1 --port 3343"
+      ],
+      "environmentId": "local",
+      "routesProcessed": 76,
+      "edgesProcessed": 20,
+      "url": "http://127.0.0.1:3343/",
+      "http": "pass",
+      "browser": "pass",
+      "viewerEvidence": [
+        "complete toolbar",
+        "scan overview",
+        "76 routes",
+        "Dashboard",
+        "Internal",
+        "Marketing",
+        "Audit",
+        "Search"
+      ],
+      "limitations": [
+        "The Seatify app server itself was not required because this proof intentionally exercised offline sync and the saved viewer path."
+      ],
+      "browserWarnings": [],
+      "browserErrors": [],
+      "serverStopped": true
+    }
+  ]
+}

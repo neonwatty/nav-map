@@ -1,0 +1,75 @@
+{
+  "version": "nav-map-release-pilot/1.0",
+  "date": "2026-07-13",
+  "status": "pass",
+  "releaseStrategy": {
+    "method": "semantic-release",
+    "commitType": "feat",
+    "expectedBump": "minor",
+    "manualVersionChange": false,
+    "rationale": "The repository derives package releases and release notes from conventional commits and has no checked-in changelog."
+  },
+  "packages": [
+    {
+      "name": "@neonwatty/nav-map",
+      "packedVersion": "0.1.0",
+      "tarball": "neonwatty-nav-map-0.1.0.tgz"
+    },
+    {
+      "name": "@neonwatty/nav-map-scanner",
+      "packedVersion": "0.1.0",
+      "tarball": "neonwatty-nav-map-scanner-0.1.0.tgz",
+      "viewerAssetsPresent": true
+    }
+  ],
+  "pilot": {
+    "kind": "external-disposable-app-overlay",
+    "sourceApp": "Bleep exposed read-only through an app-directory symlink",
+    "workspacePackageResolution": false,
+    "commands": [
+      "pnpm install --ignore-workspace",
+      "pnpm exec nav-map --help",
+      "pnpm exec nav-map init . --id bleep-external-pilot --name Bleep --json",
+      "pnpm exec nav-map init . --id bleep-external-pilot --name Bleep --json",
+      "pnpm exec nav-map sync . --no-screenshots --json",
+      "pnpm exec nav-map open . --no-browser --host 127.0.0.1 --port 3350"
+    ],
+    "initFirstRun": "created",
+    "initSecondRun": "reused",
+    "sync": {
+      "status": "passed",
+      "routes": 37,
+      "edges": 33,
+      "groups": 6,
+      "screenshotsRequested": false,
+      "failures": []
+    },
+    "http": {
+      "root": "pass",
+      "viewerJavaScript": "pass",
+      "graph": "pass"
+    },
+    "browser": {
+      "status": "pass",
+      "title": "Bleep · NavMap",
+      "completeViewerControls": [
+        "Hierarchy",
+        "Map",
+        "Flow",
+        "Tree",
+        "Saved",
+        "Target",
+        "Audit",
+        "Search"
+      ],
+      "warnings": [],
+      "errors": []
+    },
+    "serverStopped": true
+  },
+  "warnings": [
+    "pnpm ignored sharp's install script in the disposable pilot. The no-screenshot adoption path did not require sharp and completed successfully."
+  ],
+  "authStateIds": [],
+  "sensitiveDataInspected": false
+}

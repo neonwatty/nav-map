@@ -51,6 +51,10 @@
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",
     "@types/node": "^25.6.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.5"

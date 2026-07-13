@@ -1,0 +1,661 @@
+version: 2
+
+goal:
+  title: "NavMap One-Command Adoption"
+  slug: "nav-map-one-command-adoption"
+  kind: existing_plan
+  tranche: "Deliver the backward-compatible per-repository init, open, and sync workflow with the complete viewer and browser-verified dogfood proof."
+  status: done
+  oracle:
+    signal: "A clean fixture app and at least three dogfood apps complete init, open, and sync while the complete viewer passes browser verification."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Command receipts, focused and full verification, and browser walkthrough evidence mapped to the adoption workflow."
+  intake:
+    original_request: "Make a plan to make NavMap easier to pick up and use with web apps."
+    interpreted_outcome: "A developer can adopt and repeatedly use NavMap from any web-app repository through a one-command-oriented workflow without embedding a custom demo."
+    input_shape: existing_plan
+    audience: "Developers working across several web apps"
+    authority: approved
+    proof_type: demo
+    completion_proof: "A clean app plus three dogfood apps pass init -> open -> sync browser and compatibility verification."
+    likely_misfire: "Improving isolated internals while the convenient path still launches a reduced viewer or requires manual integration."
+    blind_spots_considered:
+      - "Schema migration and stale generated graph compatibility"
+      - "Environment URL portability and stable project identity"
+      - "Nested screenshot paths and artifact ownership"
+      - "Server lifecycle, port conflicts, and browser readiness"
+      - "Backward compatibility for current CLI and React consumers"
+    existing_plan_facts:
+      - "First milestone is per repository, not the multi-project hub."
+      - "Add init, open, and sync orchestration."
+      - "Open must use the complete NavMap viewer."
+      - "Preserve existing CLI commands and React package behavior."
+      - "Verify a fresh app and at least three dogfood apps in a browser."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/nav-map-one-command-adoption/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.0/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/nav-map-one-command-adoption"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the approved implementation plan against current repository evidence and specify the largest safe first vertical slice."
+    inputs:
+      - "Audit findings from the current conversation"
+      - "README.md"
+      - "packages/scanner"
+      - "packages/core"
+      - "packages/demo"
+      - "Existing CLI, viewer, workflow, and reliability tests"
+    constraints:
+      - "Read-only."
+      - "Preserve the user's approved sequencing and compatibility requirement."
+      - "Do not expand the first milestone into a multi-project hub."
+    expected_output:
+      - "Validated architecture and dependency order"
+      - "Exact first Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Risks and deferred work"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "The plan is sound if viewer consolidation precedes project orchestration. The current scanner ships only a hand-written force-graph template, while the complete React viewer already consumes standard NavMapGraph. The largest safe first slice is to bundle that real UI into the scanner, route serve through it, and add open as an additive entry point. This immediately improves adoption, preserves existing scan/workflow APIs, and creates the server/runtime foundation required by init and sync. Project contracts, environments, migrations, and dogfood proof remain later required packages."
+      worker_package:
+        objective: "Bundle the complete NavMap browser UI with the scanner, make serve use it, and add a backward-compatible open command that launches the same viewer for a graph file."
+        allowed_files:
+          - packages/scanner/package.json
+          - packages/scanner/tsup.config.ts
+          - "packages/scanner/src/viewer/**"
+          - packages/scanner/src/modes/serve.ts
+          - packages/scanner/src/commands/serve.ts
+          - packages/scanner/src/commands/open.ts
+          - packages/scanner/src/program.ts
+          - packages/scanner/src/index.ts
+          - packages/scanner/src/__tests__/serve.test.ts
+          - packages/scanner/src/__tests__/commands.test.ts
+          - scripts/package-consumer-smoke.mjs
+          - packages/demo/next-env.d.ts
+          - pnpm-lock.yaml
+        verify:
+          - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          - "pnpm --filter @neonwatty/nav-map-scanner build"
+          - "pnpm smoke:package-consumer"
+        stop_if:
+          - "The browser bundle cannot be shipped inside the scanner tarball without creating a new published package or changing the public React package API."
+          - "Implementation requires files outside allowed_files."
+          - "Existing serve file and port arguments cannot remain compatible."
+          - "Verification fails twice for the same unresolved reason."
+      evidence:
+        - packages/scanner/src/viewer/template.ts
+        - packages/scanner/src/modes/serve.ts
+        - packages/scanner/tsup.config.ts
+        - packages/scanner/package.json
+        - packages/core/src/components/NavMap.tsx
+        - scripts/package-consumer-smoke.mjs
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence:
+        - "Browser bundle mechanics and tarball contents must be proven by T002."
+        - "The goal still requires init, sync, portability hardening, fresh-app proof, and three dogfood walkthroughs."
+      required_board_updates:
+        - "Activate T002 with the supplied Worker package."
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Bundle the complete NavMap browser UI with the scanner, make serve use it, and add a backward-compatible open command that launches the same viewer for a graph file."
+    inputs:
+      - "T001 receipt"
+      - "The provisional architecture and planned work packages in goal.md"
+    constraints:
+      - "Do not implement the multi-project workspace hub."
+      - "Preserve current CLI and React package compatibility."
+      - "Keep the viewer generic and driven only by NavMapGraph data."
+      - "Serve nested screenshot paths safely and reject path traversal."
+      - "Do not introduce init, sync, or the project contract in this slice."
+    expected_output:
+      - "A working vertical slice that changes the adoption workflow"
+      - "Focused automated tests"
+      - "Command and browser receipts where applicable"
+    allowed_files:
+      - "packages/scanner/package.json"
+      - "packages/scanner/tsup.config.ts"
+      - "packages/scanner/src/viewer/**"
+      - "packages/scanner/src/modes/serve.ts"
+      - "packages/scanner/src/commands/serve.ts"
+      - "packages/scanner/src/commands/open.ts"
+      - "packages/scanner/src/program.ts"
+      - "packages/scanner/src/index.ts"
+      - "packages/scanner/src/__tests__/serve.test.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+      - "scripts/package-consumer-smoke.mjs"
+      - "packages/demo/next-env.d.ts"
+      - "pnpm-lock.yaml"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "pnpm --filter @neonwatty/nav-map-scanner build"
+      - "pnpm smoke:package-consumer"
+    stop_if:
+      - "The browser bundle cannot be shipped inside the scanner tarball without creating a new published package or changing the public React package API."
+      - "Implementation requires files outside allowed_files."
+      - "Existing serve file and port arguments cannot remain compatible."
+      - "Verification fails twice for the same unresolved reason."
+    receipt:
+      result: done
+      changed_files:
+        - packages/scanner/package.json
+        - packages/scanner/tsup.config.ts
+        - packages/scanner/src/viewer/app.tsx
+        - packages/scanner/src/viewer/app.css
+        - packages/scanner/src/viewer/template.ts
+        - packages/scanner/src/modes/serve.ts
+        - packages/scanner/src/commands/serve.ts
+        - packages/scanner/src/commands/open.ts
+        - packages/scanner/src/program.ts
+        - packages/scanner/src/index.ts
+        - packages/scanner/src/__tests__/serve.test.ts
+        - packages/scanner/src/__tests__/commands.test.ts
+        - scripts/package-consumer-smoke.mjs
+        - pnpm-lock.yaml
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "curl root, viewer asset, graph, and nested PRcard screenshot from http://192.168.1.34:3334"
+          status: pass
+        - cmd: "In-app browser walkthrough of packaged PRcard viewer controls, workflow overview, flow selector, audit, node, and screenshot"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "The scanner now bundles the complete React NavMap UI, serves it through the existing serve command, and exposes an additive open command with optional browser launch. The server safely serves nested screenshots with legacy leaf-directory fallback, rejects traversal, and reports its resolved ready URL. Focused scanner coverage, typecheck, browser build, packed-consumer verification, HTTP checks, and a real PRcard browser walkthrough all pass with no runtime warnings or errors."
+      deviations:
+        - "The first browser bundle is intentionally self-contained and approximately 2.1 MB before future optimization."
+        - "Project-aware open resolution is deferred until the project contract and init package."
+      remaining_blockers:
+        - "The full goal still requires project init, sync orchestration, migration and environment hardening, fresh-app proof, three dogfood walkthroughs, and onboarding updates."
+      verification_attempts: 2
+      stopped_because: null
+  - id: T003
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the first vertical slice against the oracle and expand the next largest safe work package from the approved sequence."
+    inputs:
+      - "T001 and T002 receipts"
+      - "Current diff and focused verification"
+      - "Remaining planned work packages in goal.md"
+    constraints:
+      - "Read-only."
+      - "Do not approve stopping while init, open, sync, migration, dogfood, or compatibility work remains safely actionable."
+      - "Prefer a coherent vertical package over helper-only tasks."
+    expected_output:
+      - "Slice verdict"
+      - "Next exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Updated risk and dependency notes"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "T002 satisfies the viewer-consolidation phase: the scanner tarball contains the full UI, serve and open share it, nested evidence is safe, and HTTP/browser/package proof is current. The next dependency is a portable repository contract plus idempotent init. This package should also teach open to resolve that contract so init produces an immediately understandable next step. Sync remains separate because generation dispatch, atomic writes, failure preservation, and receipts form their own coherent vertical slice."
+      worker_package:
+        objective: "Add the versioned repository project contract and an idempotent init command, then make open resolve initialized projects while retaining explicit graph-file support."
+        allowed_files:
+          - packages/scanner/src/modes/project.ts
+          - packages/scanner/src/commands/init.ts
+          - packages/scanner/src/commands/open.ts
+          - packages/scanner/src/program.ts
+          - packages/scanner/src/index.ts
+          - packages/scanner/src/__tests__/project.test.ts
+          - packages/scanner/src/__tests__/commands.test.ts
+          - scripts/package-consumer-smoke.mjs
+        verify:
+          - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/project.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          - "pnpm --filter @neonwatty/nav-map-scanner build"
+          - "pnpm smoke:package-consumer"
+        stop_if:
+          - "The contract needs secrets or auth storage contents."
+          - "Implementation requires overwriting an existing user configuration."
+          - "Implementation requires files outside allowed_files."
+          - "Verification fails twice for the same unresolved reason."
+      evidence:
+        - "T002 receipt"
+        - packages/scanner/dist/viewer/app.js
+        - packages/scanner/src/modes/serve.ts
+        - packages/scanner/src/commands/open.ts
+        - scripts/package-consumer-smoke.mjs
+        - "Browser proof at http://192.168.1.34:3334"
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence:
+        - "No initialized project contract exists yet."
+        - "Sync, migration hardening, multi-app dogfood, and onboarding proof remain required."
+      required_board_updates:
+        - "Activate T004."
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Add the versioned repository project contract and an idempotent init command, then make open resolve initialized projects while retaining explicit graph-file support."
+    inputs:
+      - "T003 receipt"
+      - "The project contract boundary in goal.md"
+      - "Existing scanner config, workflow, open, and command conventions"
+    constraints:
+      - "Do not implement sync in this package."
+      - "Do not overwrite an existing project contract or unrelated .nav-map files."
+      - "Keep project paths relative, portable, and confined to the initialized project root."
+      - "Do not store or print secrets or auth storage contents."
+      - "Explicit graph-file open behavior must remain supported."
+    expected_output:
+      - "Versioned project contract types, loading, validation, and path resolution"
+      - "Safe idempotent init command with agent-readable receipt"
+      - "Project-aware open resolution"
+      - "Focused tests for creation, reuse, conflicts, invalid paths, and open resolution"
+    allowed_files:
+      - "packages/scanner/src/modes/project.ts"
+      - "packages/scanner/src/commands/init.ts"
+      - "packages/scanner/src/commands/open.ts"
+      - "packages/scanner/src/program.ts"
+      - "packages/scanner/src/index.ts"
+      - "packages/scanner/src/__tests__/project.test.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+      - "scripts/package-consumer-smoke.mjs"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/project.test.ts packages/scanner/src/__tests__/commands.test.ts"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "pnpm --filter @neonwatty/nav-map-scanner build"
+      - "pnpm smoke:package-consumer"
+    stop_if:
+      - "The contract needs secrets or auth storage contents."
+      - "Implementation requires overwriting an existing user configuration."
+      - "Implementation requires files outside allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt:
+      result: done
+      changed_files:
+        - packages/scanner/src/modes/project.ts
+        - packages/scanner/src/commands/init.ts
+        - packages/scanner/src/commands/open.ts
+        - packages/scanner/src/program.ts
+        - packages/scanner/src/index.ts
+        - packages/scanner/src/__tests__/project.test.ts
+        - packages/scanner/src/__tests__/commands.test.ts
+        - scripts/package-consumer-smoke.mjs
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/project.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "NavMap now has a versioned, portable per-repository project contract and an idempotent init command. The contract records a stable project identity, repo, workflow-manifest, or URL source, named environments, and generated artifact locations without storing credentials. Init refuses conflicting configuration and preserves unrelated .nav-map data. Open resolves initialized project artifacts while retaining explicit nav-map.json support."
+      deviations:
+        - "Sync generation remains intentionally deferred to the next vertical slice."
+      remaining_blockers:
+        - "The full goal still requires atomic sync orchestration and receipts, migration and identity hardening, fresh-app proof, three dogfood walkthroughs, onboarding updates, and final audit."
+      verification_attempts: 2
+      stopped_because: null
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Add project-aware sync orchestration for repository, workflow-manifest, and URL sources with atomic graph publication and agent-readable receipts."
+    inputs:
+      - "T004 receipt"
+      - "Existing repo scan, URL crawl, and workflow generation APIs"
+      - "The atomic generation and receipt requirements in goal.md"
+    constraints:
+      - "Preserve the last good graph when generation fails."
+      - "Resolve all artifact and source paths inside the project root."
+      - "Refer to auth state by id only; never inspect or print storage contents."
+      - "Do not remove or alter the existing scan, crawl, or workflow commands."
+      - "Do not implement migration hardening or onboarding docs in this package."
+    expected_output:
+      - "A sync command that dispatches all three project source types"
+      - "Named-environment and screenshot control"
+      - "Atomic graph replacement with latest-sync receipt"
+      - "Focused success, environment, auth-id, and failure-preservation tests"
+    allowed_files:
+      - "packages/scanner/src/modes/project.ts"
+      - "packages/scanner/src/modes/sync.ts"
+      - "packages/scanner/src/commands/sync.ts"
+      - "packages/scanner/src/program.ts"
+      - "packages/scanner/src/index.ts"
+      - "packages/scanner/src/__tests__/sync.test.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+      - "scripts/package-consumer-smoke.mjs"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/sync.test.ts packages/scanner/src/__tests__/commands.test.ts"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "pnpm --filter @neonwatty/nav-map-scanner build"
+      - "pnpm smoke:package-consumer"
+      - "git diff --check"
+    stop_if:
+      - "Atomic graph publication cannot be achieved without changing existing generator APIs outside allowed_files."
+      - "Auth handling would require reading or reporting storage-state contents."
+      - "Implementation requires files outside allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt:
+      result: done
+      changed_files:
+        - packages/scanner/src/modes/project.ts
+        - packages/scanner/src/modes/sync.ts
+        - packages/scanner/src/commands/sync.ts
+        - packages/scanner/src/program.ts
+        - packages/scanner/src/index.ts
+        - packages/scanner/src/__tests__/sync.test.ts
+        - packages/scanner/src/__tests__/commands.test.ts
+        - scripts/package-consumer-smoke.mjs
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/sync.test.ts packages/scanner/src/__tests__/commands.test.ts"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner lint"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Initialized projects can now run nav-map sync across repository, workflow-manifest, and URL sources. Sync selects named environments, uses auth state ids only for workflow generation, controls screenshot capture, atomically publishes the graph, writes an agent-readable latest-sync receipt, and preserves the last good graph on generation failure. A real repository test proves that adding a route and syncing again updates the generated graph."
+      deviations:
+        - "Authenticated sync is limited to workflow projects because those manifests already provide the safe auth-state id-to-storage mapping."
+        - "Lint passed with max-lines warnings in existing large files plus the new project module; there were no lint errors."
+      remaining_blockers:
+        - "The full goal still requires migration and stable viewer-identity hardening, lifecycle edge-case coverage, fresh-app and three-app browser proof, onboarding updates, full compatibility verification, and final audit."
+      verification_attempts: 2
+      stopped_because: null
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Harden graph migration, stable project/environment identity, viewer validation, and port-collision behavior for the adoption workflow."
+    inputs:
+      - "T005 receipt"
+      - "Observed blank legacy-flow risk and mutable graph preference scope"
+      - "Existing core validation, viewer state, sync metadata, and serve lifecycle code"
+    constraints:
+      - "Keep graph version 1.0 and all existing public APIs backward compatible."
+      - "Legacy id/label flow shapes must produce actionable validation instead of blank UI."
+      - "Stable identity metadata must remain generic and optional for legacy consumers."
+      - "Existing explicit serve port behavior remains compatible; fallback behavior must be opt-in for open."
+      - "Do not add app-specific migration logic."
+    expected_output:
+      - "Flow shape and node-reference validation in graphs and workflow manifests"
+      - "Viewer rejection of malformed graphs with actionable errors"
+      - "Project/environment-scoped viewer preferences backed by sync metadata"
+      - "Bounded port fallback for project open and focused lifecycle tests"
+    allowed_files:
+      - "packages/core/src/types.ts"
+      - "packages/core/src/utils/validateGraph.ts"
+      - "packages/core/src/utils/validateGraph.test.ts"
+      - "packages/core/src/workflowManifest.ts"
+      - "packages/core/src/workflowManifest.test.ts"
+      - "packages/core/src/components/NavMap.tsx"
+      - "packages/core/src/components/NavMap.test.tsx"
+      - "packages/scanner/src/modes/sync.ts"
+      - "packages/scanner/src/modes/serve.ts"
+      - "packages/scanner/src/commands/open.ts"
+      - "packages/scanner/src/viewer/app.tsx"
+      - "packages/scanner/src/__tests__/sync.test.ts"
+      - "packages/scanner/src/__tests__/serve.test.ts"
+      - "packages/scanner/src/__tests__/commands.test.ts"
+    verify:
+      - "pnpm --filter @neonwatty/nav-map test"
+      - "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/sync.test.ts packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts"
+      - "pnpm --filter @neonwatty/nav-map typecheck"
+      - "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+      - "pnpm --filter @neonwatty/nav-map-scanner build"
+      - "git diff --check"
+    stop_if:
+      - "Stable identity requires changing required fields for legacy graph consumers."
+      - "Port fallback cannot be bounded without changing existing serve semantics."
+      - "Implementation requires files outside allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt:
+      result: done
+      changed_files:
+        - packages/core/src/types.ts
+        - packages/core/src/utils/validateGraph.ts
+        - packages/core/src/utils/validateGraph.test.ts
+        - packages/core/src/workflowManifest.ts
+        - packages/core/src/workflowManifest.test.ts
+        - packages/core/src/components/NavMap.tsx
+        - packages/core/src/components/NavMap.test.tsx
+        - packages/scanner/src/modes/sync.ts
+        - packages/scanner/src/modes/serve.ts
+        - packages/scanner/src/commands/open.ts
+        - packages/scanner/src/viewer/app.tsx
+        - packages/scanner/src/__tests__/sync.test.ts
+        - packages/scanner/src/__tests__/serve.test.ts
+      commands:
+        - cmd: "pnpm --filter @neonwatty/nav-map test"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner test"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner typecheck"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map build"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner build"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "The adoption path now validates graph and manifest flows, rejects legacy id/label flow shapes with actionable migration guidance, validates generated graphs before atomic publication, and shows malformed graph details in the bundled viewer. Sync adds optional stable project and environment metadata, and the viewer uses that identity for persistent state. Open opts into a bounded consecutive-port fallback while explicit serve behavior stays compatible."
+      deviations: []
+      remaining_blockers:
+        - "The full goal still requires a clean fixture plus three dogfood init/open/sync browser walkthroughs, primary-path README and skill onboarding, final full verification, and oracle audit."
+      verification_attempts: 3
+      stopped_because: null
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Prove the complete init -> sync -> open workflow on a clean app and three representative dogfood apps, then make that workflow the primary onboarding path."
+    inputs:
+      - "T006 receipt"
+      - "Bundled PRcard workflow, Bleep scan dataset/source, and Seatify local dataset/source"
+      - "Existing README and skills/nav-map/SKILL.md"
+    constraints:
+      - "Use disposable project roots; do not modify external app repositories."
+      - "Keep app-specific details in fixtures, manifests, screenshots, docs, or receipts."
+      - "Do not inspect auth storage contents or print secrets/raw environment values."
+      - "Verify each exact local viewer URL with curl and the in-app browser immediately before recording it."
+      - "Stop every proof server after its browser walkthrough."
+    expected_output:
+      - "Fresh Next-style fixture receipt showing a changed route after sync"
+      - "Three dogfood receipts covering curated workflow, scan-only, and named local environment paths"
+      - "Browser evidence that each uses the complete viewer without runtime errors"
+      - "README and NavMap skill led by init, sync, and open with low-level commands retained as advanced paths"
+    allowed_files:
+      - "README.md"
+      - "skills/nav-map/SKILL.md"
+      - "docs/goals/nav-map-one-command-adoption/notes/**"
+    verify:
+      - "pnpm smoke:skill"
+      - "pnpm reliability:agent"
+      - "pnpm smoke:package-consumer"
+      - "pnpm test"
+      - "pnpm typecheck"
+      - "pnpm build"
+      - "git diff --check"
+    stop_if:
+      - "A proof requires modifying an external application repository."
+      - "A browser target requires unavailable credentials and no safe offline fixture path exists."
+      - "A local URL fails curl or renders a framework/runtime error after two repair attempts."
+      - "Implementation requires product files outside allowed_files."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - skills/nav-map/SKILL.md
+        - docs/goals/nav-map-one-command-adoption/notes/T007-browser-proof.json
+      commands:
+        - cmd: "Disposable fresh fixture: nav-map init -> sync -> add /about -> sync -> open; curl and in-app browser at http://127.0.0.1:3340/"
+          status: pass
+        - cmd: "Disposable PRcard workflow project: nav-map init --manifest -> sync --no-screenshots -> open; curl and in-app browser at http://127.0.0.1:3341/"
+          status: pass
+        - cmd: "Read-only Bleep symlink overlay: nav-map init -> sync --no-screenshots -> open; curl and in-app browser at http://127.0.0.1:3342/"
+          status: pass
+        - cmd: "Read-only Seatify symlink overlay: nav-map init --base-url -> sync --environment local --no-screenshots -> open; curl and in-app browser at http://127.0.0.1:3343/"
+          status: pass
+        - cmd: "pnpm smoke:skill"
+          status: pass
+        - cmd: "pnpm reliability:agent"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+        - cmd: "pnpm test"
+          status: pass
+        - cmd: "pnpm typecheck"
+          status: pass
+        - cmd: "pnpm build"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "The full repository workflow is browser-proven on a clean app and three representative dogfood apps. The fresh fixture grew from one to two routes after sync. PRcard exercised a 17-route, four-flow curated workflow; Bleep exercised a 37-route scan-only project; Seatify exercised a 76-route named local environment. Every exact URL passed curl, rendered the complete toolbar/viewer, reported no browser warnings or errors, and was stopped afterward. README and the NavMap skill now lead with init, sync, and open while retaining low-level commands as advanced paths."
+      deviations:
+        - "Dogfood project contracts lived in disposable roots with read-only symlink overlays so external repositories were not modified."
+        - "Browser proof intentionally used --no-screenshots; PRcard retained manifest evidence and the scan-only proofs verified route rendering without live app servers."
+      remaining_blockers:
+        - "Only the final oracle-backed Judge/PM audit remains."
+      verification_attempts: 1
+      stopped_because: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit all receipts and live evidence against the full init -> open -> sync adoption oracle."
+    inputs:
+      - "All completed task receipts"
+      - "Final verification commands"
+      - "Browser walkthrough receipts"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if a fresh app or fewer than three dogfood apps were browser-verified."
+      - "Reject completion if current scanner commands or React package compatibility regressed."
+      - "Reject completion if open still serves a reduced viewer."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to each acceptance criterion"
+      - "Missing evidence or next task"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "The original adoption outcome is complete. A clean repository and three representative dogfood apps each completed init, sync, and open from disposable roots. The clean fixture proved repeatable refresh by adding /about and growing from one route to two. PRcard proved curated workflow behavior in the complete viewer; Bleep proved scan-only adoption against a real app source; Seatify proved a named local environment against a real app source. Every exact viewer URL passed curl immediately before an in-app browser walkthrough, exposed the complete viewer controls, produced no browser warnings or errors, and was stopped afterward. Full core/scanner tests, typechecks, production build, package-consumer smoke, skill smoke, and reliability gate all pass. The convenient path is documented first, legacy scanner commands and explicit graph open/serve remain available, and no React API was removed."
+      acceptance_criteria:
+        - criterion: "Clean app completes init -> sync -> open and reflects a route change"
+          status: pass
+          evidence: "T007 browser proof: fresh fixture synced 1 route, added /about, resynced 2 routes, and rendered Home/About at the curl-verified viewer URL."
+        - criterion: "At least three dogfood apps complete the same repository workflow"
+          status: pass
+          evidence: "T007 browser proof: PRcard 17 routes/4 flows, Bleep 37 routes/33 edges, and Seatify 76 routes/20 edges under environment local."
+        - criterion: "Open uses the complete viewer"
+          status: pass
+          evidence: "T002 and T007 browser evidence shows Hierarchy, Map, Flow, Tree, Saved/Target, Audit, Search, PRcard flow selection, and workflow overview from the packaged scanner viewer."
+        - criterion: "Project workflow is safe, portable, repeatable, and failure-aware"
+          status: pass
+          evidence: "T004-T006 tests cover versioned relative contracts, idempotent conflict-safe init, named environments, auth id only, atomic graph publication, last-good preservation, truthful receipts, graph/flow migration validation, stable project identity, and bounded port fallback."
+        - criterion: "Existing scanner and React consumers remain compatible"
+          status: pass
+          evidence: "All 309 core and 189 scanner tests pass; root typecheck/build, packed ESM/CJS consumer smoke, existing command help, skill smoke, and reliability gate pass. New graph identity fields are optional and commands/APIs are additive."
+        - criterion: "The convenient path is primary onboarding"
+          status: pass
+          evidence: "README Quick Start and skills/nav-map/SKILL.md now begin with init, sync, and open; lower-level scan/crawl/workflow/probe/diff/serve remain documented as advanced paths."
+      evidence:
+        - notes/T002-receipt.json
+        - notes/T004-receipt.json
+        - notes/T005-receipt.json
+        - notes/T006-receipt.json
+        - notes/T007-receipt.json
+        - notes/T007-browser-proof.json
+        - "pnpm smoke:skill"
+        - "pnpm reliability:agent"
+        - "pnpm smoke:package-consumer"
+        - "pnpm test"
+        - "pnpm typecheck"
+        - "pnpm build"
+        - "git diff --check"
+      worker_package: null
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence: []
+      required_board_updates:
+        - "Mark T999 done and the goal achieved."
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

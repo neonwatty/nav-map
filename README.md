@@ -23,25 +23,56 @@ Interactive navigation map visualization for Next.js apps and websites. Scan you
 
 ## Quick Start
 
-### 1. Scan your project
+Use NavMap from any web-app repository without adding a viewer page to that app:
 
 ```bash
-# Scan a Next.js project directory
-npx @neonwatty/nav-map-scanner scan ./my-next-app -o public/nav-map.json
+# Run once in the web-app repository
+npx @neonwatty/nav-map-scanner init .
 
-# Or crawl a live URL
-npx @neonwatty/nav-map-scanner crawl https://mysite.com -o public/nav-map.json
+# Refresh the map, then open the complete local viewer
+npx @neonwatty/nav-map-scanner sync
+npx @neonwatty/nav-map-scanner open
 ```
 
-> **Note:** First run downloads Playwright's Chromium browser (~200-400 MB). Subsequent runs use the cached browser.
+`init` creates a portable `.nav-map/project.json` plus ignored generated/auth directories. It is
+safe to run again: matching configuration is reused and conflicting options are never silently
+overwritten. `sync` writes `.nav-map/generated/nav-map.json` atomically, preserves the last good
+graph after a failed refresh, and records `.nav-map/generated/receipts/latest-sync.json`. `open`
+resolves those artifacts and launches the same complete viewer used by the React package.
 
-### 2. Install the component
+For a curated workflow manifest or a live site, choose the source during initialization:
+
+```bash
+# App-specific personas, flows, auth-state ids, and evidence stay in the manifest
+npx @neonwatty/nav-map-scanner init . --manifest docs/app.workflow.json \
+  --base-url http://localhost:3000
+
+# Or crawl a URL instead of scanning repository routes
+npx @neonwatty/nav-map-scanner init . --url https://example.com
+
+# Select a named project environment when the project defines more than one
+npx @neonwatty/nav-map-scanner sync --environment local
+```
+
+Use `--no-screenshots` for a fast offline refresh. Use `--auth-state <id>` only with workflow
+projects; receipts include the id, never storage-state contents. The first live screenshot or URL
+crawl may download Playwright's Chromium browser (~200–400 MB); later runs use its cache.
+
+The existing `scan`, `crawl`, `workflow`, `probe`, `diff`, and file-oriented `serve` commands remain
+available for advanced and CI workflows.
+
+## Optional React Embedding
+
+Embed NavMap in your application only when you want a product-owned viewer route. The repository
+workflow above does not require this integration.
+
+### 1. Install the component
 
 ```bash
 npm install @neonwatty/nav-map
 ```
 
-### 3. Configure Next.js
+### 2. Configure Next.js
 
 Add the package to `transpilePackages` in your `next.config.ts`:
 
@@ -53,7 +84,7 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-### 4. Render the map
+### 3. Render the map
 
 The component requires client-side rendering. Use `dynamic` import with `ssr: false`:
 

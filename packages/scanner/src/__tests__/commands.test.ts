@@ -10,7 +10,11 @@ import { createCrawlCommand } from '../commands/crawl.js';
 import { createDiffCommand } from '../commands/diff.js';
 import { createDiagnosticsCommand } from '../commands/diagnostics.js';
 import { createGenerateCommand } from '../commands/generate.js';
+import { createInitCommand } from '../commands/init.js';
+import { createOpenCommand } from '../commands/open.js';
 import { createProbeCommand } from '../commands/probe.js';
+import { createServeCommand } from '../commands/serve.js';
+import { createSyncCommand } from '../commands/sync.js';
 import { createWorkflowCommand } from '../commands/workflow.js';
 import { createProgram } from '../program.js';
 
@@ -40,6 +44,9 @@ describe('scanner command registration', () => {
       'generate',
       'check-config',
       'diagnostics',
+      'init',
+      'sync',
+      'open',
       'serve',
       'ingest',
       'context',
@@ -62,6 +69,9 @@ describe('scanner command registration', () => {
       'generate',
       'check-config',
       'diagnostics',
+      'init',
+      'sync',
+      'open',
       'serve',
       'ingest',
       'context',
@@ -100,6 +110,58 @@ describe('scanner command registration', () => {
     );
     expect(command.registeredArguments.map(argument => argument.name())).toEqual(['file']);
     expect(optionFlags(command)).toEqual(['--json', '--summary']);
+  });
+
+  it('registers project adoption and backward-compatible serve options', () => {
+    const initCommand = createInitCommand();
+    const syncCommand = createSyncCommand();
+    const openCommand = createOpenCommand();
+    const serveCommand = createServeCommand();
+
+    expect(initCommand.name()).toBe('init');
+    expect(initCommand.registeredArguments.map(argument => argument.name())).toEqual(['dir']);
+    expect(optionFlags(initCommand)).toEqual([
+      '--id <id>',
+      '--name <name>',
+      '--manifest <path>',
+      '--url <url>',
+      '--base-url <url>',
+      '--json',
+    ]);
+    expect(initCommand.getOptionValue('dir')).toBeUndefined();
+
+    expect(syncCommand.name()).toBe('sync');
+    expect(syncCommand.registeredArguments.map(argument => argument.name())).toEqual(['dir']);
+    expect(optionFlags(syncCommand)).toEqual([
+      '-e, --environment <id>',
+      '--auth-state <id>',
+      '--no-screenshots',
+      '--max-pages <count>',
+      '--json',
+    ]);
+    expect(syncCommand.getOptionValue('screenshots')).toBe(true);
+    expect(syncCommand.getOptionValue('maxPages')).toBe('50');
+
+    expect(openCommand.name()).toBe('open');
+    expect(openCommand.description()).toContain('complete local NavMap viewer');
+    expect(openCommand.registeredArguments.map(argument => argument.name())).toEqual(['target']);
+    expect(optionFlags(openCommand)).toEqual([
+      '-p, --port <port>',
+      '--host <host>',
+      '--screenshot-dir <dir>',
+      '--no-browser',
+    ]);
+    expect(openCommand.getOptionValue('port')).toBe('3333');
+    expect(openCommand.getOptionValue('browser')).toBe(true);
+
+    expect(serveCommand.name()).toBe('serve');
+    expect(serveCommand.registeredArguments.map(argument => argument.name())).toEqual(['file']);
+    expect(optionFlags(serveCommand)).toEqual([
+      '-p, --port <port>',
+      '--host <host>',
+      '--screenshot-dir <dir>',
+    ]);
+    expect(serveCommand.getOptionValue('port')).toBe('3333');
   });
 
   it('registers check-config command options', () => {

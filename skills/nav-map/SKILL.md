@@ -14,6 +14,28 @@ NavMap has two installable pieces:
 - `@neonwatty/nav-map`: React viewer and workflow types.
 - `@neonwatty/nav-map-scanner`: `nav-map` CLI for context, probes, diffs, screenshots, and graph generation.
 
+## Default Repository Loop
+
+Prefer the project workflow unless the user explicitly needs a low-level scanner primitive:
+
+```bash
+# Once per web-app repository
+nav-map init .
+
+# Repeat whenever routes or workflow intent change
+nav-map sync
+nav-map open
+```
+
+For curated intent, initialize with `--manifest <path>`. For a live crawl, use `--url <url>`.
+Add `--base-url <url>` to create the initial `local` environment, and select it later with
+`sync --environment local`. Use `--no-screenshots` for safe offline generation. `init` is
+idempotent and refuses conflicting configuration; `sync` preserves the last good graph and writes
+a receipt; `open` launches the complete viewer without requiring React integration in the app.
+
+Treat `scan`, `crawl`, `workflow`, `probe`, `diff`, and `serve` as advanced primitives for custom
+automation, audit evidence, or legacy file-oriented workflows.
+
 ## Safety Rules
 
 - Do not inspect, print, commit, or summarize `.nav-map/auth/*.storage.json` or other Playwright auth storage contents.
@@ -24,7 +46,7 @@ NavMap has two installable pieces:
 
 ## Pick The Workflow
 
-- **Existing app routes**: create a workflow manifest with `nodes`, `edges`, and `flows`, then run `context`, `probe`, `diff`, and `workflow`.
+- **Existing app routes**: run `init`, `sync`, and `open`; add a workflow manifest when product intent matters beyond discovered routes.
 - **HTML mockups or prototype screens**: add them as `surfaces`; keep screenshots or live HTML paths in manifest metadata. Use the schema-supported surface types: `screenshot`, `generated-image`, `html-mockup`, `video`, `keyframe`, `component`, and `concept-screen`.
 - **Screenshots only**: attach `screenshot` paths to route nodes or surfaces, then generate `nav-map.json` without live capture.
 - **Live app QA**: run `probe --contract`, then `diff` against the manifest.
@@ -32,9 +54,10 @@ NavMap has two installable pieces:
 
 ## Agent Loop
 
-Start with inspect and context before touching a browser:
+For a workflow project, initialize once and inspect/context before touching a browser:
 
 ```bash
+nav-map init . --manifest <manifest> --base-url <url>
 nav-map workflow <manifest> --inspect --contract
 nav-map context <manifest> --format json --contract
 ```
@@ -58,11 +81,12 @@ nav-map probe <manifest> --base-url <url> --auth-state <id> --contract
 To generate a graph and capture route screenshots:
 
 ```bash
-nav-map workflow <manifest> \
-  --base-url <url> \
-  --screenshot-dir public/screenshots/workflow \
-  -o public/nav-map.json
+nav-map sync --environment local
+nav-map open
 ```
+
+Use the lower-level `workflow <manifest> --base-url ... --screenshot-dir ... -o ...` command when
+the output must go to a custom path outside the project artifact contract.
 
 Use `--no-screenshots` when a manifest is screenshot-backed or prototype-only and no live app should be loaded.
 

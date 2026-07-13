@@ -8,11 +8,14 @@ import { createDiffCommand } from './commands/diff.js';
 import { createDiagnosticsCommand } from './commands/diagnostics.js';
 import { createGenerateCommand } from './commands/generate.js';
 import { createIngestCommand } from './commands/ingest.js';
+import { createInitCommand } from './commands/init.js';
+import { createOpenCommand } from './commands/open.js';
 import { createProbeCommand } from './commands/probe.js';
 import { createRecordCommand } from './commands/record.js';
 import { createRecordFlowsCommand } from './commands/record-flows.js';
 import { createScanCommand } from './commands/scan.js';
 import { createServeCommand } from './commands/serve.js';
+import { createSyncCommand } from './commands/sync.js';
 import { createWorkflowCommand } from './commands/workflow.js';
 
 export function createProgram(program = new Command()): Command {
@@ -53,6 +56,9 @@ Preview note:
   program.addCommand(createGenerateCommand());
   program.addCommand(createCheckConfigCommand());
   program.addCommand(createDiagnosticsCommand());
+  program.addCommand(createInitCommand());
+  program.addCommand(createSyncCommand());
+  program.addCommand(createOpenCommand());
   program.addCommand(createServeCommand());
   program.addCommand(createIngestCommand());
   program.addCommand(createContextCommand());

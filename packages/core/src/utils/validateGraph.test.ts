@@ -153,6 +153,43 @@ describe('validateGraph', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('validates flow shape and node references with actionable legacy guidance', () => {
+    const legacy = validateGraph({
+      ...validGraph,
+      flows: [{ id: 'checkout', label: 'Checkout', steps: ['n1', 'missing'] }],
+    });
+    expect(legacy.valid).toBe(false);
+    expect(legacy.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'flows.0.name',
+          message: expect.stringContaining('Legacy "label" detected; rename it to "name"'),
+        }),
+        expect.objectContaining({
+          field: 'flows.0.steps.1',
+          message: 'step references unknown node "missing"',
+        }),
+      ])
+    );
+
+    expect(
+      validateGraph({ ...validGraph, flows: [{ name: 'Home', steps: ['n1'], partial: true }] })
+        .valid
+    ).toBe(true);
+  });
+
+  it('validates optional stable project identity metadata', () => {
+    expect(
+      validateGraph({
+        ...validGraph,
+        meta: { ...validGraph.meta, projectId: 'storefront', environmentId: 'staging' },
+      }).valid
+    ).toBe(true);
+    expect(
+      validateGraph({ ...validGraph, meta: { ...validGraph.meta, projectId: '' } }).errors
+    ).toContainEqual(expect.objectContaining({ field: 'meta.projectId' }));
+  });
+
   it('collects multiple errors', () => {
     const result = validateGraph({ version: '2.0' } as never);
     expect(result.errors.length).toBeGreaterThan(1);

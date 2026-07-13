@@ -1,0 +1,44 @@
+{
+  "result": "done",
+  "task_id": "T004",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "changed_files": [
+    "packages/scanner/src/modes/project.ts",
+    "packages/scanner/src/commands/init.ts",
+    "packages/scanner/src/commands/open.ts",
+    "packages/scanner/src/program.ts",
+    "packages/scanner/src/index.ts",
+    "packages/scanner/src/__tests__/project.test.ts",
+    "packages/scanner/src/__tests__/commands.test.ts",
+    "scripts/package-consumer-smoke.mjs"
+  ],
+  "commands": [
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/project.test.ts packages/scanner/src/__tests__/commands.test.ts",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner build",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm smoke:package-consumer",
+      "status": "pass"
+    },
+    {
+      "cmd": "git diff --check",
+      "status": "pass"
+    }
+  ],
+  "summary": "NavMap now has a versioned, portable per-repository project contract and an idempotent init command. The contract records a stable project identity, repo, workflow-manifest, or URL source, named environments, and generated artifact locations without storing credentials. Init refuses conflicting configuration and preserves unrelated .nav-map data. Open resolves initialized project artifacts while retaining explicit nav-map.json support.",
+  "deviations": ["Sync generation remains intentionally deferred to the next vertical slice."],
+  "remaining_blockers": [
+    "The full goal still requires atomic sync orchestration and receipts, migration and identity hardening, fresh-app proof, three dogfood walkthroughs, onboarding updates, and final audit."
+  ],
+  "verification_attempts": 2,
+  "stopped_because": null
+}

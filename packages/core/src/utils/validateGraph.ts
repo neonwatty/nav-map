@@ -52,12 +52,12 @@ export function validateGraph(graph: unknown): GraphValidationResult {
     validateGroups(g.groups, groupIds, errors);
   }
 
+  const nodeIds = new Set<string>();
   if (!Array.isArray(g.nodes)) {
     errors.push({ field: 'nodes', message: 'nodes must be an array' });
   } else if (g.nodes.length === 0) {
     errors.push({ field: 'nodes', message: 'nodes array must not be empty' });
   } else {
-    const nodeIds = new Set<string>();
     validateNodes(g.nodes, groupIds, nodeIds, errors);
 
     if (Array.isArray(g.edges)) {
@@ -67,6 +67,14 @@ export function validateGraph(graph: unknown): GraphValidationResult {
 
   if (!Array.isArray(g.edges)) {
     errors.push({ field: 'edges', message: 'edges must be an array' });
+  }
+
+  if (g.flows !== undefined) {
+    if (!Array.isArray(g.flows)) {
+      errors.push({ field: 'flows', message: 'flows must be an array when provided' });
+    } else {
+      validateFlows(g.flows, nodeIds, errors);
+    }
   }
 
   return { valid: errors.length === 0, errors };
@@ -84,6 +92,12 @@ function validateMeta(meta: Record<string, unknown>, errors: GraphValidationErro
     });
   }
 
+  for (const field of ['projectId', 'environmentId'] as const) {
+    if (meta[field] !== undefined && !isNonEmptyString(meta[field])) {
+      errors.push({ field: `meta.${field}`, message: `meta.${field} must be a non-empty string` });
+    }
+  }
+
   if (!GENERATED_BY_VALUES.has(String(meta.generatedBy))) {
     errors.push({
       field: 'meta.generatedBy',
@@ -97,6 +111,62 @@ function validateMeta(meta: Record<string, unknown>, errors: GraphValidationErro
       message: `meta.framework must be one of: ${Array.from(FRAMEWORK_VALUES).join(', ')}`,
     });
   }
+}
+
+function validateFlows(
+  flows: unknown[],
+  nodeIds: Set<string>,
+  errors: GraphValidationError[]
+): void {
+  flows.forEach((flow, index) => {
+    const record = asRecord(flow);
+    if (!record) {
+      errors.push({ field: `flows.${index}`, message: 'flow must be an object' });
+      return;
+    }
+
+    if (!isNonEmptyString(record.name)) {
+      const legacyField = isNonEmptyString(record.label)
+        ? 'label'
+        : isNonEmptyString(record.id)
+          ? 'id'
+          : null;
+      errors.push({
+        field: `flows.${index}.name`,
+        message: legacyField
+          ? `name must be a non-empty string. Legacy "${legacyField}" detected; rename it to "name".`
+          : 'name must be a non-empty string',
+      });
+    }
+
+    if (!Array.isArray(record.steps) || record.steps.length === 0) {
+      errors.push({
+        field: `flows.${index}.steps`,
+        message: 'steps must be a non-empty array of node ids',
+      });
+    } else {
+      record.steps.forEach((step, stepIndex) => {
+        if (!isNonEmptyString(step)) {
+          errors.push({
+            field: `flows.${index}.steps.${stepIndex}`,
+            message: 'step must be a non-empty node id',
+          });
+        } else if (!nodeIds.has(step)) {
+          errors.push({
+            field: `flows.${index}.steps.${stepIndex}`,
+            message: `step references unknown node "${step}"`,
+          });
+        }
+      });
+    }
+
+    if (record.partial !== undefined && typeof record.partial !== 'boolean') {
+      errors.push({
+        field: `flows.${index}.partial`,
+        message: 'partial must be a boolean when provided',
+      });
+    }
+  });
 }
 
 function validateGroups(

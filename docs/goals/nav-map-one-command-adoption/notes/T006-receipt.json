@@ -1,0 +1,61 @@
+{
+  "result": "done",
+  "task_id": "T006",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "changed_files": [
+    "packages/core/src/types.ts",
+    "packages/core/src/utils/validateGraph.ts",
+    "packages/core/src/utils/validateGraph.test.ts",
+    "packages/core/src/workflowManifest.ts",
+    "packages/core/src/workflowManifest.test.ts",
+    "packages/core/src/components/NavMap.tsx",
+    "packages/core/src/components/NavMap.test.tsx",
+    "packages/scanner/src/modes/sync.ts",
+    "packages/scanner/src/modes/serve.ts",
+    "packages/scanner/src/commands/open.ts",
+    "packages/scanner/src/viewer/app.tsx",
+    "packages/scanner/src/__tests__/sync.test.ts",
+    "packages/scanner/src/__tests__/serve.test.ts"
+  ],
+  "commands": [
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map test",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner test",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map typecheck",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map build",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner build",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm smoke:package-consumer",
+      "status": "pass"
+    },
+    {
+      "cmd": "git diff --check",
+      "status": "pass"
+    }
+  ],
+  "summary": "The adoption path now validates graph and manifest flows, rejects legacy id/label flow shapes with actionable migration guidance, validates generated graphs before atomic publication, and shows malformed graph details in the bundled viewer. Sync adds optional stable project and environment metadata, and the viewer uses that identity for persistent state. Open opts into a bounded consecutive-port fallback while explicit serve behavior stays compatible.",
+  "deviations": [],
+  "remaining_blockers": [
+    "The full goal still requires a clean fixture plus three dogfood init/open/sync browser walkthroughs, primary-path README and skill onboarding, final full verification, and oracle audit."
+  ],
+  "verification_attempts": 3,
+  "stopped_because": null
+}

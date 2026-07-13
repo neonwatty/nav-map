@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .next/
+.nav-map/
 pnpm-lock.yaml
 *.md
 docs/goals/**/.goalbuddy-board/

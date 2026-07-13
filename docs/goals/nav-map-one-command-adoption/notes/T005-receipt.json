@@ -1,0 +1,51 @@
+{
+  "result": "done",
+  "task_id": "T005",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "changed_files": [
+    "packages/scanner/src/modes/project.ts",
+    "packages/scanner/src/modes/sync.ts",
+    "packages/scanner/src/commands/sync.ts",
+    "packages/scanner/src/program.ts",
+    "packages/scanner/src/index.ts",
+    "packages/scanner/src/__tests__/sync.test.ts",
+    "packages/scanner/src/__tests__/commands.test.ts",
+    "scripts/package-consumer-smoke.mjs"
+  ],
+  "commands": [
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/sync.test.ts packages/scanner/src/__tests__/commands.test.ts",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner lint",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner build",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm smoke:package-consumer",
+      "status": "pass"
+    },
+    {
+      "cmd": "git diff --check",
+      "status": "pass"
+    }
+  ],
+  "summary": "Initialized projects can now run nav-map sync across repository, workflow-manifest, and URL sources. Sync selects named environments, uses auth state ids only for workflow generation, controls screenshot capture, atomically publishes the graph, writes an agent-readable latest-sync receipt, and preserves the last good graph on generation failure. A real repository test proves that adding a route and syncing again updates the generated graph.",
+  "deviations": [
+    "Authenticated sync is limited to workflow projects because those manifests already provide the safe auth-state id-to-storage mapping.",
+    "Lint passed with max-lines warnings in existing large files plus the new project module; there were no lint errors."
+  ],
+  "remaining_blockers": [
+    "The full goal still requires migration and stable viewer-identity hardening, lifecycle edge-case coverage, fresh-app and three-app browser proof, onboarding updates, full compatibility verification, and final audit."
+  ],
+  "verification_attempts": 2,
+  "stopped_because": null
+}
