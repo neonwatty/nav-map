@@ -41,22 +41,22 @@
   },
   "dependencies": {
     "@neonwatty/nav-map": "workspace:*",
-    "adm-zip": "^0.5.17",
+    "adm-zip": "^0.6.0",
     "commander": "^14.0.3",
     "glob": "^11.0.0",
-    "playwright": "^1.59.1",
-    "sharp": "^0.34.5",
+    "playwright": "^1.61.1",
+    "sharp": "^0.35.3",
     "ts-morph": "^27.0.2"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",
     "@types/node": "^25.6.0",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.10"
   }
 }
