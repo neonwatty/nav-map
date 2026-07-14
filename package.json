@@ -25,10 +25,6 @@
     "@commitlint/cli": "^20.5.2",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/github": "^12.0.6",
-    "@semantic-release/npm": "^13.1.5",
-    "@semantic-release/release-notes-generator": "^14.1.0",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
     "eslint": "^10.2.1",
@@ -39,7 +35,6 @@
     "husky": "^9.1.7",
     "knip": "^5.87.0",
     "prettier": "^3.8.3",
-    "semantic-release": "^25.0.3",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.5"

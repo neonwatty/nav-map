@@ -670,6 +670,22 @@ packages/
 landing/      — Static landing page with video demos
 ```
 
+## Releases
+
+Releases are cut manually with the GitHub CLI after `main` is green. The release creates a GitHub
+tag and generated release notes; it does not publish the workspace packages to npm.
+
+```bash
+VERSION=v1.2.0
+gh release create "$VERSION" \
+  --repo neonwatty/nav-map \
+  --target main \
+  --title "$VERSION" \
+  --generate-notes
+```
+
+See [docs/releasing.md](docs/releasing.md) for the complete verification and rollback checklist.
+
 ## License
 
 MIT
