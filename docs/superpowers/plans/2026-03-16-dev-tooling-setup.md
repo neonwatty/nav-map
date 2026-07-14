@@ -1,5 +1,9 @@
 # Development Tooling Setup Implementation Plan
 
+> Historical plan: the semantic-release automation described below was removed in July 2026.
+> Current releases are created manually with the GitHub CLI; see
+> [docs/releasing.md](../../releasing.md).
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add ESLint, Prettier, Knip, commitlint, Husky, semantic-release, and CI/CD to the nav-map monorepo, matching the bleep app's best practices.
