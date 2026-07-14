@@ -1,0 +1,61 @@
+{
+  "result": "done",
+  "task_id": "T999",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "decision": "complete",
+  "full_outcome_complete": true,
+  "rationale": "The original adoption outcome is complete. A clean repository and three representative dogfood apps each completed init, sync, and open from disposable roots. The clean fixture proved repeatable refresh by adding /about and growing from one route to two. PRcard proved curated workflow behavior in the complete viewer; Bleep proved scan-only adoption against a real app source; Seatify proved a named local environment against a real app source. Every exact viewer URL passed curl immediately before an in-app browser walkthrough, exposed the complete viewer controls, produced no browser warnings or errors, and was stopped afterward. Full core/scanner tests, typechecks, production build, package-consumer smoke, skill smoke, and reliability gate all pass. The convenient path is documented first, legacy scanner commands and explicit graph open/serve remain available, and no React API was removed.",
+  "acceptance_criteria": [
+    {
+      "criterion": "Clean app completes init -> sync -> open and reflects a route change",
+      "status": "pass",
+      "evidence": "T007 browser proof: fresh fixture synced 1 route, added /about, resynced 2 routes, and rendered Home/About at the curl-verified viewer URL."
+    },
+    {
+      "criterion": "At least three dogfood apps complete the same repository workflow",
+      "status": "pass",
+      "evidence": "T007 browser proof: PRcard 17 routes/4 flows, Bleep 37 routes/33 edges, and Seatify 76 routes/20 edges under environment local."
+    },
+    {
+      "criterion": "Open uses the complete viewer",
+      "status": "pass",
+      "evidence": "T002 and T007 browser evidence shows Hierarchy, Map, Flow, Tree, Saved/Target, Audit, Search, PRcard flow selection, and workflow overview from the packaged scanner viewer."
+    },
+    {
+      "criterion": "Project workflow is safe, portable, repeatable, and failure-aware",
+      "status": "pass",
+      "evidence": "T004-T006 tests cover versioned relative contracts, idempotent conflict-safe init, named environments, auth id only, atomic graph publication, last-good preservation, truthful receipts, graph/flow migration validation, stable project identity, and bounded port fallback."
+    },
+    {
+      "criterion": "Existing scanner and React consumers remain compatible",
+      "status": "pass",
+      "evidence": "All 309 core and 189 scanner tests pass; root typecheck/build, packed ESM/CJS consumer smoke, existing command help, skill smoke, and reliability gate pass. New graph identity fields are optional and commands/APIs are additive."
+    },
+    {
+      "criterion": "The convenient path is primary onboarding",
+      "status": "pass",
+      "evidence": "README Quick Start and skills/nav-map/SKILL.md now begin with init, sync, and open; lower-level scan/crawl/workflow/probe/diff/serve remain documented as advanced paths."
+    }
+  ],
+  "evidence": [
+    "notes/T002-receipt.json",
+    "notes/T004-receipt.json",
+    "notes/T005-receipt.json",
+    "notes/T006-receipt.json",
+    "notes/T007-receipt.json",
+    "notes/T007-browser-proof.json",
+    "pnpm smoke:skill",
+    "pnpm reliability:agent",
+    "pnpm smoke:package-consumer",
+    "pnpm test",
+    "pnpm typecheck",
+    "pnpm build",
+    "git diff --check"
+  ],
+  "worker_package": null,
+  "subgoal_contract": null,
+  "parallel_safety": null,
+  "blocked_tasks": [],
+  "missing_evidence": [],
+  "required_board_updates": ["Mark T999 done and the goal achieved."]
+}

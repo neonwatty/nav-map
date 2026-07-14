@@ -329,6 +329,63 @@ describe('NavMap props', () => {
     expect(window.localStorage.getItem('nav-map:graph|Test|manual:preview-mode')).toBe('"live"');
   });
 
+  it('scopes project preferences by stable project and environment identity', async () => {
+    const projectGraph = {
+      ...minimalGraph,
+      meta: {
+        ...minimalGraph.meta,
+        projectId: 'storefront',
+        environmentId: 'local',
+        baseUrl: 'http://localhost:3000',
+      },
+    };
+    const { rerender } = render(<NavMap graph={projectGraph} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Try live app or mockup targets where available',
+      })
+    );
+    expect(window.localStorage.getItem('nav-map:project|storefront|local:preview-mode')).toBe(
+      '"live"'
+    );
+
+    rerender(
+      <NavMap
+        graph={{
+          ...projectGraph,
+          meta: {
+            ...projectGraph.meta,
+            name: 'Renamed storefront',
+            generatedAt: '2026-07-13',
+            baseUrl: 'http://localhost:3100',
+          },
+        }}
+      />
+    );
+    expect(
+      screen
+        .getByRole('button', { name: 'Try live app or mockup targets where available' })
+        .getAttribute('aria-pressed')
+    ).toBe('true');
+
+    rerender(
+      <NavMap
+        graph={{
+          ...projectGraph,
+          meta: { ...projectGraph.meta, environmentId: 'staging' },
+        }}
+      />
+    );
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('button', { name: 'Show saved screenshots and static surface images' })
+          .getAttribute('aria-pressed')
+      ).toBe('true');
+    });
+  });
+
   it('runs a scoped target preflight from the Target toggle', async () => {
     vi.stubGlobal(
       'fetch',

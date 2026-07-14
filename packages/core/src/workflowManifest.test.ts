@@ -785,6 +785,33 @@ describe('workflowManifestToGraph', () => {
     );
   });
 
+  it('rejects legacy or invalid flow shapes with actionable errors', () => {
+    const result = validateWorkflowManifest({
+      version: 'workflow-atlas/1.0',
+      name: 'Legacy flows',
+      nodes: [{ id: 'home', route: '/', label: 'Home' }],
+      flows: [{ id: 'primary', label: 'Primary', steps: ['home', 'missing'], partial: 'yes' }],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'flows.0.name',
+          message: expect.stringContaining('Legacy "label" detected; rename it to "name"'),
+        }),
+        expect.objectContaining({
+          field: 'flows.0.steps.1',
+          message: 'step references unknown node "missing"',
+        }),
+        expect.objectContaining({
+          field: 'flows.0.partial',
+          message: 'partial must be a boolean when provided',
+        }),
+      ])
+    );
+  });
+
   it('creates stable route IDs for common app route shapes', () => {
     expect(routeToId('/')).toBe('index');
     expect(routeToId('/api/public/snapshot/[slug]')).toBe('api-public-snapshot-slug');

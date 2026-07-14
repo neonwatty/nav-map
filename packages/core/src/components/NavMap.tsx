@@ -527,11 +527,17 @@ export function NavMap(props: NavMapProps) {
 
 function getLiveTargetScopeKey(graph: NavMapGraph | null): string {
   if (!graph) return 'no-graph';
+  if (graph.meta.projectId) {
+    return [graph.meta.projectId, graph.meta.environmentId ?? 'default'].join('|');
+  }
   return [graph.meta.name, graph.meta.baseUrl, graph.meta.generatedBy].filter(Boolean).join('|');
 }
 
 function getGraphStateScopeKey(graph: NavMapGraph | null): string {
   if (!graph) return 'no-graph';
+  if (graph.meta.projectId) {
+    return ['project', graph.meta.projectId, graph.meta.environmentId ?? 'default'].join('|');
+  }
   return ['graph', graph.meta.name, graph.meta.baseUrl, graph.meta.generatedBy]
     .filter(Boolean)
     .join('|');

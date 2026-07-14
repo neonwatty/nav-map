@@ -1,0 +1,49 @@
+{
+  "result": "done",
+  "task_id": "T003",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "decision": "approved",
+  "full_outcome_complete": false,
+  "rationale": "T002 satisfies the viewer-consolidation phase: the scanner tarball contains the full UI, serve and open share it, nested evidence is safe, and HTTP/browser/package proof is current. The next dependency is a portable repository contract plus idempotent init. This package should also teach open to resolve that contract so init produces an immediately understandable next step. Sync remains separate because generation dispatch, atomic writes, failure preservation, and receipts form their own coherent vertical slice.",
+  "worker_package": {
+    "objective": "Add the versioned repository project contract and an idempotent init command, then make open resolve initialized projects while retaining explicit graph-file support.",
+    "allowed_files": [
+      "packages/scanner/src/modes/project.ts",
+      "packages/scanner/src/commands/init.ts",
+      "packages/scanner/src/commands/open.ts",
+      "packages/scanner/src/program.ts",
+      "packages/scanner/src/index.ts",
+      "packages/scanner/src/__tests__/project.test.ts",
+      "packages/scanner/src/__tests__/commands.test.ts",
+      "scripts/package-consumer-smoke.mjs"
+    ],
+    "verify": [
+      "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/project.test.ts packages/scanner/src/__tests__/commands.test.ts",
+      "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "pnpm --filter @neonwatty/nav-map-scanner build",
+      "pnpm smoke:package-consumer"
+    ],
+    "stop_if": [
+      "The contract needs secrets or auth storage contents.",
+      "Implementation requires overwriting an existing user configuration.",
+      "Implementation requires files outside allowed_files.",
+      "Verification fails twice for the same unresolved reason."
+    ]
+  },
+  "evidence": [
+    "T002 receipt",
+    "packages/scanner/dist/viewer/app.js",
+    "packages/scanner/src/modes/serve.ts",
+    "packages/scanner/src/commands/open.ts",
+    "scripts/package-consumer-smoke.mjs",
+    "Browser proof at http://192.168.1.34:3334"
+  ],
+  "subgoal_contract": null,
+  "parallel_safety": null,
+  "blocked_tasks": [],
+  "missing_evidence": [
+    "No initialized project contract exists yet.",
+    "Sync, migration hardening, multi-app dogfood, and onboarding proof remain required."
+  ],
+  "required_board_updates": ["Activate T004."]
+}

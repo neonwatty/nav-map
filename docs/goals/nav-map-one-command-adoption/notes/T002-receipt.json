@@ -1,0 +1,61 @@
+{
+  "result": "done",
+  "task_id": "T002",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "changed_files": [
+    "packages/scanner/package.json",
+    "packages/scanner/tsup.config.ts",
+    "packages/scanner/src/viewer/app.tsx",
+    "packages/scanner/src/viewer/app.css",
+    "packages/scanner/src/viewer/template.ts",
+    "packages/scanner/src/modes/serve.ts",
+    "packages/scanner/src/commands/serve.ts",
+    "packages/scanner/src/commands/open.ts",
+    "packages/scanner/src/program.ts",
+    "packages/scanner/src/index.ts",
+    "packages/scanner/src/__tests__/serve.test.ts",
+    "packages/scanner/src/__tests__/commands.test.ts",
+    "scripts/package-consumer-smoke.mjs",
+    "pnpm-lock.yaml"
+  ],
+  "commands": [
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm --filter @neonwatty/nav-map-scanner build",
+      "status": "pass"
+    },
+    {
+      "cmd": "pnpm smoke:package-consumer",
+      "status": "pass"
+    },
+    {
+      "cmd": "curl root, viewer asset, graph, and nested PRcard screenshot from http://192.168.1.34:3334",
+      "status": "pass"
+    },
+    {
+      "cmd": "In-app browser walkthrough of packaged PRcard viewer controls, workflow overview, flow selector, audit, node, and screenshot",
+      "status": "pass"
+    },
+    {
+      "cmd": "git diff --check",
+      "status": "pass"
+    }
+  ],
+  "summary": "The scanner now bundles the complete React NavMap UI, serves it through the existing serve command, and exposes an additive open command with optional browser launch. The server safely serves nested screenshots with legacy leaf-directory fallback, rejects traversal, and reports its resolved ready URL. Focused scanner coverage, typecheck, browser build, packed-consumer verification, HTTP checks, and a real PRcard browser walkthrough all pass with no runtime warnings or errors.",
+  "deviations": [
+    "The first browser bundle is intentionally self-contained and approximately 2.1 MB before future optimization.",
+    "Project-aware open resolution is deferred until the project contract and init package."
+  ],
+  "remaining_blockers": [
+    "The full goal still requires project init, sync orchestration, migration and environment hardening, fresh-app proof, three dogfood walkthroughs, and onboarding updates."
+  ],
+  "verification_attempts": 2,
+  "stopped_because": null
+}

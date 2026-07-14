@@ -217,6 +217,7 @@ export function validateWorkflowManifest(manifest: unknown): WorkflowManifestVal
     });
   }
   validateSurfaces(record.surfaces, nodeIds, errors);
+  validateFlows(record.flows, nodeIds, errors);
 
   if (Array.isArray(record.edges)) {
     record.edges.forEach((edge, index) => {
@@ -653,6 +654,65 @@ function validateSurfaces(
       errors.push({
         field: `surfaces.${index}.sourceHints`,
         message: 'sourceHints must be an array of strings',
+      });
+    }
+  });
+}
+
+function validateFlows(
+  value: unknown,
+  nodeIds: Set<string>,
+  errors: WorkflowManifestValidationError[]
+): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    errors.push({ field: 'flows', message: 'flows must be an array' });
+    return;
+  }
+
+  value.forEach((flow, index) => {
+    const record = asRecord(flow);
+    if (!record) {
+      errors.push({ field: `flows.${index}`, message: 'flow must be an object' });
+      return;
+    }
+    if (!isNonEmptyString(record.name)) {
+      const legacyField = isNonEmptyString(record.label)
+        ? 'label'
+        : isNonEmptyString(record.id)
+          ? 'id'
+          : null;
+      errors.push({
+        field: `flows.${index}.name`,
+        message: legacyField
+          ? `name must be a non-empty string. Legacy "${legacyField}" detected; rename it to "name".`
+          : 'name must be a non-empty string',
+      });
+    }
+    if (!Array.isArray(record.steps) || record.steps.length === 0) {
+      errors.push({
+        field: `flows.${index}.steps`,
+        message: 'steps must be a non-empty array of node ids',
+      });
+    } else {
+      record.steps.forEach((step, stepIndex) => {
+        if (!isNonEmptyString(step)) {
+          errors.push({
+            field: `flows.${index}.steps.${stepIndex}`,
+            message: 'step must be a non-empty node id',
+          });
+        } else if (!nodeIds.has(step)) {
+          errors.push({
+            field: `flows.${index}.steps.${stepIndex}`,
+            message: `step references unknown node "${step}"`,
+          });
+        }
+      });
+    }
+    if (record.partial !== undefined && typeof record.partial !== 'boolean') {
+      errors.push({
+        field: `flows.${index}.partial`,
+        message: 'partial must be a boolean when provided',
       });
     }
   });

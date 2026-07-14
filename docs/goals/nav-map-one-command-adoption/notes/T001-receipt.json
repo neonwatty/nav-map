@@ -1,0 +1,54 @@
+{
+  "result": "done",
+  "task_id": "T001",
+  "board_path": "/Users/neonwatty/Desktop/nav-map-fresh/docs/goals/nav-map-one-command-adoption/state.yaml",
+  "decision": "approved",
+  "full_outcome_complete": false,
+  "rationale": "The plan is sound if viewer consolidation precedes project orchestration. The current scanner ships only a hand-written force-graph template, while the complete React viewer already consumes standard NavMapGraph. The largest safe first slice is to bundle that real UI into the scanner, route serve through it, and add open as an additive entry point. This immediately improves adoption, preserves existing scan/workflow APIs, and creates the server/runtime foundation required by init and sync. Project contracts, environments, migrations, and dogfood proof remain later required packages.",
+  "worker_package": {
+    "objective": "Bundle the complete NavMap browser UI with the scanner, make serve use it, and add a backward-compatible open command that launches the same viewer for a graph file.",
+    "allowed_files": [
+      "packages/scanner/package.json",
+      "packages/scanner/tsup.config.ts",
+      "packages/scanner/src/viewer/**",
+      "packages/scanner/src/modes/serve.ts",
+      "packages/scanner/src/commands/serve.ts",
+      "packages/scanner/src/commands/open.ts",
+      "packages/scanner/src/program.ts",
+      "packages/scanner/src/index.ts",
+      "packages/scanner/src/__tests__/serve.test.ts",
+      "packages/scanner/src/__tests__/commands.test.ts",
+      "scripts/package-consumer-smoke.mjs",
+      "packages/demo/next-env.d.ts",
+      "pnpm-lock.yaml"
+    ],
+    "verify": [
+      "pnpm --filter @neonwatty/nav-map-scanner test -- packages/scanner/src/__tests__/serve.test.ts packages/scanner/src/__tests__/commands.test.ts",
+      "pnpm --filter @neonwatty/nav-map-scanner typecheck",
+      "pnpm --filter @neonwatty/nav-map-scanner build",
+      "pnpm smoke:package-consumer"
+    ],
+    "stop_if": [
+      "The browser bundle cannot be shipped inside the scanner tarball without creating a new published package or changing the public React package API.",
+      "Implementation requires files outside allowed_files.",
+      "Existing serve file and port arguments cannot remain compatible.",
+      "Verification fails twice for the same unresolved reason."
+    ]
+  },
+  "evidence": [
+    "packages/scanner/src/viewer/template.ts",
+    "packages/scanner/src/modes/serve.ts",
+    "packages/scanner/tsup.config.ts",
+    "packages/scanner/package.json",
+    "packages/core/src/components/NavMap.tsx",
+    "scripts/package-consumer-smoke.mjs"
+  ],
+  "subgoal_contract": null,
+  "parallel_safety": null,
+  "blocked_tasks": [],
+  "missing_evidence": [
+    "Browser bundle mechanics and tarball contents must be proven by T002.",
+    "The goal still requires init, sync, portability hardening, fresh-app proof, and three dogfood walkthroughs."
+  ],
+  "required_board_updates": ["Activate T002 with the supplied Worker package."]
+}

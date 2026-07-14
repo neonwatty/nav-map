@@ -196,6 +196,10 @@ export interface NavMapGraph {
   version: '1.0';
   meta: {
     name: string;
+    /** Stable repository identity used to scope viewer preferences across regenerations. */
+    projectId?: string;
+    /** Named project environment used with projectId to isolate viewer preferences. */
+    environmentId?: string;
     baseUrl?: string;
     generatedAt: string;
     generatedBy: 'repo-scan' | 'url-crawl' | 'manual' | 'e2e-record' | 'merged';

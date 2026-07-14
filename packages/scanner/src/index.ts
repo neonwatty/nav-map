@@ -38,8 +38,35 @@ export { autoLogin, closeBrowser, buildLoginSteps } from './modes/auto-auth.js';
 export type { AutoLoginOptions } from './modes/auto-auth.js';
 export { runGenerate } from './modes/generate.js';
 export type { GenerateResult, GenerateOptions } from './modes/generate.js';
+export {
+  initProject,
+  loadProject,
+  resolveOpenTarget,
+  resolveProjectEnvironment,
+  resolveProjectFilePath,
+  validateProject,
+  NAV_MAP_PROJECT_FILE,
+  NAV_MAP_PROJECT_VERSION,
+} from './modes/project.js';
+export type {
+  InitProjectOptions,
+  InitProjectReceipt,
+  LoadedNavMapProject,
+  NavMapProject,
+  NavMapProjectEnvironment,
+  NavMapProjectSource,
+  OpenTarget,
+  ResolvedProjectEnvironment,
+} from './modes/project.js';
+export { syncProject } from './modes/sync.js';
+export type {
+  SyncProjectOptions,
+  SyncProjectReceipt,
+  SyncProjectResult,
+  SyncProjectRunners,
+} from './modes/sync.js';
 export { startServer } from './modes/serve.js';
-export type { ServeOptions } from './modes/serve.js';
+export type { ServeOptions, ServeReadyInfo } from './modes/serve.js';
 export { runIngest } from './modes/ingest.js';
 export type { IngestOptions, IngestResult } from './modes/ingest.js';
 export { parseReport } from './ingest/parseReport.js';
