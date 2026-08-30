@@ -9,7 +9,6 @@ import {
   type Node,
   type Edge,
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 
 import type { NavMapGraph, ViewMode, EdgeMode, NavMapTheme, NavMapPreviewMode } from '../types';
 import type { GraphValidationError } from '../utils/validateGraph';

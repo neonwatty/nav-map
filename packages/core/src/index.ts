@@ -21,6 +21,40 @@ export { CoverageSummary } from './components/panels/CoverageSummary';
 export { RouteHealthPanel } from './components/panels/RouteHealthPanel';
 export { CoverageBadge, getCoverageBorderColor } from './components/nodes/CoverageBadge';
 
+// Focused workflow review canvas
+export {
+  WorkflowCanvas,
+  WorkflowCanvasDetails,
+  WorkflowCanvasNode,
+  WorkflowCanvasSemantic,
+  validateWorkflowCanvas,
+  WORKFLOW_CANVAS_CAPS,
+  workflowCanvasV1Fixture,
+} from './workflow-canvas';
+export type {
+  AnnotationRecord,
+  CanvasEdge,
+  CanvasNode,
+  ComparisonRecord,
+  EvidenceAvailability,
+  EvidenceRecord,
+  EvidenceRole,
+  FindingRecord,
+  IntegrityState,
+  ProducerLabel,
+  ProducerTone,
+  Provenance,
+  ReferenceSelection,
+  ReviewAction,
+  ReviewDecision,
+  ReviewState,
+  WorkflowCanvasActionHandler,
+  WorkflowCanvasProps,
+  WorkflowCanvasV1,
+  WorkflowCanvasValidationError,
+  WorkflowCanvasValidationResult,
+} from './workflow-canvas';
+
 // Error handling
 export { NavMapErrorBoundary } from './components/NavMapErrorBoundary';
 export { ContainerWarning } from './components/ContainerWarning';

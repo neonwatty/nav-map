@@ -1,0 +1,21 @@
+{
+  "goalbuddy_receipt_v1": {
+    "result": "done",
+    "task_id": "T008",
+    "decision": "complete",
+    "full_outcome_complete": true,
+    "summary": "Verified the experiment branch equals origin/main at creation, ruleset 21868642 applies PR, deletion, and non-fast-forward protections with no bypass, PR #190 is open with the intended base and head, local and remote feature commits match, the worktree is clean before the receipt update, local QA is green, and all current PR checks pass. The PR remains unmerged.",
+    "evidence": [
+      "https://github.com/neonwatty/nav-map/rules/21868642",
+      "https://github.com/neonwatty/nav-map/pull/190"
+    ],
+    "commands": [
+      {"cmd": "gh api repos/neonwatty/nav-map/rules/branches/experimental%2Fworkflow-canvas", "status": "pass"},
+      {"cmd": "gh pr view 190 --json baseRefName,headRefName,state,statusCheckRollup", "status": "pass"},
+      {"cmd": "compare local, remote source, experimental target, and origin/main commit IDs", "status": "pass"},
+      {"cmd": "gh pr checks 190 --watch --interval 10", "status": "pass"}
+    ],
+    "remaining_blockers": [],
+    "harness": "codex"
+  }
+}

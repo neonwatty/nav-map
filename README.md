@@ -95,6 +95,7 @@ The component requires client-side rendering. Use `dynamic` import with `ssr: fa
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { NavMapGraph } from '@neonwatty/nav-map';
+import '@neonwatty/nav-map/styles.css';
 
 const NavMap = dynamic(
   () => import('@neonwatty/nav-map').then(mod => ({ default: mod.NavMap })),
@@ -121,6 +122,63 @@ export default function NavMapPage() {
 ```
 
 > **Important:** The container element must have an explicit width and height. The component renders at `width: 100%; height: 100%` of its parent. If the parent has no height (common in App Router layouts), the graph will be invisible.
+
+## Focused WorkflowCanvas Embedding
+
+`WorkflowCanvas` is the standalone review surface for a producer-supplied
+`workflow-canvas/v1` document. It is intentionally separate from the complete `NavMap` viewer: it
+does not mount search, route health, live targets, analytics, export, shared navigation, alternate
+view modes, or persistent viewer preferences.
+
+Import the component and the public stylesheet from package exports only:
+
+```tsx
+'use client';
+
+import { WorkflowCanvas, type WorkflowCanvasV1 } from '@neonwatty/nav-map';
+import '@neonwatty/nav-map/styles.css';
+
+export function WorkflowReview({ document }: { document: WorkflowCanvasV1 }) {
+  return (
+    <WorkflowCanvas
+      document={document}
+      defaultSelectedNodeId={document.nodes[0]?.id}
+      onSelectedNodeChange={nodeId => console.log('Selected supplied node', nodeId)}
+      onValidationError={errors => console.error('Canvas unavailable', errors)}
+      onAction={(action, event) => {
+        // Optional: intercept the ordinary relative anchor without mutating workflow data.
+        if (action.destination.surface === 'finding-detail') event.preventDefault();
+      }}
+    />
+  );
+}
+```
+
+Selection is either controlled (`selectedNodeId` together with `onSelectedNodeChange`) or
+uncontrolled (`defaultSelectedNodeId` with an optional callback), never both. Mounting does not
+move focus. The semantic step list supports arrow, Home, and End traversal; Enter, Space, or the
+explicit Inspect control opens details, and closing returns focus to the initiating control.
+Containers at 480 CSS pixels or narrower use the semantic list and a contained details dialog;
+every visible action link and button has a minimum 44-by-44 CSS-pixel target while links retain
+ordinary same-origin anchor behavior.
+
+### Authority boundary
+
+The producer owns every lifecycle-critical value: review state and reason, platform labels,
+reference eligibility and primary selection, integrity, evidence availability, findings,
+comparison sides and conclusions, and next-review actions. NavMap validates references and
+structural consistency and renders those supplied values; it never chooses the latest or canonical
+evidence, substitutes a comparison side, derives pass/fail or readiness, or invents a call to
+action.
+
+Evidence URLs and action links must be opaque relative same-origin paths. Validation does not fetch
+them. Missing, unavailable, disconnected, stale, and corrupt states remain explicit; corrupt bytes
+never render, and stale imagery renders only when the producer supplies the permitted policy. All
+producer strings render as plain text, while normalized annotations overlay rather than modify
+source images.
+
+The exported `workflowCanvasV1Fixture` is privacy-safe and useful for local component tests. It is
+example data, not a source of product policy or lifecycle meaning.
 
 ## Minimal Example JSON
 

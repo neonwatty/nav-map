@@ -1,0 +1,19 @@
+{
+  "goalbuddy_receipt_v1": {
+    "result": "done",
+    "task_id": "T007",
+    "summary": "Created experimental/workflow-canvas from origin/main, applied an active repository ruleset analogous to main (PR required, deletion blocked, non-fast-forward blocked, no bypass), pushed codex/workflow-canvas-embed-mode, and opened PR #190 into the experimental branch without merging.",
+    "evidence": [
+      "https://github.com/neonwatty/nav-map/rules/21868642",
+      "https://github.com/neonwatty/nav-map/pull/190"
+    ],
+    "commands": [
+      {"cmd": "git push origin origin/main:refs/heads/experimental/workflow-canvas", "status": "pass"},
+      {"cmd": "create and verify GitHub ruleset 21868642", "status": "pass"},
+      {"cmd": "git push -u origin codex/workflow-canvas-embed-mode", "status": "pass"},
+      {"cmd": "gh pr create --base experimental/workflow-canvas --head codex/workflow-canvas-embed-mode", "status": "pass"}
+    ],
+    "remaining_blockers": [],
+    "harness": "codex"
+  }
+}

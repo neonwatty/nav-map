@@ -1,0 +1,61 @@
+.page {
+  width: 100%;
+  min-height: 100dvh;
+  padding: 24px;
+  overflow-x: clip;
+  background: #eef1f7;
+  color: #182033;
+}
+
+.intro {
+  max-width: 1180px;
+  margin: 0 auto 16px;
+}
+
+.intro span {
+  color: #3157d5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.intro h1 {
+  margin: 4px 0;
+  font-size: 28px;
+}
+
+.intro p {
+  color: #5c6574;
+}
+
+.page > section {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 0;
+  }
+  .intro {
+    padding: 14px 16px;
+    margin: 0;
+  }
+  .intro h1 {
+    font-size: 22px;
+  }
+  .page > section {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .page * {
+    scroll-behavior: auto !important;
+  }
+}
