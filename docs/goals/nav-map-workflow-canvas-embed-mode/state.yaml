@@ -5,7 +5,7 @@ goal:
   slug: "nav-map-workflow-canvas-embed-mode"
   kind: existing_plan
   tranche: "Freeze the shared canvas contract, then build and prove a focused reusable WorkflowCanvas without Agent Workflows lifecycle inference."
-  status: active
+  status: done
   oracle:
     signal: "A standalone focused WorkflowCanvas renders the frozen workflow-canvas/v1 fixture accessibly at desktop and 393x852 with truthful screenshot nodes, supplied run overlays, findings/annotations, focused details, and comparisons while unrelated NavMap controls remain absent."
     cadence: "after each Worker package and at final audit"
@@ -74,7 +74,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41740/nav-map-workflow-canvas-embed-mode/"
     command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.3/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/nav-map-workflow-canvas-embed-mode --port 41740"
 
-active_task: T007
+active_task: null
 
 tasks:
   - id: T001
@@ -257,7 +257,7 @@ tasks:
   - id: T007
     type: pm
     assignee: PM
-    status: active
+    status: done
     reasoning_hint: high
     objective: "Create a long-lived experimental integration branch from main, mirror main's PR protections analogously, commit and push the verified source branch, and open an unmerged PR into the experiment branch."
     inputs:
@@ -273,15 +273,48 @@ tasks:
       - "Protected experimental branch"
       - "Pushed source branch"
       - "Open PR targeting the experimental branch"
-    receipt: null
-
+    receipt:
+      result: done
+      summary: "Created experimental/workflow-canvas from origin/main, applied an active repository ruleset analogous to main (PR required, deletion blocked, non-fast-forward blocked, no bypass), pushed codex/workflow-canvas-embed-mode, and opened PR #190 into the experimental branch without merging."
+      evidence:
+        - "https://github.com/neonwatty/nav-map/rules/21868642"
+        - "https://github.com/neonwatty/nav-map/pull/190"
+      commands:
+        - cmd: "git push origin origin/main:refs/heads/experimental/workflow-canvas"
+          status: pass
+        - cmd: "create and verify GitHub ruleset 21868642"
+          status: pass
+        - cmd: "git push -u origin codex/workflow-canvas-embed-mode"
+          status: pass
+        - cmd: "gh pr create --base experimental/workflow-canvas --head codex/workflow-canvas-embed-mode"
+          status: pass
+      remaining_blockers: []
+      harness: codex
   - id: T008
     type: pm
     assignee: PM
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit the experimental branch protection, PR base/head, checks, and preserved local QA evidence."
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Verified the experiment branch equals origin/main at creation, ruleset 21868642 applies PR, deletion, and non-fast-forward protections with no bypass, PR #190 is open with the intended base and head, local and remote feature commits match, local QA is green, and all current PR checks pass. The PR remains unmerged."
+      evidence:
+        - https://github.com/neonwatty/nav-map/rules/21868642
+        - https://github.com/neonwatty/nav-map/pull/190
+      commands:
+        - cmd: "gh api repos/neonwatty/nav-map/rules/branches/experimental%2Fworkflow-canvas"
+          status: pass
+        - cmd: "gh pr view 190 --json baseRefName,headRefName,state,statusCheckRollup"
+          status: pass
+        - cmd: "compare local, remote source, experimental target, and origin/main commit IDs"
+          status: pass
+        - cmd: "gh pr checks 190 --watch --interval 10"
+          status: pass
+      remaining_blockers: []
+      harness: codex
 
 checks:
   dirty_fingerprint: "Recovered WorkflowCanvas implementation and control artifacts only on codex/workflow-canvas-embed-mode."
