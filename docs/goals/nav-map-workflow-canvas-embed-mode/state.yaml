@@ -1,0 +1,225 @@
+version: 2
+
+goal:
+  title: "NavMap Workflow Canvas Embed Mode"
+  slug: "nav-map-workflow-canvas-embed-mode"
+  kind: existing_plan
+  tranche: "Freeze the shared canvas contract, then build and prove a focused reusable WorkflowCanvas without Agent Workflows lifecycle inference."
+  status: active
+  oracle:
+    signal: "A standalone focused WorkflowCanvas renders the frozen workflow-canvas/v1 fixture accessibly at desktop and 393x852 with truthful screenshot nodes, supplied run overlays, findings/annotations, focused details, and comparisons while unrelated NavMap controls remain absent."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipt-backed component, semantic fallback, accessibility, responsive, reduced-motion, fixture, package-consumer, full validation, and independent final Judge proof mapped to all charter checks."
+  intake:
+    original_request: "Perform a focused NavMap workflow-canvas track in parallel with the Studio decision-model and journey-evidence track."
+    interpreted_outcome: "NavMap offers a constrained reusable workflow-review canvas that consumes but never invents Agent Workflows truth."
+    input_shape: existing_plan
+    audience: "Product teams embedding screenshot-backed workflow review, initially Agent Workflows Studio"
+    authority: approved
+    proof_type: demo
+    completion_proof: "The public focused component passes fixture, interaction, responsive, accessibility, reduced-motion, package-consumer, full validation, and final adversarial proof."
+    likely_misfire: "Repackage the complete NavMap viewer, hide complexity with brittle CSS, or hardcode Agent Workflows lifecycle semantics."
+    blind_spots_considered:
+      - "React and layout runtime weight"
+      - "Public exports versus private internal composition"
+      - "Producer-consumer contract drift"
+      - "Generic presentation versus product-specific lifecycle inference"
+      - "Reference, observed, resolution, unavailable, stale, and corrupt evidence"
+      - "Annotation provenance and immutable screenshot bytes"
+      - "Mobile canvas gestures, panel density, and page overflow"
+      - "Keyboard graph traversal, focus return, dialogs, and screen-reader fallback"
+      - "Reduced motion and decorative animation"
+      - "Larger graph performance and semantic zoom"
+      - "Privacy-safe fixtures and package delivery"
+    existing_plan_facts:
+      - "Run consumer and producer Scouts in parallel before contract freeze."
+      - "Workflows owns lifecycle meaning and the canonical producer contract after rendezvous."
+      - "NavMap renders supplied truth and never derives pass, qualification, integrity, readiness, or canonical eligibility."
+      - "Expose a focused public WorkflowCanvas API rather than private component imports or the full viewer."
+      - "Default to Flow view and hide unrelated search, live-target, analytics, export, route-health, and site-map controls."
+      - "Support screenshot nodes, focused details, supplied status/findings/annotations, semantic fallback, and comparison."
+      - "Prove desktop, exactly 393x852 mobile, keyboard, screen readers, reduced motion, and package consumption."
+      - "Stop before production Agent Workflows integration or package publication."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41740/nav-map-workflow-canvas-embed-mode/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.3/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/nav-map-workflow-canvas-embed-mode --port 41740"
+
+active_task: T001
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: active
+    reasoning_hint: high
+    objective: "Audit current-main NavMap public APIs, flow/gallery behavior, accessibility, responsive seams, package exports, and the smallest generic consumer surface for workflow-canvas/v1."
+    inputs:
+      - "goal.md"
+      - "Current origin/main-equivalent NavMap"
+      - "Core public types and exports"
+      - "Flow, gallery, details, responsive, keyboard, layout, and package-consumer tests"
+      - "The current Workflows T001 producer receipt when the coordinating PM supplies it"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation or goal files."
+      - "Do not browse or edit the Agent Workflows repository from this task."
+      - "Do not assume the complete NavMap viewer is an acceptable embed surface."
+      - "Identify generic primitives and product-specific concepts explicitly."
+      - "Return a compact evidence receipt, not an implementation plan."
+    expected_output:
+      - "Public/private API and package-export map"
+      - "Reusable canvas, flow, screenshot, gallery, selection, and semantic-fallback seams"
+      - "Accessibility, mobile, reduced-motion, and performance risk inventory"
+      - "Smallest credible focused embed boundary"
+      - "Candidate consumer-contract requirements and unresolved questions for rendezvous"
+    receipt: null
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Rendezvous the NavMap Scout with the canonical Workflows contract, validate consumer feasibility, freeze the focused public API, and authorize the largest safe NavMap Worker package."
+    inputs:
+      - "T001 receipt"
+      - "Workflows goal T001 receipt and T002 canonical contract supplied by coordinating PM"
+      - "goal.md oracle and cross-repository boundary"
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Request a PM-mediated contract revision rather than inventing lifecycle semantics."
+      - "Reject private-import composition, brittle CSS hiding, spatial-only meaning, or desktop-only proof."
+      - "Specify exact allowed_files, verify commands, and stop_if conditions for T003."
+    expected_output:
+      - "Consumer compatibility decision"
+      - "Frozen public WorkflowCanvas API and fixture shape"
+      - "Semantic fallback and accessibility contract"
+      - "Largest safe T003 Worker scope"
+      - "Deferred production integration and package-publication questions"
+    receipt: null
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Implement one coherent public WorkflowCanvas vertical slice with frozen fixtures, screenshot nodes, supplied overlays, focused details, comparisons, and semantic fallback."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "T002 has not validated the canonical contract and exact allowed_files."
+      - "A requested behavior would require Agent Workflows lifecycle inference."
+      - "The solution depends on private imports or brittle CSS hiding of the full viewer."
+      - "Need files outside Judge-authorized allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt: null
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Complete intentional 393x852 mobile behavior, keyboard and screen-reader operation, reduced-motion equivalence, unavailable-state handling, and representative larger-graph performance."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "The semantic fallback would diverge from the visual canvas truth."
+      - "A mobile design would rely on tiny targets, trapped gestures, or horizontal page scrolling."
+      - "Need files outside Judge-authorized allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt: null
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Finalize public exports, documentation, demo proof, and a throwaway package-consumer smoke for the focused WorkflowCanvas."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "The package would require publication or external credentials."
+      - "Consumer proof would rely on repository-private imports or undeclared assets."
+      - "Need files outside Judge-authorized allowed_files."
+      - "Verification fails twice for the same unresolved reason."
+    receipt: null
+
+  - id: T006
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: high
+    objective: "Produce a privacy-safe consumer fixture receipt and integration-readiness handoff for Workflows without editing or integrating the Workflows repository."
+    inputs:
+      - "T002 frozen contract and API"
+      - "T003 through T005 receipts"
+      - "Current package-consumer and responsive proof"
+    constraints:
+      - "Do not edit the Workflows repository."
+      - "Do not publish a package or begin production integration."
+      - "Record exact contract version, public export, fixture identity, verification, and limitations."
+    expected_output:
+      - "Consumer compatibility receipt"
+      - "Public API and fixture handoff"
+      - "Known limitations and deferred delivery decision"
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Adversarially audit whether the focused WorkflowCanvas satisfies the complete reusable, accessible, responsive, truthful, and package-consumable owner outcome."
+    inputs:
+      - "All done task receipts"
+      - "Fresh desktop and exactly 393x852 demo proof"
+      - "Last full validation, package-consumer proof, and current diff"
+      - "Workflows contract-compatibility receipt if available"
+    constraints:
+      - "Read-only."
+      - "Reject completion if any required Worker or handoff remains queued, active, or unverified."
+      - "Reject lifecycle inference, private-import composition, full-viewer complexity, spatial-only meaning, mobile/accessibility regression, decorative motion, stale proof, or package drift."
+      - "Do not require production Workflows integration or package publication, which are explicitly deferred."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Oracle-by-oracle evidence map"
+      - "Missing evidence and exact recovery task if incomplete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: "goal-prep files only in clean origin/main-equivalent worktree"
+  last_verification:
+    result: unknown
+    task: null
+    commands: []
