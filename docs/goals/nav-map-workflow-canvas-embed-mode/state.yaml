@@ -74,152 +74,226 @@ visual_board:
     url: "http://goalbuddy.localhost:41740/nav-map-workflow-canvas-embed-mode/"
     command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.3/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/nav-map-workflow-canvas-embed-mode --port 41740"
 
-active_task: T001
+active_task: T007
 
 tasks:
   - id: T001
     type: scout
     assignee: Scout
-    status: active
+    status: done
     reasoning_hint: high
-    objective: "Audit current-main NavMap public APIs, flow/gallery behavior, accessibility, responsive seams, package exports, and the smallest generic consumer surface for workflow-canvas/v1."
-    inputs:
-      - "goal.md"
-      - "Current origin/main-equivalent NavMap"
-      - "Core public types and exports"
-      - "Flow, gallery, details, responsive, keyboard, layout, and package-consumer tests"
-      - "The current Workflows T001 producer receipt when the coordinating PM supplies it"
-    constraints:
-      - "Read-only."
-      - "Do not edit implementation or goal files."
-      - "Do not browse or edit the Agent Workflows repository from this task."
-      - "Do not assume the complete NavMap viewer is an acceptable embed surface."
-      - "Identify generic primitives and product-specific concepts explicitly."
-      - "Return a compact evidence receipt, not an implementation plan."
-    expected_output:
-      - "Public/private API and package-export map"
-      - "Reusable canvas, flow, screenshot, gallery, selection, and semantic-fallback seams"
-      - "Accessibility, mobile, reduced-motion, and performance risk inventory"
-      - "Smallest credible focused embed boundary"
-      - "Candidate consumer-contract requirements and unresolved questions for rendezvous"
-    receipt: null
+    objective: "Audit the smallest credible focused workflow-canvas consumer boundary."
+    receipt:
+      result: done
+      summary: "Mapped the reusable graph, semantic, responsive, accessibility, and package seams and rejected composition through the complete NavMap viewer."
+      evidence:
+        - packages/core/src/index.ts
+        - packages/core/src/components/NavMap.tsx
+        - packages/core/src/workflow-canvas/types.ts
+      harness: codex
 
   - id: T002
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
-    objective: "Rendezvous the NavMap Scout with the canonical Workflows contract, validate consumer feasibility, freeze the focused public API, and authorize the largest safe NavMap Worker package."
-    inputs:
-      - "T001 receipt"
-      - "Workflows goal T001 receipt and T002 canonical contract supplied by coordinating PM"
-      - "goal.md oracle and cross-repository boundary"
-    constraints:
-      - "Read-only."
-      - "Do not implement."
-      - "Request a PM-mediated contract revision rather than inventing lifecycle semantics."
-      - "Reject private-import composition, brittle CSS hiding, spatial-only meaning, or desktop-only proof."
-      - "Specify exact allowed_files, verify commands, and stop_if conditions for T003."
-    expected_output:
-      - "Consumer compatibility decision"
-      - "Frozen public WorkflowCanvas API and fixture shape"
-      - "Semantic fallback and accessibility contract"
-      - "Largest safe T003 Worker scope"
-      - "Deferred production integration and package-publication questions"
-    receipt: null
+    objective: "Freeze and verify the producer-consumer workflow-canvas/v1 contract."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Accepted Workflows authority for lifecycle truth and froze the direct public WorkflowCanvas boundary."
+      evidence:
+        - docs/goals/nav-map-workflow-canvas-embed-mode/notes/T002-supplied-shared-contract.md
+      commands:
+        - cmd: "wc -c and shasum -a 256 frozen contract"
+          status: pass
+      harness: codex
 
   - id: T003
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: medium
-    objective: "Implement one coherent public WorkflowCanvas vertical slice with frozen fixtures, screenshot nodes, supplied overlays, focused details, comparisons, and semantic fallback."
-    allowed_files: []
-    verify: []
-    stop_if:
-      - "T002 has not validated the canonical contract and exact allowed_files."
-      - "A requested behavior would require Agent Workflows lifecycle inference."
-      - "The solution depends on private imports or brittle CSS hiding of the full viewer."
-      - "Need files outside Judge-authorized allowed_files."
-      - "Verification fails twice for the same unresolved reason."
-    receipt: null
+    objective: "Implement the focused public WorkflowCanvas vertical slice."
+    allowed_files:
+      - packages/core/src/workflow-canvas/
+      - packages/core/src/index.ts
+      - packages/core/src/components/NavMap.tsx
+      - packages/demo/app/workflow-canvas/
+      - packages/demo/public/workflow-fixtures/
+    verify:
+      - pnpm test
+      - pnpm typecheck
+      - pnpm build
+    stop_if: []
+    receipt:
+      result: done
+      summary: "Implemented validation, public types and exports, truthful visual and semantic representations, details, evidence, findings, annotations, comparisons, and real fixtures."
+      changed_files:
+        - packages/core/src/workflow-canvas/
+        - packages/core/src/index.ts
+        - packages/core/src/components/NavMap.tsx
+        - packages/demo/app/workflow-canvas/
+        - packages/demo/public/workflow-fixtures/
+      commands:
+        - cmd: "pnpm exec vitest run packages/core/src/workflow-canvas/validation.test.ts packages/core/src/workflow-canvas/WorkflowCanvas.test.tsx"
+          status: pass
+      harness: codex
 
   - id: T004
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: medium
-    objective: "Complete intentional 393x852 mobile behavior, keyboard and screen-reader operation, reduced-motion equivalence, unavailable-state handling, and representative larger-graph performance."
-    allowed_files: []
-    verify: []
-    stop_if:
-      - "The semantic fallback would diverge from the visual canvas truth."
-      - "A mobile design would rely on tiny targets, trapped gestures, or horizontal page scrolling."
-      - "Need files outside Judge-authorized allowed_files."
-      - "Verification fails twice for the same unresolved reason."
-    receipt: null
+    objective: "Prove responsive, keyboard, screen-reader, reduced-motion, degraded-state, topology, and representative performance behavior."
+    allowed_files:
+      - packages/core/src/workflow-canvas/
+      - scripts/workflow-canvas-browser-proof.mjs
+    verify:
+      - pnpm test
+      - pnpm lint
+      - pnpm format:check
+      - pnpm typecheck
+      - pnpm knip:production
+      - pnpm build
+      - pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/workflow-canvas-browser-proof.mjs
+    stop_if: []
+    receipt:
+      result: done
+      summary: "Real Chromium proves exact 393x852 behavior, no overflow, 44x44 targets, focus return, supplied topology, reduced motion, and the 40/60/120 representative fixture within thresholds."
+      changed_files:
+        - packages/core/src/workflow-canvas/
+        - scripts/workflow-canvas-browser-proof.mjs
+      commands:
+        - cmd: "pnpm test"
+          status: pass
+        - cmd: "pnpm lint"
+          status: pass
+        - cmd: "pnpm format:check"
+          status: pass
+        - cmd: "pnpm typecheck"
+          status: pass
+        - cmd: "pnpm knip:production"
+          status: pass
+        - cmd: "pnpm build"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/workflow-canvas-browser-proof.mjs"
+          status: pass
+      harness: codex
 
   - id: T005
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: medium
-    objective: "Finalize public exports, documentation, demo proof, and a throwaway package-consumer smoke for the focused WorkflowCanvas."
-    allowed_files: []
-    verify: []
-    stop_if:
-      - "The package would require publication or external credentials."
-      - "Consumer proof would rely on repository-private imports or undeclared assets."
-      - "Need files outside Judge-authorized allowed_files."
-      - "Verification fails twice for the same unresolved reason."
-    receipt: null
+    objective: "Finalize public exports, documentation, demo proof, and packed consumer smoke."
+    allowed_files:
+      - README.md
+      - packages/core/src/index.ts
+      - scripts/copy-core-css.mjs
+      - scripts/package-consumer-smoke.mjs
+    verify:
+      - pnpm smoke:package-consumer
+    stop_if: []
+    receipt:
+      result: done
+      summary: "Documented the focused boundary and proved public ESM, CJS, declarations, stylesheet, scanner, and CLI consumption from packed tarballs."
+      changed_files:
+        - README.md
+        - packages/core/src/index.ts
+        - scripts/copy-core-css.mjs
+        - scripts/package-consumer-smoke.mjs
+      commands:
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+      harness: codex
 
   - id: T006
     type: pm
     assignee: PM
-    status: queued
+    status: done
     reasoning_hint: high
-    objective: "Produce a privacy-safe consumer fixture receipt and integration-readiness handoff for Workflows without editing or integrating the Workflows repository."
-    inputs:
-      - "T002 frozen contract and API"
-      - "T003 through T005 receipts"
-      - "Current package-consumer and responsive proof"
-    constraints:
-      - "Do not edit the Workflows repository."
-      - "Do not publish a package or begin production integration."
-      - "Record exact contract version, public export, fixture identity, verification, and limitations."
-    expected_output:
-      - "Consumer compatibility receipt"
-      - "Public API and fixture handoff"
-      - "Known limitations and deferred delivery decision"
-    receipt: null
+    objective: "Record the privacy-safe integration-readiness handoff without editing Workflows."
+    receipt:
+      result: done
+      summary: "Recorded workflow-canvas/v1 compatibility, public exports, real fixture proof, and deferred production integration."
+      evidence:
+        - docs/goals/nav-map-workflow-canvas-embed-mode/notes/T002-supplied-shared-contract.md
+      remaining_blockers:
+        - "Production React integration and dependency delivery remain deferred to an explicit cross-repository rendezvous."
+      harness: codex
 
   - id: T999
     type: judge
     assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the completed focused WorkflowCanvas owner outcome."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Current full tests, build, packed consumer, exact desktop/mobile Chromium proof, reduced motion, truthful degraded states, semantic topology, and contract hash satisfy the original focused reusable-canvas outcome."
+      commands:
+        - cmd: "pnpm test"
+          status: pass
+        - cmd: "pnpm lint"
+          status: pass
+        - cmd: "pnpm format:check"
+          status: pass
+        - cmd: "pnpm typecheck"
+          status: pass
+        - cmd: "pnpm knip:production"
+          status: pass
+        - cmd: "pnpm build"
+          status: pass
+        - cmd: "pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/workflow-canvas-browser-proof.mjs"
+          status: pass
+        - cmd: "pnpm smoke:package-consumer"
+          status: pass
+      harness: codex
+
+  - id: T007
+    type: pm
+    assignee: PM
+    status: active
+    reasoning_hint: high
+    objective: "Create a long-lived experimental integration branch from main, mirror main's PR protections analogously, commit and push the verified source branch, and open an unmerged PR into the experiment branch."
+    inputs:
+      - "Current green local verification"
+      - "Current GitHub main branch protection and rulesets"
+    constraints:
+      - "Use only the NavMap repository and remote."
+      - "Do not modify or inspect the Workflows repository."
+      - "Do not weaken main protections."
+      - "Do not merge the PR."
+      - "Preserve the dirty unrelated main worktree."
+    expected_output:
+      - "Protected experimental branch"
+      - "Pushed source branch"
+      - "Open PR targeting the experimental branch"
+    receipt: null
+
+  - id: T008
+    type: pm
+    assignee: PM
     status: queued
     reasoning_hint: high
-    objective: "Adversarially audit whether the focused WorkflowCanvas satisfies the complete reusable, accessible, responsive, truthful, and package-consumable owner outcome."
-    inputs:
-      - "All done task receipts"
-      - "Fresh desktop and exactly 393x852 demo proof"
-      - "Last full validation, package-consumer proof, and current diff"
-      - "Workflows contract-compatibility receipt if available"
-    constraints:
-      - "Read-only."
-      - "Reject completion if any required Worker or handoff remains queued, active, or unverified."
-      - "Reject lifecycle inference, private-import composition, full-viewer complexity, spatial-only meaning, mobile/accessibility regression, decorative motion, stale proof, or package drift."
-      - "Do not require production Workflows integration or package publication, which are explicitly deferred."
-    expected_output:
-      - "complete | not_complete"
-      - "full_outcome_complete: true | false"
-      - "Oracle-by-oracle evidence map"
-      - "Missing evidence and exact recovery task if incomplete"
+    objective: "Audit the experimental branch protection, PR base/head, checks, and preserved local QA evidence."
     receipt: null
 
 checks:
-  dirty_fingerprint: "goal-prep files only in clean origin/main-equivalent worktree"
+  dirty_fingerprint: "Recovered WorkflowCanvas implementation and control artifacts only on codex/workflow-canvas-embed-mode."
   last_verification:
-    result: unknown
-    task: null
-    commands: []
+    result: pass
+    task: T999
+    commands:
+      - pnpm test
+      - pnpm lint
+      - pnpm format:check
+      - pnpm typecheck
+      - pnpm knip:production
+      - pnpm build
+      - pnpm --filter @neonwatty/nav-map-scanner exec node ../../scripts/workflow-canvas-browser-proof.mjs
+      - pnpm smoke:package-consumer

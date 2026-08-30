@@ -74,6 +74,8 @@ function writeConsumerProject(coreTarball, scannerTarball) {
           '@neonwatty/nav-map-scanner': `file:${scannerTarball}`,
           '@types/react': '^19.0.0',
           '@types/react-dom': '^19.0.0',
+          react: '^19.0.0',
+          'react-dom': '^19.0.0',
           typescript: '^5.7.0',
         },
         devDependencies: {},
@@ -98,17 +100,18 @@ function writeConsumerProject(coreTarball, scannerTarball) {
           strict: true,
           skipLibCheck: true,
           noEmit: true,
+          jsx: 'react-jsx',
         },
-        include: ['types.ts'],
+        include: ['types.tsx'],
       },
       null,
       2
     )
   );
   fs.writeFileSync(
-    path.join(consumerDir, 'types.ts'),
+    path.join(consumerDir, 'types.tsx'),
     [
-      "import type { NavMapGraph } from '@neonwatty/nav-map';",
+      "import { WorkflowCanvas, workflowCanvasV1Fixture, type NavMapGraph, type WorkflowCanvasV1 } from '@neonwatty/nav-map';",
       "import type { WorkflowManifest } from '@neonwatty/nav-map/workflow';",
       "import { validateGraph } from '@neonwatty/nav-map/validation';",
       "import { validateWorkflowManifest, workflowManifestToGraph } from '@neonwatty/nav-map/workflow';",
@@ -122,30 +125,56 @@ function writeConsumerProject(coreTarball, scannerTarball) {
       'if (!result.valid) throw new Error(result.errors[0]?.message ?? "invalid workflow");',
       'const graph: NavMapGraph = workflowManifestToGraph(workflow);',
       'validateGraph(graph);',
+      'const canvasDocument: WorkflowCanvasV1 = workflowCanvasV1Fixture;',
+      'const canvas = <WorkflowCanvas document={canvasDocument} defaultSelectedNodeId="welcome" />;',
+      'void canvas;',
     ].join('\n')
   );
   fs.writeFileSync(
     path.join(consumerDir, 'esm.mjs'),
     [
+      "import fs from 'node:fs';",
+      "import { fileURLToPath } from 'node:url';",
+      "import React from 'react';",
+      "import { renderToStaticMarkup } from 'react-dom/server';",
+      "import { WorkflowCanvas, workflowCanvasV1Fixture, validateWorkflowCanvas } from '@neonwatty/nav-map';",
       "import { validateGraph } from '@neonwatty/nav-map/validation';",
       "import { validateWorkflowManifest, workflowManifestToGraph } from '@neonwatty/nav-map/workflow';",
       "import { createRequire } from 'node:module';",
       'const require = createRequire(import.meta.url);',
       "require.resolve('@neonwatty/nav-map/styles.css');",
+      "const packageEntry = fileURLToPath(import.meta.resolve('@neonwatty/nav-map'));",
+      "if (packageEntry.startsWith(process.env.NAV_MAP_FORBIDDEN_WORKSPACE_ROOT)) throw new Error('ESM resolved from workspace instead of tarball');",
+      "const stylesheet = fs.readFileSync(require.resolve('@neonwatty/nav-map/styles.css'), 'utf8');",
+      "if (!stylesheet.includes('.react-flow') || !stylesheet.includes('.workflow-canvas')) throw new Error('combined public stylesheet missing');",
       "const workflow = { version: 'workflow-atlas/1.0', name: 'Consumer Smoke', nodes: [{ id: 'home', route: '/', label: 'Home' }] };",
       'if (!validateWorkflowManifest(workflow).valid) throw new Error("workflow export failed");',
       'validateGraph(workflowManifestToGraph(workflow));',
+      'if (!validateWorkflowCanvas(workflowCanvasV1Fixture).valid) throw new Error("workflow canvas fixture invalid");',
+      "const html = renderToStaticMarkup(React.createElement(WorkflowCanvas, { document: workflowCanvasV1Fixture, defaultSelectedNodeId: 'welcome' }));",
+      "if (!html.includes('Privacy-safe onboarding review') || !html.includes('Workflow steps')) throw new Error('ESM WorkflowCanvas render failed');",
     ].join('\n')
   );
   fs.writeFileSync(
     path.join(consumerDir, 'cjs.cjs'),
     [
+      "const fs = require('node:fs');",
+      "const React = require('react');",
+      "const { renderToStaticMarkup } = require('react-dom/server');",
+      "const { WorkflowCanvas, workflowCanvasV1Fixture, validateWorkflowCanvas } = require('@neonwatty/nav-map');",
       "const { validateGraph } = require('@neonwatty/nav-map/validation');",
       "const { validateWorkflowManifest, workflowManifestToGraph } = require('@neonwatty/nav-map/workflow');",
       "require.resolve('@neonwatty/nav-map/styles.css');",
+      "const packageEntry = require.resolve('@neonwatty/nav-map');",
+      "if (packageEntry.startsWith(process.env.NAV_MAP_FORBIDDEN_WORKSPACE_ROOT)) throw new Error('CJS resolved from workspace instead of tarball');",
+      "const stylesheet = fs.readFileSync(require.resolve('@neonwatty/nav-map/styles.css'), 'utf8');",
+      "if (!stylesheet.includes('.react-flow') || !stylesheet.includes('.workflow-canvas')) throw new Error('combined public stylesheet missing in CJS');",
       "const workflow = { version: 'workflow-atlas/1.0', name: 'Consumer Smoke', nodes: [{ id: 'home', route: '/', label: 'Home' }] };",
       'if (!validateWorkflowManifest(workflow).valid) throw new Error("workflow CJS export failed");',
       'validateGraph(workflowManifestToGraph(workflow));',
+      'if (!validateWorkflowCanvas(workflowCanvasV1Fixture).valid) throw new Error("workflow canvas fixture invalid in CJS");',
+      "const html = renderToStaticMarkup(React.createElement(WorkflowCanvas, { document: workflowCanvasV1Fixture, defaultSelectedNodeId: 'welcome' }));",
+      "if (!html.includes('Privacy-safe onboarding review') || !html.includes('Workflow steps')) throw new Error('CJS WorkflowCanvas render failed');",
     ].join('\n')
   );
   fs.writeFileSync(
@@ -175,7 +204,11 @@ function run(command, args, cwd) {
     cwd,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, CI: process.env.CI ?? '1' },
+    env: {
+      ...process.env,
+      CI: process.env.CI ?? '1',
+      NAV_MAP_FORBIDDEN_WORKSPACE_ROOT: repoRoot,
+    },
   });
   const label = `${command} ${args.join(' ')}`;
   receipts.push({ check: label, status: result.status === 0 ? 'pass' : 'fail' });
