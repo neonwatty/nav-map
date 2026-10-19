@@ -158,6 +158,10 @@ pnpm dlx @neonwatty/nav-map-scanner workflow app.workflow.json --inspect --contr
           ))}
         </div>
       </section>
+    <nav aria-label="More from Jeremy Watt" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1.5rem", padding: "2rem 1rem" }}>
+        <a href="https://neonwatty.com/projects/">All projects</a>
+        <a href="https://neonwatty.com/posts/">Blog</a>
+      </nav>
     </main>
   );
 }
