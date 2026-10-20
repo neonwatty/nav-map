@@ -54,8 +54,8 @@ export default function HomePage() {
     return (
       <main
         style={{
-          width: '100vw',
-          height: '100vh',
+          width: '100%',
+          height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -69,7 +69,7 @@ export default function HomePage() {
   }
 
   return (
-    <main style={{ width: '100vw', height: '100vh' }}>
+    <main style={{ width: '100%', height: '100%' }}>
       <label
         style={{
           position: 'absolute',
