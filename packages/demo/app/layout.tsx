@@ -31,7 +31,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{children}</body>
+      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <nav className="project-navigation" aria-label="Project navigation">
+          <span>Nav Map</span>
+          <a href="https://neonwatty.com/projects/">All projects</a>
+          <a href="https://neonwatty.com/posts/">Blog</a>
+        </nav>
+        <div className="demo-content">{children}</div>
+      </body>
     </html>
   );
 }
